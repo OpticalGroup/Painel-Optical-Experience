@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Optical Dental Academy Brand Colors */
+    --background: 0 0% 93%; /* #EDEDED */
+    --foreground: 0 0% 14%; /* #242424 */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 14%;
+
+    --primary: 245 56% 63%; /* #6E66D9 - Brand Purple */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 23 19% 82%; /* #D6CDC8 - Sand/Gold */
+    --secondary-foreground: 23 23% 40%; /* Darker sand for text */
+
+    --muted: 0 0% 93%;
+    --muted-foreground: 23 7% 59%; /* #9E9791 - Taupe */
+
+    --accent: 23 19% 82%; /* Sand accent */
+    --accent-foreground: 0 0% 14%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 23 19% 82%; /* Sand borders */
+    --input: 0 0% 100%;
+    --ring: 245 56% 63%; /* Purple focus ring */
+
+    --radius: 0.5rem;
+
+    /* Status badge colors */
+    --badge-paid-bg: 245 56% 63% / 0.1; /* Purple 10% */
+    --badge-paid-text: 245 56% 63%;
+    --badge-signed-bg: 23 19% 82% / 0.3; /* Sand 30% */
+    --badge-signed-text: 23 23% 40%;
+    --badge-pending-bg: 0 0% 93%;
+    --badge-pending-text: 23 7% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+/* Custom animations for Optical Dental Academy */
+@keyframes pulse-purple {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-purple {
+  animation: pulse-purple 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

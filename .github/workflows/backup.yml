@@ -1,0 +1,59 @@
+# Backup Automático Diário via GitHub Actions
+# Este workflow executa backup do banco de dados todo dia às 3h UTC
+
+name: Database Backup
+
+on:
+  schedule:
+    # Executar diariamente às 3h UTC (0h BRT)
+    - cron: '0 3 * * *'
+  
+  # Permitir execução manual
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Execute backup edge function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          RESPONSE=$(curl -X POST \
+            "${SUPABASE_URL}/functions/v1/backup-database" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json")
+          
+          echo "$RESPONSE"
+          
+          # Verificar se backup foi bem-sucedido
+          if echo "$RESPONSE" | jq -e '.success == true' > /dev/null; then
+            echo "✅ Backup concluído com sucesso!"
+          else
+            echo "❌ Erro no backup"
+            exit 1
+          fi
+      
+      - name: Save backup to artifacts
+        if: success()
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          echo "$RESPONSE" > "backup-${DATE}.json"
+      
+      - name: Upload backup artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-${{ github.run_number }}
+          path: backup-*.json
+          retention-days: 90
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Backup falhou! Verifique os logs."
