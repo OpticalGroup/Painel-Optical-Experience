@@ -332,7 +332,7 @@ const Index = () => {
               <StatsCard
                 title="Matrículas Pagas"
                 value={totalPaid}
-                subtitle="confirmadas"
+                subtitle="pagamento confirmado"
                 icon={TrendingUp}
                 trend={{ value: "8%", isPositive: true }}
                 tooltip="Total de alunos que já realizaram o pagamento integral ou da primeira parcela."
@@ -340,7 +340,7 @@ const Index = () => {
               <StatsCard
                 title="Receita Total"
                 value={formatBRL(totalRevenue / 100)}
-                subtitle="este mês"
+                subtitle="arrecadado (valores pagos)"
                 icon={DollarSign}
                 trend={{ value: "15%", isPositive: true }}
                 tooltip="Receita total gerada pelas matrículas no período selecionado."
