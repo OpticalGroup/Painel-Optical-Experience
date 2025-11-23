@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link, HelpCircle } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CancellationReasonsSettings } from "@/components/settings/CancellationReasonsSettings";
 import { UTMSettings } from "@/components/settings/UTMSettings";
@@ -224,13 +224,22 @@ const Settings = () => {
               </p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-primary"
+            onClick={() => window.open('/documentation#configuracao-de-turmas', '_blank')}
+            title="Ver Documentação"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 
       {/* Content */}
       <section className="px-8 py-8">
         <Tabs defaultValue="sales-reps" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-4xl grid-cols-4">
             <TabsTrigger value="sales-reps">
               <Users className="mr-2 h-4 w-4" />
               Vendedores
@@ -241,11 +250,11 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="cancellation" className="gap-2">
               <AlertTriangle className="h-4 w-4" />
-              Motivos de Cancelamento
+              Cancelamento
             </TabsTrigger>
             <TabsTrigger value="utm" className="gap-2">
               <Link className="h-4 w-4" />
-              Rastreamento (UTM)
+              Rastreamento
             </TabsTrigger>
           </TabsList>
 

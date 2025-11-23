@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, HelpCircle } from "lucide-react";
 import { CohortCardEnhanced } from "@/components/CohortCardEnhanced";
 import { EnrollmentModal, EnrollmentData } from "@/components/EnrollmentModal";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,15 @@ const CohortsOverview = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-primary"
+              onClick={() => window.open('/documentation#configuracao-de-turmas', '_blank')}
+              title="Ver Documentação"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <ExportButton type="cohorts" label="Exportar Turmas" />
             <Button
               className="bg-primary hover:bg-primary/90 shadow-sm"

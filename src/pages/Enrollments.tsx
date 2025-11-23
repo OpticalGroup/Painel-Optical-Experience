@@ -1,9 +1,3 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-import { EnrollmentModal } from "@/components/EnrollmentModal";
 import { TransferCohortModal } from "@/components/TransferCohortModal";
 import { EnrollmentFilters } from "@/components/enrollments/EnrollmentFilters";
 import { EnrollmentList } from "@/components/enrollments/EnrollmentList";
@@ -171,30 +165,16 @@ const Enrollments = () => {
     setTransferCurrentCohortId(undefined);
     setTransferCurrentCohortName(undefined);
     setTransferModalOpen(true);
-  };
-
-  const isPending = bulkDeleteMutation.isPending || bulkPayMutation.isPending || bulkContractMutation.isPending || bulkMarkAsSignedMutation.isPending || bulkCancelMutation.isPending;
-
-  return (
-    <>
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Todas as Matrículas
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Listagem completa de todas as matrículas do sistema
-            </p>
-          </div>
-          <EnrollmentFilters
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            showCancelled={showCancelled}
-            onShowCancelledChange={setShowCancelled}
-          />
-        </div>
-      </header>
+            </p >
+          </div >
+  <EnrollmentFilters
+    sortBy={sortBy}
+    onSortChange={setSortBy}
+    showCancelled={showCancelled}
+    onShowCancelledChange={setShowCancelled}
+  />
+        </div >
+      </header >
 
       <section className="px-8 py-6 pb-24">
         <EnrollmentList
@@ -230,25 +210,27 @@ const Enrollments = () => {
         isPending={isPending}
       />
 
-      {editingEnrollment && (
-        <EnrollmentModal
-          open={modalOpen}
-          onOpenChange={handleModalClose}
-          cohortName={editingEnrollment.cohorts?.name || ''}
-          cohortId={editingEnrollment.cohort_id}
-          onSubmit={() => { }}
-          editingEnrollment={editingEnrollment}
-        />
-      )}
+{
+  editingEnrollment && (
+    <EnrollmentModal
+      open={modalOpen}
+      onOpenChange={handleModalClose}
+      cohortName={editingEnrollment.cohorts?.name || ''}
+      cohortId={editingEnrollment.cohort_id}
+      onSubmit={() => { }}
+      editingEnrollment={editingEnrollment}
+    />
+  )
+}
 
-      <TransferCohortModal
-        open={transferModalOpen}
-        onOpenChange={setTransferModalOpen}
-        enrollmentIds={transferEnrollmentIds}
-        studentName={transferStudentName}
-        currentCohortId={transferCurrentCohortId}
-        currentCohortName={transferCurrentCohortName}
-      />
+<TransferCohortModal
+  open={transferModalOpen}
+  onOpenChange={setTransferModalOpen}
+  enrollmentIds={transferEnrollmentIds}
+  studentName={transferStudentName}
+  currentCohortId={transferCurrentCohortId}
+  currentCohortName={transferCurrentCohortName}
+/>
     </>
   );
 };
