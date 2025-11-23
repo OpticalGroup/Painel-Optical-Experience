@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,22 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
   const { data: courses, isLoading: coursesLoading } = useCoursesQuery();
   const createCohort = useCreateCohort();
   const updateCohort = useUpdateCohort();
+
+  // Update form when cohort changes
+  useEffect(() => {
+    if (cohort) {
+      setName(cohort.name);
+      setCourseId(cohort.course_id);
+      setYear(cohort.year.toString());
+      setStartDate(new Date(cohort.start_date));
+      setEndDate(cohort.end_date ? new Date(cohort.end_date) : undefined);
+      setLocation(cohort.location);
+      setCapacity(cohort.capacity.toString());
+      setStatus(cohort.status);
+    } else {
+      resetForm();
+    }
+  }, [cohort, open]);
 
   const resetForm = () => {
     setName("");

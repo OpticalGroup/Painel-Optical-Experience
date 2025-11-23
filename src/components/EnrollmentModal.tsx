@@ -20,6 +20,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { COUNTRIES } from "./enrollments/constants";
 import { useCreateEnrollment, useUpdateEnrollment } from "@/integrations/supabase/hooks/useEnrollments";
 import { Constants, Tables } from "@/integrations/supabase/types";
 import {
@@ -32,11 +49,12 @@ import {
 import { useSalesRepsQuery } from "@/integrations/supabase/hooks/useSalesReps";
 import { useCohortsQuery } from "@/integrations/supabase/hooks/useCohorts";
 import { useCustomSourcesQuery } from "@/integrations/supabase/hooks/useCustomSources";
+import { useUtmSettings } from "@/integrations/supabase/hooks/useUtmSettings";
 import { normalizeCPF } from "@/lib/cpf";
-import { 
-  normalizeZipcode, 
-  normalizeAddress, 
-  normalizeDate 
+import {
+  normalizeZipcode,
+  normalizeAddress,
+  normalizeDate
 } from "@/lib/normalize";
 import {
   AlertDialog,
@@ -70,6 +88,14 @@ const formSchema = z.object({
   paymentProofUrl: z.string().optional().or(z.literal("")),
   kommoLeadId: z.string().optional().or(z.literal("")),
   typeformResponseId: z.string().optional().or(z.literal("")),
+  leadDate: z.string().optional().or(z.literal("")),
+  nationality: z.string().optional().default("Brasil"),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmPage: z.string().optional(),
 });
 
 export interface EnrollmentData {
@@ -91,6 +117,14 @@ export interface EnrollmentData {
   paymentProofUrl?: string;
   kommoLeadId?: string;
   typeformResponseId?: string;
+  leadDate?: string;
+  nationality?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  utmPage?: string;
 }
 
 interface EnrollmentModalProps {
@@ -115,8 +149,7 @@ export const EnrollmentModal = ({
   const { data: salesReps } = useSalesRepsQuery();
   const { data: cohorts } = useCohortsQuery();
   const { data: customSources } = useCustomSourcesQuery();
-  const [showMissingFieldsAlert, setShowMissingFieldsAlert] = useState(false);
-  const [pendingData, setPendingData] = useState<EnrollmentData | null>(null);
+  const { config: utmConfig } = useUtmSettings();
   const isEditing = !!editingEnrollment;
 
   // Combine enum sources with custom sources
@@ -146,6 +179,14 @@ export const EnrollmentModal = ({
       paymentProofUrl: "",
       kommoLeadId: "",
       typeformResponseId: "",
+      leadDate: "",
+      nationality: "Brasil",
+      utmSource: "",
+      utmMedium: "",
+      utmCampaign: "",
+      utmContent: "",
+      utmTerm: "",
+      utmPage: "",
     },
   });
 
@@ -171,6 +212,14 @@ export const EnrollmentModal = ({
         paymentProofUrl: editingEnrollment.payment_proof_url || "",
         kommoLeadId: editingEnrollment.kommo_lead_id || "",
         typeformResponseId: editingEnrollment.typeform_response_id || "",
+        leadDate: editingEnrollment.lead_date || "",
+        nationality: (editingEnrollment.external_metadata as any)?.nationality || "Brasil",
+        utmSource: (editingEnrollment.external_metadata as any)?.utm_source || "",
+        utmMedium: (editingEnrollment.external_metadata as any)?.utm_medium || "",
+        utmCampaign: (editingEnrollment.external_metadata as any)?.utm_campaign || "",
+        utmContent: (editingEnrollment.external_metadata as any)?.utm_content || "",
+        utmTerm: (editingEnrollment.external_metadata as any)?.utm_term || "",
+        utmPage: (editingEnrollment.external_metadata as any)?.utm_page || "",
       });
     } else if (open && !editingEnrollment) {
       form.reset({
@@ -192,37 +241,31 @@ export const EnrollmentModal = ({
         paymentProofUrl: "",
         kommoLeadId: "",
         typeformResponseId: "",
+        leadDate: "",
+        nationality: "Brasil",
+        utmSource: "",
+        utmMedium: "",
+        utmCampaign: "",
+        utmContent: "",
+        utmTerm: "",
+        utmPage: "",
       });
     }
   }, [open, editingEnrollment, cohortId, form]);
 
-  const checkMissingOptionalFields = (data: EnrollmentData) => {
-    const missing: string[] = [];
-    if (!data.address?.trim()) missing.push("Endereço");
-    if (!data.city?.trim()) missing.push("Cidade");
-    if (!data.state?.trim()) missing.push("Estado");
-    if (!data.zipcode?.trim()) missing.push("CEP");
-    if (!data.purchaseDate?.trim()) missing.push("Data de Compra");
-    if (!data.observations?.trim()) missing.push("Observações");
-    if (!data.paymentProofUrl?.trim()) missing.push("URL do Comprovante");
-    return missing;
-  };
-
   const handleFormSubmit = async (data: EnrollmentData) => {
-    const missingFields = checkMissingOptionalFields(data);
-    
-    if (missingFields.length > 0 && !pendingData) {
-      setPendingData(data);
-      setShowMissingFieldsAlert(true);
-      return;
-    }
-
     // Apply normalization
     const normalizedCPFResult = normalizeCPF(data.cpf);
     const normalizedCPF = normalizedCPFResult.normalized;
     const normalizedZipcode = data.zipcode ? normalizeZipcode(data.zipcode) : undefined;
     const normalizedAddress = data.address ? normalizeAddress(data.address) : undefined;
     const normalizedPurchaseDate = data.purchaseDate ? normalizeDate(data.purchaseDate) : undefined;
+    const normalizedLeadDate = data.leadDate ? normalizeDate(data.leadDate) : undefined;
+
+    // Check for overbooking
+    const selectedCohort = cohorts?.find(c => c.id === data.cohortId);
+    const isFull = (selectedCohort?.stats?.available_spots || 0) <= 0;
+    const status = isFull ? 'waiting_list' : 'active';
 
     const enrollmentData = {
       cohort_id: data.cohortId,
@@ -245,6 +288,18 @@ export const EnrollmentModal = ({
       payment_proof_url: data.paymentProofUrl || null,
       kommo_lead_id: data.kommoLeadId || null,
       typeform_response_id: data.typeformResponseId || null,
+      lead_date: normalizedLeadDate || null,
+      external_metadata: {
+        nationality: data.nationality || null,
+        status: status, // Set status based on overbooking
+        overbooked: isFull,
+        utm_source: data.utmSource,
+        utm_medium: data.utmMedium,
+        utm_campaign: data.utmCampaign,
+        utm_content: data.utmContent,
+        utm_term: data.utmTerm,
+        utm_page: data.utmPage,
+      },
     };
 
     if (isEditing && editingEnrollment) {
@@ -257,7 +312,6 @@ export const EnrollmentModal = ({
         {
           onSuccess: () => {
             form.reset();
-            setPendingData(null);
             onOpenChange(false);
             onSubmit(data);
           },
@@ -267,18 +321,10 @@ export const EnrollmentModal = ({
       createEnrollment.mutate(enrollmentData, {
         onSuccess: () => {
           form.reset();
-          setPendingData(null);
           onOpenChange(false);
           onSubmit(data);
         },
       });
-    }
-  };
-
-  const handleConfirmSubmit = () => {
-    if (pendingData) {
-      handleFormSubmit(pendingData);
-      setShowMissingFieldsAlert(false);
     }
   };
 
@@ -291,8 +337,8 @@ export const EnrollmentModal = ({
               {isEditing ? 'Editar Matrícula' : 'Nova Matrícula'}
             </DialogTitle>
             <DialogDescription>
-              {isEditing 
-                ? `Atualizando informações de ${editingEnrollment?.student_name}` 
+              {isEditing
+                ? `Atualizando informações de ${editingEnrollment?.student_name}`
                 : "Selecione a turma e adicione os dados do aluno"
               }
             </DialogDescription>
@@ -306,26 +352,36 @@ export const EnrollmentModal = ({
                 <FormField
                   control={form.control}
                   name="cohortId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Selecione a Turma *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma turma" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cohorts?.map((cohort) => (
-                            <SelectItem key={cohort.id} value={cohort.id}>
-                              {cohort.name} - {cohort.location} ({cohort.stats?.available_spots || 0} vagas disponíveis)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selectedCohort = cohorts?.find(c => c.id === field.value);
+                    const isFull = (selectedCohort?.stats?.available_spots || 0) <= 0;
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Selecione a Turma *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma turma" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cohorts?.map((cohort) => (
+                              <SelectItem key={cohort.id} value={cohort.id}>
+                                {cohort.name} - {cohort.location} ({cohort.stats?.available_spots || 0} vagas disponíveis)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {isFull && (
+                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-yellow-600 text-sm mt-2">
+                            <strong>Atenção:</strong> Esta turma está lotada. O aluno será adicionado à <strong>Lista de Espera</strong>.
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
 
@@ -467,19 +523,35 @@ export const EnrollmentModal = ({
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="paymentDetails"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Condições de Pagamento *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} rows={3} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="paymentDetails"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Condições de Pagamento *</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={3} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="leadDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Chegada do Lead</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Endereço */}
@@ -570,6 +642,106 @@ export const EnrollmentModal = ({
                   )}
                 />
 
+
+                {/* Rastreamento (UTM) */}
+                {(utmConfig.utm_source || utmConfig.utm_medium || utmConfig.utm_campaign || utmConfig.utm_content || utmConfig.utm_term || utmConfig.utm_page) && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold">Rastreamento (UTM)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {utmConfig.utm_source && (
+                        <FormField
+                          control={form.control}
+                          name="utmSource"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Source</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: google, newsletter" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {utmConfig.utm_medium && (
+                        <FormField
+                          control={form.control}
+                          name="utmMedium"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Medium</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: cpc, banner" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {utmConfig.utm_campaign && (
+                        <FormField
+                          control={form.control}
+                          name="utmCampaign"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Campaign</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: lancamento_verao" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {utmConfig.utm_content && (
+                        <FormField
+                          control={form.control}
+                          name="utmContent"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Content</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: logolink" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {utmConfig.utm_term && (
+                        <FormField
+                          control={form.control}
+                          name="utmTerm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Term</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: palavras-chave" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      {utmConfig.utm_page && (
+                        <FormField
+                          control={form.control}
+                          name="utmPage"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>UTM Page</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="ex: landing-page-v1" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* FASE 6: Campos de ID de Integração */}
                 <FormField
                   control={form.control}
@@ -584,68 +756,30 @@ export const EnrollmentModal = ({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="typeformResponseId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">ID Typeform</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Opcional" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="bg-primary hover:bg-primary/90"
                   disabled={createEnrollment.isPending || updateEnrollment.isPending}
                 >
                   {createEnrollment.isPending || updateEnrollment.isPending
-                    ? "Salvando..." 
-                    : isEditing 
-                    ? "Atualizar Matrícula" 
-                    : "Criar Matrícula"
+                    ? "Salvando..."
+                    : isEditing
+                      ? "Atualizar Matrícula"
+                      : "Criar Matrícula"
                   }
                 </Button>
               </div>
             </form>
           </Form>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
-      <AlertDialog open={showMissingFieldsAlert} onOpenChange={setShowMissingFieldsAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Campos opcionais não preenchidos</AlertDialogTitle>
-            <AlertDialogDescription>
-              Os seguintes campos opcionais não foram preenchidos:
-              <ul className="list-disc list-inside mt-2">
-                {pendingData && checkMissingOptionalFields(pendingData).map((field) => (
-                  <li key={field}>{field}</li>
-                ))}
-              </ul>
-              <p className="mt-2">Deseja continuar mesmo assim?</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingData(null)}>
-              Voltar e preencher
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSubmit}>
-              Continuar sem preencher
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };

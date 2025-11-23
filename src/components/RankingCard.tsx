@@ -14,22 +14,26 @@ interface RankingCardProps {
   items: RankingItem[];
   icon?: React.ComponentType<{ className?: string }>;
   maxItems?: number;
+  action?: React.ReactNode;
 }
 
-export const RankingCard = ({ title, items, icon: Icon = Trophy, maxItems = 5 }: RankingCardProps) => {
+export const RankingCard = ({ title, items, icon: Icon = Trophy, maxItems = 5, action }: RankingCardProps) => {
   const sortedItems = [...items].sort((a, b) => b.value - a.value).slice(0, maxItems);
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <Card className="p-6 border border-border bg-card hover:shadow-md transition-all duration-300">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-primary/10 rounded-lg">
-          <Icon className="h-5 w-5 text-primary" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-lg">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground">Top {maxItems} performance</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-          <p className="text-sm text-muted-foreground">Top {maxItems} performance</p>
-        </div>
+        {action && <div>{action}</div>}
       </div>
 
       <div className="space-y-3">

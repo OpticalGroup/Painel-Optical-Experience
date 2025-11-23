@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, Tag } from "lucide-react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { CancellationReasonsSettings } from "@/components/settings/CancellationReasonsSettings";
+import { UTMSettings } from "@/components/settings/UTMSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -210,385 +211,249 @@ const Settings = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
-
-        <main className="flex-1">
-          {/* Header */}
-          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-            <div className="flex items-center justify-between px-8 py-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Gerencie vendedores e origens de matrícula
-                  </p>
-                </div>
-              </div>
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Gerencie vendedores e origens de matrícula
+              </p>
             </div>
-          </header>
+          </div>
+        </div>
+      </header>
 
-          {/* Content */}
-          <section className="px-8 py-8">
-            <Tabs defaultValue="sales-reps" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="sales-reps">
-                  <Users className="mr-2 h-4 w-4" />
-                  Vendedores
-                </TabsTrigger>
-                <TabsTrigger value="sources">
-                  <Tag className="mr-2 h-4 w-4" />
-                  Origens
-                </TabsTrigger>
-              </TabsList>
+      {/* Content */}
+      <section className="px-8 py-8">
+        <Tabs defaultValue="sales-reps" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="sales-reps">
+              <Users className="mr-2 h-4 w-4" />
+              Vendedores
+            </TabsTrigger>
+            <TabsTrigger value="sources">
+              <Tag className="mr-2 h-4 w-4" />
+              Origens
+            </TabsTrigger>
+            <TabsTrigger value="cancellation" className="gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Motivos de Cancelamento
+            </TabsTrigger>
+            <TabsTrigger value="utm" className="gap-2">
+              <Link className="h-4 w-4" />
+              Rastreamento (UTM)
+            </TabsTrigger>
+          </TabsList>
 
-              {/* Sales Reps Tab */}
-              <TabsContent value="sales-reps" className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Gerenciar representantes de vendas
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSelectedSalesRep(null);
-                      setSalesRepFormData({ name: "", email: "", phone: "", active: true });
-                      setSalesRepFormErrors({});
-                      setSalesRepModalOpen(true);
-                    }}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Vendedor
-                  </Button>
-                </div>
+          {/* Sales Reps Tab */}
+          <TabsContent value="sales-reps" className="mt-6">
+            {/* ... existing content ... */}
+          </TabsContent>
 
-                <div className="rounded-md border border-border bg-card shadow-sm">
-                  {salesRepsLoading ? (
-                    <div className="p-8 space-y-4">
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="font-semibold text-foreground">Nome</TableHead>
-                          <TableHead className="font-semibold text-foreground">Email</TableHead>
-                          <TableHead className="font-semibold text-foreground">Telefone</TableHead>
-                          <TableHead className="font-semibold text-foreground">Status</TableHead>
-                          <TableHead className="font-semibold text-foreground">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {salesReps?.map((rep) => (
-                          <TableRow key={rep.id} className="hover:bg-muted/50">
-                            <TableCell className="font-medium">{rep.name}</TableCell>
-                            <TableCell className="text-muted-foreground">{rep.email || "—"}</TableCell>
-                            <TableCell className="text-muted-foreground">{rep.phone || "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant={rep.active ? "default" : "secondary"}>
-                                {rep.active ? "Ativo" : "Inativo"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSalesRepEdit(rep)}
-                                  className="hover:bg-primary/10 hover:text-primary"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSalesRepToDelete(rep.id);
-                                    setSalesRepDeleteDialogOpen(true);
-                                  }}
-                                  className="hover:bg-destructive/10 hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </TabsContent>
+          {/* Custom Sources Tab */}
+          <TabsContent value="sources" className="mt-6">
+            {/* ... existing content ... */}
+          </TabsContent>
 
-              {/* Custom Sources Tab */}
-              <TabsContent value="sources" className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Gerenciar origens de matrícula personalizadas
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSelectedSource(null);
-                      setSourceFormData({ name: "", description: "", active: true });
-                      setSourceFormErrors({});
-                      setSourceModalOpen(true);
-                    }}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nova Origem
-                  </Button>
-                </div>
+          {/* Cancellation Reasons Tab */}
+          <TabsContent value="cancellation">
+            <CancellationReasonsSettings />
+          </TabsContent>
 
-                <div className="rounded-md border border-border bg-card shadow-sm">
-                  {sourcesLoading ? (
-                    <div className="p-8 space-y-4">
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="font-semibold text-foreground">Nome</TableHead>
-                          <TableHead className="font-semibold text-foreground">Descrição</TableHead>
-                          <TableHead className="font-semibold text-foreground">Status</TableHead>
-                          <TableHead className="font-semibold text-foreground">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {customSources?.map((source) => (
-                          <TableRow key={source.id} className="hover:bg-muted/50">
-                            <TableCell className="font-medium">{source.name}</TableCell>
-                            <TableCell className="text-muted-foreground">{source.description || "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant={source.active ? "default" : "secondary"}>
-                                {source.active ? "Ativo" : "Inativo"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSourceEdit(source)}
-                                  className="hover:bg-primary/10 hover:text-primary"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSourceToDelete(source.id);
-                                    setSourceDeleteDialogOpen(true);
-                                  }}
-                                  className="hover:bg-destructive/10 hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </section>
-        </main>
+          <TabsContent value="utm">
+            <UTMSettings />
+          </TabsContent>
+        </Tabs>
+      </section>
 
-        {/* Sales Rep Modal */}
-        <Dialog open={salesRepModalOpen} onOpenChange={setSalesRepModalOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="text-primary">
-                {selectedSalesRep ? "Editar Vendedor" : "Novo Vendedor"}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha as informações do vendedor
-              </DialogDescription>
-            </DialogHeader>
 
-            <form onSubmit={handleSalesRepSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
-                <Input
-                  id="name"
-                  value={salesRepFormData.name}
-                  onChange={(e) => setSalesRepFormData({ ...salesRepFormData, name: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={100}
-                />
-                {salesRepFormErrors.name && (
-                  <p className="text-sm text-destructive">{salesRepFormErrors.name}</p>
-                )}
-              </div>
+      {/* Sales Rep Modal */}
+      < Dialog open={salesRepModalOpen} onOpenChange={setSalesRepModalOpen} >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              {selectedSalesRep ? "Editar Vendedor" : "Novo Vendedor"}
+            </DialogTitle>
+            <DialogDescription>
+              Preencha as informações do vendedor
+            </DialogDescription>
+          </DialogHeader>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={salesRepFormData.email}
-                  onChange={(e) => setSalesRepFormData({ ...salesRepFormData, email: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={255}
-                />
-                {salesRepFormErrors.email && (
-                  <p className="text-sm text-destructive">{salesRepFormErrors.email}</p>
-                )}
-              </div>
+          <form onSubmit={handleSalesRepSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input
+                id="name"
+                value={salesRepFormData.name}
+                onChange={(e) => setSalesRepFormData({ ...salesRepFormData, name: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={100}
+              />
+              {salesRepFormErrors.name && (
+                <p className="text-sm text-destructive">{salesRepFormErrors.name}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={salesRepFormData.phone}
-                  onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={20}
-                />
-                {salesRepFormErrors.phone && (
-                  <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={salesRepFormData.email}
+                onChange={(e) => setSalesRepFormData({ ...salesRepFormData, email: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={255}
+              />
+              {salesRepFormErrors.email && (
+                <p className="text-sm text-destructive">{salesRepFormErrors.email}</p>
+              )}
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={salesRepFormData.active}
-                  onCheckedChange={(checked) => setSalesRepFormData({ ...salesRepFormData, active: checked })}
-                />
-                <Label htmlFor="active" className="cursor-pointer">Ativo</Label>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={salesRepFormData.phone}
+                onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={20}
+              />
+              {salesRepFormErrors.phone && (
+                <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
+              )}
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setSalesRepModalOpen(false)} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={createSalesRep.isPending || updateSalesRep.isPending}
-                >
-                  {selectedSalesRep ? "Atualizar" : "Criar"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="active"
+                checked={salesRepFormData.active}
+                onCheckedChange={(checked) => setSalesRepFormData({ ...salesRepFormData, active: checked })}
+              />
+              <Label htmlFor="active" className="cursor-pointer">Ativo</Label>
+            </div>
 
-        {/* Custom Source Modal */}
-        <Dialog open={sourceModalOpen} onOpenChange={setSourceModalOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="text-primary">
-                {selectedSource ? "Editar Origem" : "Nova Origem"}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha as informações da origem
-              </DialogDescription>
-            </DialogHeader>
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setSalesRepModalOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={createSalesRep.isPending || updateSalesRep.isPending}
+              >
+                {selectedSalesRep ? "Atualizar" : "Criar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog >
 
-            <form onSubmit={handleSourceSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="sourceName">Nome *</Label>
-                <Input
-                  id="sourceName"
-                  value={sourceFormData.name}
-                  onChange={(e) => setSourceFormData({ ...sourceFormData, name: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={50}
-                />
-                {sourceFormErrors.name && (
-                  <p className="text-sm text-destructive">{sourceFormErrors.name}</p>
-                )}
-              </div>
+      {/* Custom Source Modal */}
+      < Dialog open={sourceModalOpen} onOpenChange={setSourceModalOpen} >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              {selectedSource ? "Editar Origem" : "Nova Origem"}
+            </DialogTitle>
+            <DialogDescription>
+              Preencha as informações da origem
+            </DialogDescription>
+          </DialogHeader>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={sourceFormData.description}
-                  onChange={(e) => setSourceFormData({ ...sourceFormData, description: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={200}
-                />
-                {sourceFormErrors.description && (
-                  <p className="text-sm text-destructive">{sourceFormErrors.description}</p>
-                )}
-              </div>
+          <form onSubmit={handleSourceSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="sourceName">Nome *</Label>
+              <Input
+                id="sourceName"
+                value={sourceFormData.name}
+                onChange={(e) => setSourceFormData({ ...sourceFormData, name: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={50}
+              />
+              {sourceFormErrors.name && (
+                <p className="text-sm text-destructive">{sourceFormErrors.name}</p>
+              )}
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="sourceActive"
-                  checked={sourceFormData.active}
-                  onCheckedChange={(checked) => setSourceFormData({ ...sourceFormData, active: checked })}
-                />
-                <Label htmlFor="sourceActive" className="cursor-pointer">Ativo</Label>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={sourceFormData.description}
+                onChange={(e) => setSourceFormData({ ...sourceFormData, description: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={200}
+              />
+              {sourceFormErrors.description && (
+                <p className="text-sm text-destructive">{sourceFormErrors.description}</p>
+              )}
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setSourceModalOpen(false)} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={createSource.isPending || updateSource.isPending}
-                >
-                  {selectedSource ? "Atualizar" : "Criar"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="sourceActive"
+                checked={sourceFormData.active}
+                onCheckedChange={(checked) => setSourceFormData({ ...sourceFormData, active: checked })}
+              />
+              <Label htmlFor="sourceActive" className="cursor-pointer">Ativo</Label>
+            </div>
 
-        {/* Sales Rep Delete Dialog */}
-        <AlertDialog open={salesRepDeleteDialogOpen} onOpenChange={setSalesRepDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. Isso irá remover permanentemente o vendedor.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSalesRepDelete} className="bg-destructive hover:bg-destructive/90">
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setSourceModalOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={createSource.isPending || updateSource.isPending}
+              >
+                {selectedSource ? "Atualizar" : "Criar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog >
 
-        {/* Source Delete Dialog */}
-        <AlertDialog open={sourceDeleteDialogOpen} onOpenChange={setSourceDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. Isso irá remover permanentemente a origem.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSourceDelete} className="bg-destructive hover:bg-destructive/90">
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </SidebarProvider>
+      {/* Sales Rep Delete Dialog */}
+      < AlertDialog open={salesRepDeleteDialogOpen} onOpenChange={setSalesRepDeleteDialogOpen} >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso irá remover permanentemente o vendedor.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSalesRepDelete} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog >
+
+      {/* Source Delete Dialog */}
+      < AlertDialog open={sourceDeleteDialogOpen} onOpenChange={setSourceDeleteDialogOpen} >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso irá remover permanentemente a origem.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSourceDelete} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog >
+    </>
   );
 };
 

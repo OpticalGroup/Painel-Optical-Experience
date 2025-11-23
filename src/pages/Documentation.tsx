@@ -1,193 +1,182 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { 
-  FileText, 
-  Users, 
-  Calendar, 
-  Download,
-  CheckCircle,
-  BookOpen,
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  FileText,
+  Users,
+  Calendar,
   Workflow,
-  Plug,
-  FileCode,
-  History,
-  Database,
   Shield,
-  Palette
+  Database,
+  Book,
+  ExternalLink
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { UserMenu } from "@/components/UserMenu";
 
 const Documentation = () => {
-  const downloadChangelog = () => {
-    const changelog = `# SISTEMA DE GESTÃO DE TURMAS - OPTICAL DENTAL ACADEMY
-# CHANGELOG E DOCUMENTAÇÃO TÉCNICA COMPLETA
-
-Versão: 2.0.0 | Data: ${new Date().toLocaleDateString('pt-BR')}
-
-## 📋 ÍNDICE
-1. Arquitetura do Sistema
-2. Módulos Principais
-3. Banco de Dados
-4. Integrações
-5. Segurança
-6. API Reference
-7. Estrutura de Código
-
----
-
-## 🏗️ ARQUITETURA
-
-**Stack:** React 18 + TypeScript + Vite + Tailwind + Supabase
-**Backend:** PostgreSQL + Edge Functions (Deno)
-**Auth:** Supabase Auth + RLS
-**Estado:** TanStack Query v5
-
----
-
-## 📊 FUNCIONALIDADES COMPLETAS
-
-### Gestão de Turmas
-- Criação e edição de turmas
-- Controle de ocupação em tempo real
-- Gráficos Apple Watch style
-- Sistema de capacidade dinâmica
-- Lista de espera e overbooking
-- Transferência entre turmas
-
-### Sistema de Matrículas
-- Cadastro individual
-- Importação CSV em lote
-- Validação completa
-- Status financeiro e contratual
-- Ações rápidas
-- Auditoria completa
-
-### Integrações Nativas
-- ClickSign (assinatura digital)
-- Kommo CRM (leads)
-- Typeform (formulários)
-- Webhooks configuráveis
-- Logs de operações
-
-### Analytics e Relatórios
-- Dashboard com métricas
-- Rankings (vendedores, origens)
-- Tendências de ocupação
-- Exportação CSV/Excel
-
----
-
-Documentação gerada automaticamente pelo sistema.
-`;
-
-    const blob = new Blob([changelog], { type: 'text/markdown' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'SYSTEM_CHANGELOG.md';
-    link.click();
-  };
+  // Dummy data for documentation cards
+  const docs = [
+    {
+      icon: FileText,
+      title: "Guia de Início Rápido",
+      description: "Comece a usar o sistema em minutos com este guia passo a passo.",
+    },
+    {
+      icon: Users,
+      title: "Gestão de Matrículas",
+      description: "Aprenda a cadastrar alunos, importar dados e gerenciar matrículas.",
+    },
+    {
+      icon: Calendar,
+      title: "Configuração de Turmas",
+      description: "Crie e gerencie turmas, defina capacidades e horários.",
+    },
+    {
+      icon: Workflow,
+      title: "Integrações",
+      description: "Conecte o sistema com ClickSign, Kommo CRM e outras ferramentas.",
+    },
+    {
+      icon: Shield,
+      title: "Segurança e Permissões",
+      description: "Entenda o controle de acesso baseado em função (RBAC) e RLS.",
+    },
+    {
+      icon: Database,
+      title: "API Reference",
+      description: "Documentação completa da API para desenvolvedores.",
+    },
+  ];
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
-        
-        <main className="flex-1">
-          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
-            <div className="flex items-center justify-between px-8 py-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Documentação</h1>
-                  <p className="text-sm text-muted-foreground">Guias e referências do sistema</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button onClick={downloadChangelog} variant="outline" className="gap-2">
-                  <FileCode className="h-4 w-4" />
-                  Exportar Changelog
-                </Button>
-                <UserMenu />
-              </div>
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Documentação
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Guias, tutoriais e referência da API
+              </p>
             </div>
-          </header>
+          </div>
+          <UserMenu />
+        </div>
+      </header>
 
-          <section className="px-8 py-8 max-w-7xl">
-            <Card className="p-8">
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-3xl font-bold mb-4">Sistema de Gestão de Turmas</h2>
-                  <p className="text-lg text-muted-foreground mb-6">
-                    Plataforma completa para gerenciamento da Optical Dental Academy
-                  </p>
+      {/* Content */}
+      <div className="p-8 max-w-7xl mx-auto space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {docs.map((doc, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="mb-4 p-3 bg-primary/10 w-fit rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <doc.icon className="h-6 w-6 text-primary" />
                 </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                    <Calendar className="h-5 w-5 text-primary mb-2" />
-                    <h3 className="font-semibold mb-1">Turmas</h3>
-                    <p className="text-sm text-muted-foreground">Gestão completa com controle de ocupação</p>
-                  </div>
-                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                    <Users className="h-5 w-5 text-primary mb-2" />
-                    <h3 className="font-semibold mb-1">Matrículas</h3>
-                    <p className="text-sm text-muted-foreground">Individual ou lote via CSV</p>
-                  </div>
-                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                    <Plug className="h-5 w-5 text-primary mb-2" />
-                    <h3 className="font-semibold mb-1">Integrações</h3>
-                    <p className="text-sm text-muted-foreground">ClickSign, Kommo, Typeform</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <Accordion type="multiple" className="w-full">
-                  <AccordionItem value="modules">
-                    <AccordionTrigger>
-                      <div className="flex items-center gap-3">
-                        <Database className="h-5 w-5" />
-                        <span>Todos os Módulos</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3 ml-8">
-                        <p><strong>✅ Gestão de Turmas:</strong> Criação, edição, ocupação, status</p>
-                        <p><strong>✅ Matrículas:</strong> Individual, CSV, validação, ações rápidas</p>
-                        <p><strong>✅ Dashboard:</strong> Métricas, rankings, tendências</p>
-                        <p><strong>✅ Integrações:</strong> ClickSign, Kommo, Typeform</p>
-                        <p><strong>✅ Segurança:</strong> RBAC, RLS, auditoria</p>
-                        <p><strong>✅ Whitelabel:</strong> Logo, cores, domínio</p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                <Alert className="bg-primary/5 border-primary/20">
-                  <FileCode className="h-5 w-5 text-primary" />
-                  <AlertDescription>
-                    <p className="font-semibold mb-2">Documentação Técnica Completa</p>
-                    <p className="text-sm">Exportação inclui arquitetura, schema do banco, Edge Functions, API Reference e muito mais.</p>
-                  </AlertDescription>
-                </Alert>
-
-                <Button onClick={downloadChangelog} size="lg" className="gap-2">
-                  <Download className="h-5 w-5" />
-                  Exportar Documentação Completa
+                <CardTitle className="group-hover:text-primary transition-colors">
+                  {doc.title}
+                </CardTitle>
+                <CardDescription>
+                  {doc.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full justify-between group-hover:translate-x-1 transition-transform" asChild>
+                  <a href={`#${doc.title.toLowerCase().replace(/ /g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`}>
+                    Acessar Guia
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </a>
                 </Button>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Detailed Sections */}
+        <div className="space-y-12">
+          <section id="gestao-de-matriculas" className="scroll-mt-24">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Users className="h-6 w-6 text-primary" />
+              Gestão de Matrículas
+            </h2>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <p>
+                  A gestão de matrículas permite acompanhar todo o ciclo de vida do aluno, desde o interesse inicial até a assinatura do contrato.
+                </p>
+                <div id="importacao-csv" className="scroll-mt-24 pt-4 border-t">
+                  <h3 className="text-lg font-semibold mb-2">Importação de CSV</h3>
+                  <p className="mb-4">
+                    Para importar alunos em massa, utilize o modelo CSV padrão. O sistema aceita arquivos .csv com codificação UTF-8.
+                  </p>
+                  <div className="bg-muted p-4 rounded-lg overflow-x-auto">
+                    <h4 className="font-medium mb-2">Campos Obrigatórios:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                      <li><strong>student_name</strong>: Nome completo do aluno</li>
+                      <li><strong>email</strong>: Email válido</li>
+                      <li><strong>cpf</strong>: CPF válido (apenas números)</li>
+                      <li><strong>cohort_name</strong>: Nome exato da turma (deve existir no sistema)</li>
+                      <li><strong>sales_rep</strong>: Nome do vendedor</li>
+                      <li><strong>source</strong>: Origem do lead (ex: Instagram, Google)</li>
+                      <li><strong>status</strong>: Status inicial (pending, paid, confirmed)</li>
+                    </ul>
+                  </div>
+                  <div className="mt-4">
+                    <Button variant="outline" asChild>
+                      <a href="/template_importacao.csv" download>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Baixar Modelo CSV
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </section>
-        </main>
+
+          <section id="configuracao-de-turmas" className="scroll-mt-24">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              Configuração de Turmas
+            </h2>
+            <Card>
+              <CardContent className="p-6">
+                <p>
+                  Crie turmas definindo data de início, fim, capacidade máxima e localização.
+                  O sistema alertará automaticamente sobre turmas lotadas ou com baixa ocupação.
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
+
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Book className="h-5 w-5 text-primary" />
+              Precisa de ajuda adicional?
+            </CardTitle>
+            <CardDescription>
+              Nossa equipe de suporte está disponível para ajudar com dúvidas técnicas e integrações.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <Button>
+                Falar com Suporte
+              </Button>
+              <Button variant="outline">
+                Ver Status do Sistema
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </SidebarProvider>
+    </>
   );
 };
 

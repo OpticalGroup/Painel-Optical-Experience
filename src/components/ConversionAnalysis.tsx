@@ -1,6 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Timer, TrendingDown } from "lucide-react";
 import { useMemo } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ConversionData {
   cohortName: string;
@@ -10,9 +16,10 @@ interface ConversionData {
 
 interface ConversionAnalysisProps {
   data: ConversionData[];
+  action?: React.ReactNode;
 }
 
-export const ConversionAnalysis = ({ data }: ConversionAnalysisProps) => {
+export const ConversionAnalysis = ({ data, action }: ConversionAnalysisProps) => {
   const globalAvg = useMemo(() => {
     if (data.length === 0) return 0;
     const totalDays = data.reduce((sum, item) => sum + (item.avgDays * item.totalConversions), 0);
@@ -24,17 +31,37 @@ export const ConversionAnalysis = ({ data }: ConversionAnalysisProps) => {
 
   return (
     <Card className="p-6 border border-border bg-card hover:shadow-md transition-all duration-300">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-primary/10 rounded-lg">
-          <Timer className="h-5 w-5 text-primary" />
+
+      {/* ... inside component ... */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-lg">
+            <Timer className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      Janela de Conversão
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Tempo médio Lead → Pagamento</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Tempo médio entre a data de chegada do lead e a data do pagamento.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-foreground">Janela de Conversão</h3>
-          <p className="text-sm text-muted-foreground">Lead → Compra (dias)</p>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-primary">{globalAvg.toFixed(0)}</div>
-          <div className="text-xs text-muted-foreground">dias médio</div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-3xl font-bold text-primary">{globalAvg.toFixed(0)}</div>
+            <div className="text-xs text-muted-foreground">dias em média</div>
+          </div>
+          {action && <div>{action}</div>}
         </div>
       </div>
 
@@ -46,7 +73,7 @@ export const ConversionAnalysis = ({ data }: ConversionAnalysisProps) => {
         ) : (
           sortedData.map((item, index) => {
             const isAboveAvg = item.avgDays > globalAvg;
-            
+
             return (
               <div
                 key={index}

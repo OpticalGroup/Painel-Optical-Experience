@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useTheme } from "@/hooks/useTheme";
 import { LoadingFallback } from "@/components/LoadingFallback";
+import { MainLayout } from "@/components/MainLayout";
 
 const Index = lazy(() => import("./pages/Index"));
 const CohortsOverview = lazy(() => import("./pages/CohortsOverview"));
@@ -33,19 +34,23 @@ const AppContent = () => {
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
         <Route path="/auth" element={<Auth />} />
-        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-        <Route path="/cohorts" element={<ProtectedRoute><CohortsOverview /></ProtectedRoute>} />
-        <Route path="/cohorts/admin" element={<ProtectedRoute requiredRole="admin"><CohortsAdmin /></ProtectedRoute>} />
-        <Route path="/cohorts/:cohortId" element={<ProtectedRoute><CohortDetail /></ProtectedRoute>} />
-        <Route path="/enrollments" element={<ProtectedRoute><Enrollments /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute requiredRole="admin"><Settings /></ProtectedRoute>} />
-        <Route path="/branding" element={<ProtectedRoute requiredRole="admin"><Branding /></ProtectedRoute>} />
-        <Route path="/integrations" element={<ProtectedRoute requiredRole="admin"><Integrations /></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute requiredRole="admin"><Users /></ProtectedRoute>} />
-        <Route path="/audit-logs" element={<ProtectedRoute requiredRole="admin"><AuditLogs /></ProtectedRoute>} />
-        <Route path="/import-history" element={<ProtectedRoute requiredRole="admin"><ImportHistory /></ProtectedRoute>} />
-        <Route path="/documentation" element={<ProtectedRoute><Documentation /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+          <Route path="/" element={<Index />} />
+          <Route path="/cohorts" element={<CohortsOverview />} />
+          <Route path="/cohorts/admin" element={<ProtectedRoute requiredRole="admin"><CohortsAdmin /></ProtectedRoute>} />
+          <Route path="/cohorts/:cohortId" element={<CohortDetail />} />
+          <Route path="/enrollments" element={<Enrollments />} />
+          <Route path="/settings" element={<ProtectedRoute requiredRole="admin"><Settings /></ProtectedRoute>} />
+          <Route path="/branding" element={<ProtectedRoute requiredRole="admin"><Branding /></ProtectedRoute>} />
+          <Route path="/integrations" element={<ProtectedRoute requiredRole="admin"><Integrations /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute requiredRole="admin"><Users /></ProtectedRoute>} />
+          <Route path="/audit-logs" element={<ProtectedRoute requiredRole="admin"><AuditLogs /></ProtectedRoute>} />
+          <Route path="/import-history" element={<ProtectedRoute requiredRole="admin"><ImportHistory /></ProtectedRoute>} />
+          <Route path="/documentation" element={<Documentation />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -58,7 +63,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <AppContent />
         </AuthProvider>

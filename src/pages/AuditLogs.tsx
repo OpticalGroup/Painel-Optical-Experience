@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,216 +116,211 @@ const AuditLogs = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <div className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
-            <SidebarTrigger />
-            <h1 className="text-xl font-semibold">Logs de Auditoria</h1>
-          </header>
+    <>
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
+        <SidebarTrigger />
+        <h1 className="text-xl font-semibold">Logs de Auditoria</h1>
+      </header>
 
-          <main className="flex-1 p-6 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Filtros de Auditoria</CardTitle>
-                <CardDescription>
-                  Pesquise e filtre os logs de auditoria por usuário, data, tipo de entidade e ação
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Search */}
-                  <div className="space-y-2">
-                    <Label htmlFor="search">Buscar</Label>
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="search"
-                        placeholder="Email ou ID..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
+      <main className="flex-1 p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros de Auditoria</CardTitle>
+            <CardDescription>
+              Pesquise e filtre os logs de auditoria por usuário, data, tipo de entidade e ação
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="space-y-2">
+                <Label htmlFor="search">Buscar</Label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    placeholder="Email ou ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* Entity Type Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="entity">Tipo de Entidade</Label>
+                <Select value={entityFilter} onValueChange={setEntityFilter}>
+                  <SelectTrigger id="entity">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="enrollment">Matrícula</SelectItem>
+                    <SelectItem value="enrollment_access">Acesso a Dados</SelectItem>
+                    <SelectItem value="cohort">Turma</SelectItem>
+                    <SelectItem value="user">Usuário</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Action Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="action">Ação</Label>
+                <Select value={actionFilter} onValueChange={setActionFilter}>
+                  <SelectTrigger id="action">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="created">Criado</SelectItem>
+                    <SelectItem value="updated">Atualizado</SelectItem>
+                    <SelectItem value="deleted">Deletado</SelectItem>
+                    <SelectItem value="viewed">Visualizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-2">
+                <Label>Período</Label>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "dd/MM/yy") : "Início"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
                       />
-                    </div>
-                  </div>
+                    </PopoverContent>
+                  </Popover>
 
-                  {/* Entity Type Filter */}
-                  <div className="space-y-2">
-                    <Label htmlFor="entity">Tipo de Entidade</Label>
-                    <Select value={entityFilter} onValueChange={setEntityFilter}>
-                      <SelectTrigger id="entity">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="enrollment">Matrícula</SelectItem>
-                        <SelectItem value="enrollment_access">Acesso a Dados</SelectItem>
-                        <SelectItem value="cohort">Turma</SelectItem>
-                        <SelectItem value="user">Usuário</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Action Filter */}
-                  <div className="space-y-2">
-                    <Label htmlFor="action">Ação</Label>
-                    <Select value={actionFilter} onValueChange={setActionFilter}>
-                      <SelectTrigger id="action">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="created">Criado</SelectItem>
-                        <SelectItem value="updated">Atualizado</SelectItem>
-                        <SelectItem value="deleted">Deletado</SelectItem>
-                        <SelectItem value="viewed">Visualizado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Date Range */}
-                  <div className="space-y-2">
-                    <Label>Período</Label>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "flex-1 justify-start text-left font-normal",
-                              !startDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? format(startDate, "dd/MM/yy") : "Início"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={startDate}
-                            onSelect={setStartDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "flex-1 justify-start text-left font-normal",
-                              !endDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, "dd/MM/yy") : "Fim"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={endDate}
-                            onSelect={setEndDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "flex-1 justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "dd/MM/yy") : "Fim"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
+              </div>
+            </div>
 
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={() => refetch()} variant="outline" size="sm">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Atualizar
-                  </Button>
-                  <Button onClick={handleExport} variant="outline" size="sm" disabled={!auditLogs || auditLogs.length === 0}>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Exportar CSV
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={() => refetch()} variant="outline" size="sm">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Atualizar
+              </Button>
+              <Button onClick={handleExport} variant="outline" size="sm" disabled={!auditLogs || auditLogs.length === 0}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar CSV
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Registros de Auditoria</CardTitle>
-                <CardDescription>
-                  {isLoading ? "Carregando..." : `${auditLogs?.length || 0} registros encontrados`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Usuário</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Ação</TableHead>
-                        <TableHead>Detalhes</TableHead>
+        <Card>
+          <CardHeader>
+            <CardTitle>Registros de Auditoria</CardTitle>
+            <CardDescription>
+              {isLoading ? "Carregando..." : `${auditLogs?.length || 0} registros encontrados`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data/Hora</TableHead>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Ação</TableHead>
+                    <TableHead>Detalhes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Carregando logs...
+                      </TableCell>
+                    </TableRow>
+                  ) : auditLogs && auditLogs.length > 0 ? (
+                    auditLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-mono text-sm">
+                          {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{log.user_email || 'Sistema'}</span>
+                            {log.after_data?.user_name && (
+                              <span className="text-xs text-muted-foreground">{log.after_data.user_name}</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getEntityTypeName(log.entity_type)}</TableCell>
+                        <TableCell>{getActionBadge(log.action)}</TableCell>
+                        <TableCell className="max-w-md">
+                          {log.entity_type === 'enrollment_access' && log.after_data ? (
+                            <div className="text-sm">
+                              <p className="text-muted-foreground">
+                                Acessou {log.after_data.enrollment_count} matrículas
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Turma: {log.after_data.cohort_id}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              {log.entity_id}
+                            </div>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {isLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                            Carregando logs...
-                          </TableCell>
-                        </TableRow>
-                      ) : auditLogs && auditLogs.length > 0 ? (
-                        auditLogs.map((log) => (
-                          <TableRow key={log.id}>
-                            <TableCell className="font-mono text-sm">
-                              {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-sm">{log.user_email || 'Sistema'}</span>
-                                {log.after_data?.user_name && (
-                                  <span className="text-xs text-muted-foreground">{log.after_data.user_name}</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{getEntityTypeName(log.entity_type)}</TableCell>
-                            <TableCell>{getActionBadge(log.action)}</TableCell>
-                            <TableCell className="max-w-md">
-                              {log.entity_type === 'enrollment_access' && log.after_data ? (
-                                <div className="text-sm">
-                                  <p className="text-muted-foreground">
-                                    Acessou {log.after_data.enrollment_count} matrículas
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Turma: {log.after_data.cohort_id}
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  {log.entity_id}
-                                </div>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                            Nenhum log encontrado com os filtros aplicados
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Nenhum log encontrado com os filtros aplicados
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </>
   );
 };
 

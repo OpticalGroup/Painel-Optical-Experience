@@ -12,25 +12,34 @@ interface StatsCardProps {
   };
 }
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export const StatsCard = ({
   title,
   value,
   subtitle,
   icon: Icon,
   trend,
-}: StatsCardProps) => {
-  return (
-    <Card className="p-6 border border-border bg-card hover:shadow-md transition-all duration-300">
+  tooltip,
+}: StatsCardProps & { tooltip?: string }) => {
+  const CardContent = (
+    <Card className="p-6 border border-border bg-card hover:shadow-md transition-all duration-300 h-full">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          </div>
           <div className="flex items-baseline gap-2">
             <h3 className="text-3xl font-bold text-foreground">{value}</h3>
             {trend && (
               <span
-                className={`text-sm font-medium ${
-                  trend.isPositive ? "text-primary" : "text-destructive"
-                }`}
+                className={`text-sm font-medium ${trend.isPositive ? "text-primary" : "text-destructive"
+                  }`}
               >
                 {trend.isPositive ? "+" : ""}
                 {trend.value}
@@ -46,5 +55,20 @@ export const StatsCard = ({
         </div>
       </div>
     </Card>
+  );
+
+  if (!tooltip) return CardContent;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="h-full cursor-help">{CardContent}</div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

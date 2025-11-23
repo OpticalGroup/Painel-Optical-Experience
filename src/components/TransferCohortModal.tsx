@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logAuditAction } from "@/lib/audit";
 import {
   Dialog,
   DialogContent,
@@ -27,16 +28,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface TransferCohortModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  enrollmentId: string;
-  studentName: string;
-  currentCohortId: string;
-  currentCohortName: string;
+  enrollmentIds: string[];
+  studentName?: string; // Optional, used for single selection
+  currentCohortId?: string; // Optional if mixed cohorts (though UI usually implies same context, but bulk list might be mixed)
+  currentCohortName?: string;
 }
 
 export const TransferCohortModal = ({
   open,
   onOpenChange,
-  enrollmentId,
+  enrollmentIds,
   studentName,
   currentCohortId,
   currentCohortName,
@@ -48,12 +49,15 @@ export const TransferCohortModal = ({
   const { data: cohorts, isLoading } = useCohortsQuery();
 
   // Filtrar turmas disponíveis (excluir turma atual e turmas completas)
+  // Note: For bulk, if students are from different cohorts, currentCohortId might be undefined or one of them.
+  // We'll just filter out completed/cancelled and let user pick any valid target.
   const availableCohorts = cohorts?.filter(
-    (c) => 
-      c.id !== currentCohortId && 
-      c.status !== "completed" && 
-      c.status !== "cancelled" &&
-      (c.stats?.available_spots || 0) > 0
+    (c) =>
+      (currentCohortId ? c.id !== currentCohortId : true) &&
+      c.status !== "completed" &&
+      c.status !== "cancelled"
+    // Allow full cohorts for waitlist transfer
+    // && (c.stats?.available_spots || 0) > 0
   );
 
   const transferMutation = useMutation({
@@ -62,29 +66,45 @@ export const TransferCohortModal = ({
         throw new Error("Selecione uma turma de destino");
       }
 
-      // Atualizar cohort_id do enrollment
+      if (enrollmentIds.length === 0) return;
+
+      const updateData = {
+        cohort_id: selectedCohortId,
+        observations: transferReason
+          ? `TRANSFERIDO ${currentCohortName ? `DE ${currentCohortName}` : ''} - Motivo: ${transferReason}. ${new Date().toLocaleDateString()}`
+          : `TRANSFERIDO ${currentCohortName ? `DE ${currentCohortName}` : ''} em ${new Date().toLocaleDateString()}`
+      };
+
+      // Bulk update
       const { error: updateError } = await supabase
         .from("enrollments")
-        .update({ 
-          cohort_id: selectedCohortId,
-          observations: transferReason 
-            ? `TRANSFERIDO DE ${currentCohortName} - Motivo: ${transferReason}. ${new Date().toLocaleDateString()}`
-            : `TRANSFERIDO DE ${currentCohortName} em ${new Date().toLocaleDateString()}`
-        })
-        .eq("id", enrollmentId);
+        .update(updateData)
+        .in("id", enrollmentIds);
 
       if (updateError) throw updateError;
     },
     onSuccess: () => {
+      logAuditAction({
+        action: 'enrollment.transfer',
+        entityId: enrollmentIds.join(','),
+        entityType: 'enrollment',
+        beforeData: { cohortId: currentCohortId },
+        afterData: { cohortId: selectedCohortId, reason: transferReason },
+      });
+
       queryClient.invalidateQueries({ queryKey: ["cohort"] });
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      
+
+      const description = enrollmentIds.length === 1
+        ? `${studentName || 'Aluno'} foi transferido com sucesso`
+        : `${enrollmentIds.length} alunos foram transferidos com sucesso`;
+
       toast({
         title: "Transferência concluída",
-        description: `${studentName} foi transferido com sucesso`,
+        description,
       });
-      
+
       onOpenChange(false);
       setSelectedCohortId("");
       setTransferReason("");
@@ -102,24 +122,31 @@ export const TransferCohortModal = ({
     transferMutation.mutate();
   };
 
+  const isBulk = enrollmentIds.length > 1;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Transferir de Turma</DialogTitle>
           <DialogDescription>
-            Transferir <strong>{studentName}</strong> para outra turma
+            {isBulk
+              ? `Transferir ${enrollmentIds.length} alunos selecionados para outra turma`
+              : `Transferir ${studentName || 'aluno'} para outra turma`
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Turma Atual */}
-          <div>
-            <Label>Turma Atual</Label>
-            <div className="mt-2 p-3 bg-muted rounded-md text-sm">
-              {currentCohortName}
+          {/* Turma Atual (Only show if single or known context) */}
+          {currentCohortName && (
+            <div>
+              <Label>Turma Atual</Label>
+              <div className="mt-2 p-3 bg-muted rounded-md text-sm">
+                {currentCohortName}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Seletor de Nova Turma */}
           <div>
@@ -151,6 +178,11 @@ export const TransferCohortModal = ({
                 )}
               </SelectContent>
             </Select>
+            {selectedCohortId && cohorts?.find(c => c.id === selectedCohortId)?.stats?.available_spots! <= 0 && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-yellow-600 text-sm mt-2">
+                <strong>Atenção:</strong> A turma de destino está lotada. O aluno será transferido para a <strong>Lista de Espera</strong>.
+              </div>
+            )}
           </div>
 
           {/* Arrow indicator */}
@@ -180,8 +212,8 @@ export const TransferCohortModal = ({
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              <strong>Atenção:</strong> Esta ação irá mover o aluno para a nova turma. 
-              Uma vaga será liberada na turma atual e ocupada na turma de destino.
+              <strong>Atenção:</strong> Esta ação irá mover {isBulk ? 'os alunos' : 'o aluno'} para a nova turma.
+              Vagas serão liberadas na turma atual e ocupadas na turma de destino.
             </AlertDescription>
           </Alert>
         </div>

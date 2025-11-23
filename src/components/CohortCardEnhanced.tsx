@@ -25,7 +25,7 @@ const createArc = (
   const start = polarToCartesian(centerX, centerY, radius, endAngle);
   const end = polarToCartesian(centerX, centerY, radius, startAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  
+
   return [
     "M", start.x, start.y,
     "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
@@ -65,11 +65,11 @@ export const CohortCardEnhanced = ({
   // Ring 1 (outer): Enrolled vs Capacity
   const enrolledPercentage = Math.min((enrolled / capacity) * 100, 100);
   const enrolledAngle = (enrolledPercentage / 100) * 360;
-  
+
   // Ring 2 (middle): Paid vs Enrolled
   const paidPercentage = enrolled > 0 ? (paid / enrolled) * 100 : 0;
   const paidAngle = (paidPercentage / 100) * 360;
-  
+
   // Ring 3 (inner): Signed vs Paid
   const signedPercentage = paid > 0 ? (signed / paid) * 100 : 0;
   const signedAngle = (signedPercentage / 100) * 360;
@@ -94,7 +94,7 @@ export const CohortCardEnhanced = ({
               </div>
             </div>
           </div>
-          
+
           {isOverbooked && (
             <div className="px-3 py-1.5 bg-primary/10 rounded-full">
               <span className="text-xs font-bold text-primary tracking-wide">
@@ -172,7 +172,7 @@ export const CohortCardEnhanced = ({
                 />
               )}
             </svg>
-            
+
             {/* Center text - with white background circle for better contrast */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-card shadow-sm">
@@ -192,26 +192,26 @@ export const CohortCardEnhanced = ({
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-muted-foreground/50"></div>
-                <span className="text-sm text-muted-foreground">Total Reservado</span>
+                <span className="text-sm text-muted-foreground">Total Inscritos</span>
               </div>
               <div className="text-right">
                 <span className="text-base font-semibold text-foreground">{enrolled}</span>
                 <span className="text-sm text-muted-foreground ml-1">/ {capacity}</span>
               </div>
             </div>
-            
+
             {/* Middle Ring: Paid/Confirmed */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-primary"></div>
-                <span className="text-sm text-muted-foreground">Confirmados</span>
+                <span className="text-sm text-muted-foreground">Pagos</span>
               </div>
               <div className="text-right">
                 <span className="text-base font-semibold text-primary">{paid}</span>
                 <span className="text-sm text-muted-foreground ml-1">/ {capacity}</span>
               </div>
             </div>
-            
+
             {/* Inner Ring: Signed */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
@@ -223,7 +223,7 @@ export const CohortCardEnhanced = ({
                 <span className="text-sm text-muted-foreground ml-1">/ {capacity}</span>
               </div>
             </div>
-            
+
             {/* Available/Waitlist */}
             <div className="flex items-center justify-between py-2 mt-4 pt-4 border-t border-border/30">
               <div className="flex items-center gap-3">

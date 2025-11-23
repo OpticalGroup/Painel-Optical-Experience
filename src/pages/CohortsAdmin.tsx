@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -74,151 +73,144 @@ const CohortsAdmin = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
-
-        <main className="flex-1">
-          {/* Header */}
-          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-            <div className="flex items-center justify-between px-8 py-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
-                    Administração de Turmas
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Gerencie todas as turmas do sistema
-                  </p>
-                </div>
-              </div>
-              <Button
-                className="bg-primary hover:bg-primary/90 shadow-sm"
-                onClick={() => setModalOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Turma
-              </Button>
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Administração de Turmas
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Gerencie todas as turmas do sistema
+              </p>
             </div>
-          </header>
+          </div>
+          <Button
+            className="bg-primary hover:bg-primary/90 shadow-sm"
+            onClick={() => setModalOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Turma
+          </Button>
+        </div>
+      </header>
 
-          {/* Table */}
-          <section className="px-8 py-8">
-            <div className="rounded-md border border-border bg-card shadow-sm">
-              {isLoading ? (
-                <div className="p-8 space-y-4">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-semibold text-foreground">Nome da Turma</TableHead>
-                      <TableHead className="font-semibold text-foreground">Curso</TableHead>
-                      <TableHead className="font-semibold text-foreground">Período</TableHead>
-                      <TableHead className="font-semibold text-foreground">Localização</TableHead>
-                      <TableHead className="font-semibold text-foreground">Capacidade</TableHead>
-                      <TableHead className="font-semibold text-foreground">Ocupação</TableHead>
-                      <TableHead className="font-semibold text-foreground">Status</TableHead>
-                      <TableHead className="font-semibold text-foreground">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cohorts?.map((cohort) => (
-                      <TableRow key={cohort.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{cohort.name}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {cohort.course?.name || "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(cohort.start_date), "dd/MM/yyyy", { locale: ptBR })}
-                          {cohort.end_date && ` - ${format(new Date(cohort.end_date), "dd/MM/yyyy", { locale: ptBR })}`}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{cohort.location}</TableCell>
-                        <TableCell className="text-muted-foreground">{cohort.capacity}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {cohort.stats?.enrolled_count || 0}/{cohort.capacity}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              ({Math.round(((cohort.stats?.enrolled_count || 0) / cohort.capacity) * 100)}%)
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                            cohort.status === 'open' ? 'bg-green-100 text-green-800' :
-                            cohort.status === 'full' ? 'bg-yellow-100 text-yellow-800' :
-                            cohort.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+      {/* Table */}
+      <section className="px-8 py-8">
+        <div className="rounded-md border border-border bg-card shadow-sm">
+          {isLoading ? (
+            <div className="p-8 space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold text-foreground">Nome da Turma</TableHead>
+                  <TableHead className="font-semibold text-foreground">Curso</TableHead>
+                  <TableHead className="font-semibold text-foreground">Período</TableHead>
+                  <TableHead className="font-semibold text-foreground">Localização</TableHead>
+                  <TableHead className="font-semibold text-foreground">Capacidade</TableHead>
+                  <TableHead className="font-semibold text-foreground">Ocupação</TableHead>
+                  <TableHead className="font-semibold text-foreground">Status</TableHead>
+                  <TableHead className="font-semibold text-foreground">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cohorts?.map((cohort) => (
+                  <TableRow key={cohort.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">{cohort.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {cohort.course?.name || "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(cohort.start_date), "dd/MM/yyyy", { locale: ptBR })}
+                      {cohort.end_date && ` - ${format(new Date(cohort.end_date), "dd/MM/yyyy", { locale: ptBR })}`}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{cohort.location}</TableCell>
+                    <TableCell className="text-muted-foreground">{cohort.capacity}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {cohort.stats?.enrolled_count || 0}/{cohort.capacity}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ({Math.round(((cohort.stats?.enrolled_count || 0) / cohort.capacity) * 100)}%)
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${cohort.status === 'open' ? 'bg-green-100 text-green-800' :
+                        cohort.status === 'full' ? 'bg-yellow-100 text-yellow-800' :
+                          cohort.status === 'completed' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
-                          }`}>
-                            {getStatusLabel(cohort.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(cohort)}
-                              className="hover:bg-primary/10 hover:text-primary"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(cohort.id)}
-                              className="hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-          </section>
-        </main>
+                        }`}>
+                        {getStatusLabel(cohort.status)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(cohort)}
+                          className="hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(cohort.id)}
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </section>
 
-        {/* Cohort Form Modal */}
-        <CohortFormModal
-          open={modalOpen}
-          onOpenChange={handleModalClose}
-          cohort={selectedCohort}
-        />
+      {/* Cohort Form Modal */}
+      <CohortFormModal
+        open={modalOpen}
+        onOpenChange={handleModalClose}
+        cohort={selectedCohort}
+      />
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. Isso irá remover permanentemente a turma
-                e todos os dados associados a ela.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDelete}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </SidebarProvider>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso irá remover permanentemente a turma
+              e todos os dados associados a ela.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

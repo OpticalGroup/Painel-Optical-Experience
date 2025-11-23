@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/UserMenu";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -249,291 +248,285 @@ export default function Profile() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Gerencie suas informações pessoais
+              </p>
+            </div>
+          </div>
+          <UserMenu />
+        </div>
+      </header>
 
-        <main className="flex-1">
-          {/* Header */}
-          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-            <div className="flex items-center justify-between px-8 py-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Gerencie suas informações pessoais
+      {/* Content */}
+      <div className="px-8 py-6 max-w-4xl">
+        <div className="grid gap-6">
+          {/* Avatar Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Foto de Perfil</CardTitle>
+              <CardDescription>
+                Atualize sua foto de perfil. Tamanho máximo: 2MB
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    {avatarPreview ? (
+                      <AvatarImage src={avatarPreview} alt="Avatar" />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    disabled={isUploadingAvatar}
+                  />
+                  <Label htmlFor="avatar-upload">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isUploadingAvatar}
+                      onClick={() => document.getElementById("avatar-upload")?.click()}
+                      asChild
+                    >
+                      <span className="cursor-pointer">
+                        {isUploadingAvatar ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="mr-2 h-4 w-4" />
+                            Alterar Foto
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    JPG, PNG ou GIF. Máximo 2MB.
                   </p>
                 </div>
               </div>
-              <UserMenu />
-            </div>
-          </header>
+            </CardContent>
+          </Card>
 
-          {/* Content */}
-          <div className="px-8 py-6 max-w-4xl">
-            <div className="grid gap-6">
-              {/* Avatar Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Foto de Perfil</CardTitle>
-                  <CardDescription>
-                    Atualize sua foto de perfil. Tamanho máximo: 2MB
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-6">
-                    <div className="relative">
-                      <Avatar className="h-24 w-24">
-                        {avatarPreview ? (
-                          <AvatarImage src={avatarPreview} alt="Avatar" />
-                        ) : null}
-                        <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isUploadingAvatar && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
+          {/* Profile Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Pessoais</CardTitle>
+              <CardDescription>
+                Atualize suas informações de contato
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  {/* Email (read-only) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profile?.email || user?.email || ""}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      O email não pode ser alterado
+                    </p>
+                  </div>
+
+                  {/* Full Name */}
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Seu nome completo"
+                              {...field}
+                              disabled={isSaving}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Phone */}
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="(11) 99999-9999"
+                              {...field}
+                              disabled={isSaving}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar Alterações"
                       )}
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        type="file"
-                        id="avatar-upload"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        className="hidden"
-                        disabled={isUploadingAvatar}
-                      />
-                      <Label htmlFor="avatar-upload">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isUploadingAvatar}
-                          onClick={() => document.getElementById("avatar-upload")?.click()}
-                          asChild
-                        >
-                          <span className="cursor-pointer">
-                            {isUploadingAvatar ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Enviando...
-                              </>
-                            ) : (
-                              <>
-                                <Camera className="mr-2 h-4 w-4" />
-                                Alterar Foto
-                              </>
-                            )}
-                          </span>
-                        </Button>
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        JPG, PNG ou GIF. Máximo 2MB.
-                      </p>
-                    </div>
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-              {/* Profile Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Pessoais</CardTitle>
-                  <CardDescription>
-                    Atualize suas informações de contato
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      {/* Email (read-only) */}
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            value={profile?.email || user?.email || ""}
-                            disabled
-                            className="bg-muted"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          O email não pode ser alterado
-                        </p>
-                      </div>
+          {/* Security Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <CardTitle>Segurança</CardTitle>
+              </div>
+              <CardDescription>
+                Altere sua senha para manter sua conta segura
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  {/* Current Password */}
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha Atual</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="password"
+                              placeholder="••••••"
+                              {...field}
+                              disabled={isChangingPassword}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      {/* Full Name */}
-                      <FormField
-                        control={form.control}
-                        name="full_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome Completo</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  placeholder="Seu nome completo"
-                                  {...field}
-                                  disabled={isSaving}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  {/* New Password */}
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nova Senha</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="password"
+                              placeholder="••••••"
+                              {...field}
+                              disabled={isChangingPassword}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      {/* Phone */}
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Telefone</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  placeholder="(11) 99999-9999"
-                                  {...field}
-                                  disabled={isSaving}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  {/* Confirm Password */}
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Nova Senha</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="password"
+                              placeholder="••••••"
+                              {...field}
+                              disabled={isChangingPassword}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isSaving}>
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Salvando...
-                            </>
-                          ) : (
-                            "Salvar Alterações"
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-
-              {/* Security Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <CardTitle>Segurança</CardTitle>
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isChangingPassword}>
+                      {isChangingPassword ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Alterando Senha...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          Alterar Senha
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <CardDescription>
-                    Altere sua senha para manter sua conta segura
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                      {/* Current Password */}
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Senha Atual</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <Lock className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="password"
-                                  placeholder="••••••"
-                                  {...field}
-                                  disabled={isChangingPassword}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* New Password */}
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nova Senha</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <Lock className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="password"
-                                  placeholder="••••••"
-                                  {...field}
-                                  disabled={isChangingPassword}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Confirm Password */}
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmar Nova Senha</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <Lock className="h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="password"
-                                  placeholder="••••••"
-                                  {...field}
-                                  disabled={isChangingPassword}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex justify-end pt-4">
-                        <Button type="submit" disabled={isChangingPassword}>
-                          {isChangingPassword ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Alterando Senha...
-                            </>
-                          ) : (
-                            <>
-                              <ShieldCheck className="mr-2 h-4 w-4" />
-                              Alterar Senha
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </main>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </SidebarProvider>
+    </>
   );
 }

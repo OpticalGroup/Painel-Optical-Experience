@@ -32,10 +32,10 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'cpf', label: 'CPF', required: true, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (será normalizado)' },
   { key: 'sales_rep', label: 'Vendedor', required: true, description: 'Nome do vendedor responsável' },
   { key: 'source', label: 'Origem', required: true, description: 'Instagram Bio, Instagram Manychat, WEB - Downsell, Área de Membros FOTS, Tráfego Pago (Público Frio/Quente), API Remarketing, Aluno Mentoria, Programa de Indicação, Não Rastreada, Facebook, Instagram, Indicação, Tráfego Pago, Direto ou Outro' },
-  
+
   // Campos opcionais - Dados de contato
   { key: 'phone', label: 'Telefone', required: false, description: 'Telefone com DDD (será normalizado automaticamente)' },
-  
+
   // Campos opcionais - Dados financeiros e contratuais
   { key: 'financial_status', label: 'Status Pagamento', required: false, description: 'paid, pending, "Sim" ou "Não" (padrão: pending)' },
   { key: 'contract_status', label: 'Status Contrato', required: false, description: 'signed, pending ou texto contendo "assinado" (padrão: pending)' },
@@ -43,18 +43,19 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'payment_amount', label: 'Valor', required: false, description: 'Valor monetário (ex: 7500, "R$7.500", "R$8.500,00")' },
   { key: 'purchase_date', label: 'Data da Compra', required: false, description: 'Data da compra/venda (DD/MM/AAAA ou AAAA-MM-DD)' },
   { key: 'lead_date', label: 'Data do Lead', required: false, description: 'Data de chegada do lead no funil (DD/MM/AAAA)' },
-  
+  { key: 'nationality', label: 'Nacionalidade', required: false, description: 'País de origem do aluno' },
+
   // Campos opcionais - Endereço
   { key: 'address', label: 'Endereço', required: false, description: 'Endereço completo (rua, número, complemento, bairro)' },
   { key: 'city', label: 'Cidade', required: false, description: 'Nome da cidade (ex: Salvador, Aracaju)' },
   { key: 'state', label: 'Estado', required: false, description: 'Sigla do estado/UF (ex: BA, SE, SP)' },
   { key: 'zipcode', label: 'CEP', required: false, description: 'CEP no formato XXXXX-XXX ou 8 dígitos (será normalizado)' },
-  
+
   // Campos opcionais - Produto e comprovantes
   { key: 'product_name', label: 'Nome do Produto', required: false, description: 'Nome do produto adquirido (padrão: "Optical Experience")' },
   { key: 'payment_proof_url', label: 'URL do Comprovante', required: false, description: 'Link/URL do comprovante de pagamento' },
   { key: 'observations', label: 'Observações', required: false, description: 'Observações gerais, notas, comentários sobre a matrícula' },
-  
+
   // Campos opcionais - Parâmetros UTM
   { key: 'utm_source', label: 'UTM Source', required: false, description: 'Origem do tráfego (ex: instagram, google, facebook)' },
   { key: 'utm_medium', label: 'UTM Medium', required: false, description: 'Meio de marketing (ex: social, cpc, email)' },
@@ -73,8 +74,8 @@ export const CsvColumnMappingModal = ({
   multiCohort = false,
 }: CsvColumnMappingModalProps) => {
   // Filtrar campos baseado no modo de importação
-  const systemFields = multiCohort 
-    ? SYSTEM_FIELDS 
+  const systemFields = multiCohort
+    ? SYSTEM_FIELDS
     : SYSTEM_FIELDS.filter(field => field.key !== 'cohort_identifier');
 
   // Estado para mapeamento de colunas
@@ -112,18 +113,18 @@ export const CsvColumnMappingModal = ({
     const normalizedHeader = header.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
       .replace(/[^a-z0-9]/g, '');
-    
+
     const synonyms = FIELD_SYNONYMS[fieldKey] || [];
-    
+
     // Pontuação base
     let score = 0;
-    
+
     // Match exato com a chave do campo
     const normalizedFieldKey = fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (normalizedHeader === normalizedFieldKey) return 100;
     if (normalizedHeader.includes(normalizedFieldKey)) score += 50;
     if (normalizedFieldKey.includes(normalizedHeader)) score += 40;
-    
+
     // Match com sinônimos
     for (const synonym of synonyms) {
       const normalizedSynonym = synonym.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -131,30 +132,30 @@ export const CsvColumnMappingModal = ({
       if (normalizedHeader.includes(normalizedSynonym)) score += 30;
       if (normalizedSynonym.includes(normalizedHeader) && normalizedHeader.length > 3) score += 20;
     }
-    
+
     return score;
   };
 
   // Auto-detectar mapeamentos com algoritmo melhorado
   const autoDetectMappings = () => {
     const newMapping: Record<string, string | undefined> = {};
-    
+
     systemFields.forEach(field => {
       let bestMatch: { header: string; score: number } | null = null;
-      
+
       csvHeaders.forEach(header => {
         const score = calculateSimilarity(header, field.key);
         if (score > 0 && (!bestMatch || score > bestMatch.score)) {
           bestMatch = { header, score };
         }
       });
-      
+
       // Só mapear se tiver uma pontuação razoável (>= 20)
       if (bestMatch && bestMatch.score >= 20) {
         newMapping[field.key] = bestMatch.header;
       }
     });
-    
+
     setColumnMapping(newMapping);
   };
 
@@ -168,13 +169,13 @@ export const CsvColumnMappingModal = ({
   // Validar se todos os campos obrigatórios estão mapeados
   const validateMapping = (): { valid: boolean; missingFields: string[] } => {
     const missingFields: string[] = [];
-    
+
     systemFields.forEach(field => {
       if (field.required && !columnMapping[field.key]) {
         missingFields.push(field.label);
       }
     });
-    
+
     return {
       valid: missingFields.length === 0,
       missingFields,
@@ -183,11 +184,11 @@ export const CsvColumnMappingModal = ({
 
   const handleConfirm = () => {
     const validation = validateMapping();
-    
+
     if (!validation.valid) {
       return; // Botão estará desabilitado, mas validação extra
     }
-    
+
     onConfirmMapping(columnMapping);
   };
 
@@ -229,9 +230,9 @@ export const CsvColumnMappingModal = ({
                   <strong>Detecção Automática Ativada!</strong> Os campos foram pré-mapeados automaticamente.
                   Revise e ajuste conforme necessário.
                 </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={autoDetectMappings}
                   className="ml-2 h-7 text-xs"
                 >
@@ -324,14 +325,13 @@ export const CsvColumnMappingModal = ({
                           value={columnMapping[field.key] || "_none_"}
                           onValueChange={(value) => handleMappingChange(field.key, value === "_none_" ? undefined : value)}
                         >
-                          <SelectTrigger 
-                            className={`w-full transition-colors ${
-                              field.required && !columnMapping[field.key] 
-                                ? 'border-destructive focus:ring-destructive' 
+                          <SelectTrigger
+                            className={`w-full transition-colors ${field.required && !columnMapping[field.key]
+                                ? 'border-destructive focus:ring-destructive'
                                 : columnMapping[field.key]
-                                ? 'border-primary/50 bg-primary/5'
-                                : 'focus:ring-primary'
-                            }`}
+                                  ? 'border-primary/50 bg-primary/5'
+                                  : 'focus:ring-primary'
+                              }`}
                           >
                             <SelectValue placeholder="Não mapeado" />
                           </SelectTrigger>
@@ -347,8 +347,8 @@ export const CsvColumnMappingModal = ({
                           </SelectContent>
                         </Select>
                         {columnMapping[field.key] && (
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className="absolute -top-2 -right-2 text-xs bg-primary text-primary-foreground"
                           >
                             ✓

@@ -7,20 +7,22 @@ type Enrollment = Tables<'enrollments'>;
 type EnrollmentInsert = TablesInsert<'enrollments'>;
 type EnrollmentUpdate = TablesUpdate<'enrollments'>;
 
-export const useEnrollmentsQuery = (cohortId: string | undefined) => {
+export const useEnrollmentsQuery = (cohortId: string | undefined, showCancelled: boolean = false) => {
   return useQuery({
-    queryKey: ['enrollments', cohortId],
+    queryKey: ['enrollments', cohortId, showCancelled],
     queryFn: async () => {
       if (!cohortId) throw new Error('Cohort ID is required');
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('enrollments')
         .select('*')
         .eq('cohort_id', cohortId)
         .order('position_in_cohort', { ascending: true });
 
+      const { data, error } = await query;
+
       if (error) throw error;
-      
+
       // Log access to sensitive enrollment data for compliance
       if (data && data.length > 0) {
         try {
@@ -35,12 +37,19 @@ export const useEnrollmentsQuery = (cohortId: string | undefined) => {
           console.warn('Failed to log enrollment access:', logError);
         }
       }
-      
+
+      // Return all data, let the UI handle filtering
       return data as Enrollment[];
     },
     enabled: !!cohortId,
   });
 };
+
+import { logAuditAction } from '@/lib/audit';
+
+// ... (existing imports)
+
+// ... (useEnrollmentsQuery remains same)
 
 export const useCreateEnrollment = () => {
   const queryClient = useQueryClient();
@@ -49,7 +58,7 @@ export const useCreateEnrollment = () => {
   return useMutation({
     mutationFn: async (enrollment: EnrollmentInsert) => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase
         .from('enrollments')
         .insert({
@@ -62,7 +71,14 @@ export const useCreateEnrollment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      logAuditAction({
+        action: 'enrollment.create',
+        entityId: data.id,
+        entityType: 'enrollment',
+        afterData: data,
+      });
+
       queryClient.invalidateQueries({ queryKey: ['enrollments', variables.cohort_id] });
       queryClient.invalidateQueries({ queryKey: ['cohorts'] });
       queryClient.invalidateQueries({ queryKey: ['cohort', variables.cohort_id] });
@@ -87,6 +103,13 @@ export const useUpdateEnrollment = () => {
 
   return useMutation({
     mutationFn: async ({ id, cohort_id, ...updates }: EnrollmentUpdate & { id: string; cohort_id: string }) => {
+      // Fetch before data for audit
+      const { data: beforeData } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       const { data, error } = await supabase
         .from('enrollments')
         .update(updates)
@@ -95,9 +118,17 @@ export const useUpdateEnrollment = () => {
         .single();
 
       if (error) throw error;
-      return { data, cohort_id };
+      return { data, cohort_id, beforeData };
     },
     onSuccess: (result) => {
+      logAuditAction({
+        action: 'enrollment.update',
+        entityId: result.data.id,
+        entityType: 'enrollment',
+        beforeData: result.beforeData,
+        afterData: result.data,
+      });
+
       queryClient.invalidateQueries({ queryKey: ['enrollments', result.cohort_id] });
       queryClient.invalidateQueries({ queryKey: ['cohorts'] });
       queryClient.invalidateQueries({ queryKey: ['cohort', result.cohort_id] });
@@ -109,6 +140,54 @@ export const useUpdateEnrollment = () => {
     onError: (error: Error) => {
       toast({
         title: 'Erro ao atualizar matrícula',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCancelEnrollment = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, cohort_id, current_metadata, reason, details }: { id: string; cohort_id: string; current_metadata?: any; reason?: string; details?: string }) => {
+      const newMetadata = {
+        ...(current_metadata || {}),
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        cancellation_reason: reason,
+        cancellation_details: details,
+      };
+
+      const { error } = await supabase
+        .from('enrollments')
+        .update({ external_metadata: newMetadata })
+        .eq('id', id);
+
+      if (error) throw error;
+      return { id, cohort_id, newMetadata };
+    },
+    onSuccess: (result) => {
+      logAuditAction({
+        action: 'enrollment.cancel',
+        entityId: result.id,
+        entityType: 'enrollment',
+        afterData: { status: 'cancelled', metadata: result.newMetadata },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['enrollments', result.cohort_id] });
+      queryClient.invalidateQueries({ queryKey: ['cohorts'] });
+      queryClient.invalidateQueries({ queryKey: ['cohort', result.cohort_id] });
+      toast({
+        title: 'Matrícula cancelada!',
+        description: 'A matrícula foi marcada como cancelada.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao cancelar matrícula',
         description: error.message,
         variant: 'destructive',
       });
@@ -128,20 +207,26 @@ export const useDeleteEnrollment = () => {
         .eq('id', id);
 
       if (error) throw error;
-      return cohort_id;
+      return { id, cohort_id };
     },
-    onSuccess: (cohort_id) => {
-      queryClient.invalidateQueries({ queryKey: ['enrollments', cohort_id] });
+    onSuccess: (result) => {
+      logAuditAction({
+        action: 'enrollment.delete',
+        entityId: result.id,
+        entityType: 'enrollment',
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['enrollments', result.cohort_id] });
       queryClient.invalidateQueries({ queryKey: ['cohorts'] });
-      queryClient.invalidateQueries({ queryKey: ['cohort', cohort_id] });
+      queryClient.invalidateQueries({ queryKey: ['cohort', result.cohort_id] });
       toast({
-        title: 'Matrícula removida!',
-        description: 'A matrícula foi removida com sucesso.',
+        title: 'Matrícula excluída!',
+        description: 'A matrícula foi removida permanentemente.',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao remover matrícula',
+        title: 'Erro ao excluir matrícula',
         description: error.message,
         variant: 'destructive',
       });

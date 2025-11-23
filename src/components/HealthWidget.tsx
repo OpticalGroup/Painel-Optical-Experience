@@ -11,6 +11,13 @@ interface HealthWidgetProps {
   variant?: "default" | "warning" | "success";
 }
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export const HealthWidget = ({
   title,
   value,
@@ -18,7 +25,8 @@ export const HealthWidget = ({
   icon: Icon,
   onClick,
   variant = "default",
-}: HealthWidgetProps) => {
+  tooltip,
+}: HealthWidgetProps & { tooltip?: string }) => {
   const variants = {
     default: "hover:shadow-md border-border",
     warning: "hover:shadow-md border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/10",
@@ -31,10 +39,10 @@ export const HealthWidget = ({
     success: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
   };
 
-  return (
+  const WidgetContent = (
     <Card
       className={cn(
-        "p-6 border transition-all duration-300",
+        "p-6 border transition-all duration-300 h-full",
         variants[variant],
         onClick && "cursor-pointer hover:scale-[1.02]"
       )}
@@ -53,5 +61,20 @@ export const HealthWidget = ({
         </div>
       </div>
     </Card>
+  );
+
+  if (!tooltip) return WidgetContent;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="h-full">{WidgetContent}</div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
