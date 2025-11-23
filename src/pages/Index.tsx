@@ -92,7 +92,7 @@ const Index = () => {
     }, 0);
   }, [filteredCohorts]);
 
-  // Calcular reservas pendentes há mais de 7 dias
+  // Calcular matrículas aguardando pagamento há mais de 7 dias
   const oldReserves = useMemo(() => {
     if (!analytics?.salesReps) return 0;
     // Por enquanto retornando 0, precisa de campo de data de reserva na tabela
