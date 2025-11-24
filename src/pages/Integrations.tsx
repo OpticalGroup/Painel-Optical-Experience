@@ -101,8 +101,11 @@ export default function Integrations() {
       },
       n8n: {
         event: 'test_connection',
-        timestamp: new Date().toISOString(),
-        message: 'Hello from Optical Cohort Sparkle!'
+        testPayload: {
+          timestamp: new Date().toISOString(),
+          message: 'Hello from Optical Cohort Sparkle!',
+          test: true
+        }
       }
     };
 
