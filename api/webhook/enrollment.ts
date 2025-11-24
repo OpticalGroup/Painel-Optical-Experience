@@ -295,6 +295,125 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const financialStatus = record.financial_status === 'paid' ? 'paid' : 'pending';
         const contractStatus = record.contract_status === 'signed' ? 'signed' : 'pending';
 
+        // Handle Sales Rep - Create if doesn't exist (required field)
+        let salesRepName = record.sales_rep?.trim() || 'Não Informado';
+        
+        // Check if sales rep exists (case insensitive)
+        const { data: existingSalesRep } = await supabase
+          .from('sales_representatives')
+          .select('name')
+          .ilike('name', salesRepName)
+          .maybeSingle();
+
+        if (!existingSalesRep) {
+          console.log(`Sales rep not found, creating automatically: ${salesRepName}`);
+          const { error: createSalesRepError } = await supabase
+            .from('sales_representatives')
+            .insert({
+              name: salesRepName,
+              email: null,
+              phone: null,
+              active: true,
+            });
+
+          if (createSalesRepError) {
+            console.error('Error creating sales rep:', createSalesRepError);
+            // Continue anyway, will use the name as-is (database will accept it)
+          } else {
+            console.log(`Sales rep created successfully: ${salesRepName}`);
+          }
+        }
+
+        // Handle Source - Normalize and create custom source if needed
+        const sourceValue = record.source?.trim() || 'Outro';
+        let normalizedSource = sourceValue;
+
+        // Normalize source (similar to frontend logic)
+        const normalizeEnrollmentSource = (value: string): string => {
+          if (!value) return 'Outro';
+          const normalized = value.trim().toLowerCase();
+          
+          const exactMatches: Record<string, string> = {
+            'instagram bio': 'Instagram Bio',
+            'instagram manychat': 'Instagram Manychat',
+            'web - downsell': 'WEB - Downsell',
+            'área de membros fots': 'Área de Membros FOTS',
+            'area de membros fots': 'Área de Membros FOTS',
+            'tráfego pago (público frio)': 'Tráfego Pago (Público Frio)',
+            'trafego pago (publico frio)': 'Tráfego Pago (Público Frio)',
+            'tráfego pago (público quente)': 'Tráfego Pago (Público Quente)',
+            'trafego pago (publico quente)': 'Tráfego Pago (Público Quente)',
+            'api remarketing': 'API Remarketing',
+            'aluno mentoria': 'Aluno Mentoria',
+            'programa de indicação': 'Programa de Indicação',
+            'programa de indicacao': 'Programa de Indicação',
+            'não rastreada': 'Não Rastreada',
+            'nao rastreada': 'Não Rastreada',
+          };
+
+          if (exactMatches[normalized]) {
+            return exactMatches[normalized];
+          }
+
+          // Check if it matches enum values (approximate)
+          const enumSources = [
+            'Instagram', 'Facebook', 'Indicação', 'Tráfego Pago', 'Direto', 'Outro',
+            'Instagram Bio', 'Instagram Manychat', 'WEB - Downsell',
+            'Área de Membros FOTS', 'Tráfego Pago (Público Frio)',
+            'Tráfego Pago (Público Quente)', 'API Remarketing',
+            'Aluno Mentoria', 'Programa de Indicação', 'Não Rastreada'
+          ];
+
+          // Try to find matching enum (case insensitive)
+          const enumMatch = enumSources.find(s => s.toLowerCase() === normalized);
+          if (enumMatch) {
+            return enumMatch;
+          }
+
+          return value; // Return original for custom source
+        };
+
+        normalizedSource = normalizeEnrollmentSource(sourceValue);
+
+        // Check if it's a valid enum value or needs to be custom
+        const validEnumSources = [
+          'Instagram', 'Facebook', 'Indicação', 'Tráfego Pago', 'Direto', 'Outro',
+          'Instagram Bio', 'Instagram Manychat', 'WEB - Downsell',
+          'Área de Membros FOTS', 'Tráfego Pago (Público Frio)',
+          'Tráfego Pago (Público Quente)', 'API Remarketing',
+          'Aluno Mentoria', 'Programa de Indicação', 'Não Rastreada'
+        ];
+
+        const isEnumSource = validEnumSources.some(s => s.toLowerCase() === normalizedSource.toLowerCase());
+
+        // If not an enum source, check/create custom source
+        if (!isEnumSource) {
+          const { data: existingCustomSource } = await supabase
+            .from('custom_enrollment_sources')
+            .select('name')
+            .ilike('name', normalizedSource)
+            .maybeSingle();
+
+          if (!existingCustomSource) {
+            console.log(`Custom source not found, creating automatically: ${normalizedSource}`);
+            const { error: createSourceError } = await supabase
+              .from('custom_enrollment_sources')
+              .insert({
+                name: normalizedSource,
+                description: `Criado automaticamente via webhook`,
+                active: true,
+              });
+
+            if (createSourceError) {
+              console.error('Error creating custom source:', createSourceError);
+              // Fallback to 'Outro' if creation fails
+              normalizedSource = 'Outro';
+            } else {
+              console.log(`Custom source created successfully: ${normalizedSource}`);
+            }
+          }
+        }
+
         // Check for existing enrollment
         const { data: existingEnrollment } = await supabase
           .from('enrollments')
@@ -309,10 +428,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           email: normalizedEmail,
           cpf: normalizedCPF.normalized || 'PENDENTE',
           phone: normalizedPhone || null,
-          sales_rep: record.sales_rep || null,
-          source: record.source || 'Outro',
+          sales_rep: salesRepName,
+          source: normalizedSource as any,
           payment_amount: paymentAmount,
-          payment_details: record.payment_details || null,
+          payment_details: record.payment_details || '',
           financial_status: financialStatus,
           contract_status: contractStatus,
           address: record.address || null,

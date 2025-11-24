@@ -111,9 +111,11 @@ O sistema busca a turma pelo campo `cohort_identifier` usando:
 2. **Busca parcial** se não encontrar (procura pelo nome sem "Turma")
 3. **Criação automática** se não encontrar (✨ novo comportamento)
 
-### Criação Automática
+### Criação Automática de Entidades
 
-Quando uma turma não é encontrada, o sistema **cria automaticamente** com valores padrão:
+O sistema cria automaticamente todas as entidades necessárias quando não encontradas:
+
+#### 1. Turma (Cohort)
 
 - **Nome**: Valor normalizado do `cohort_identifier`
 - **Curso**: "Optical Experience" (ou primeiro curso disponível)
@@ -123,6 +125,23 @@ Quando uma turma não é encontrada, o sistema **cria automaticamente** com valo
 - **Localização**: Cidade + Estado do aluno, ou "São Paulo, BR" como padrão
 - **Capacidade**: 30 vagas
 - **Status**: "open"
+
+#### 2. Vendedor (Sales Representative)
+
+Quando o `sales_rep` não existe na tabela `sales_representatives`, o sistema cria automaticamente:
+- **Nome**: Valor do campo `sales_rep` do webhook
+- **Email**: null (pode ser atualizado depois)
+- **Phone**: null (pode ser atualizado depois)
+- **Active**: true
+
+Se `sales_rep` não for informado, usa "Não Informado" como padrão.
+
+#### 3. Origem (Source)
+
+Quando a origem não é um valor do enum padrão e não existe em `custom_enrollment_sources`, o sistema cria automaticamente:
+- **Nome**: Valor normalizado do campo `source` do webhook
+- **Description**: "Criado automaticamente via webhook"
+- **Active**: true
 
 **Exemplos:**
 - `"Turma Janeiro 2025"` → busca exata
