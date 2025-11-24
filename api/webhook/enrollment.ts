@@ -142,7 +142,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'records array is required and must not be empty' });
     }
 
-    const results = [];
+    const results: Array<{
+      success: boolean;
+      action?: string;
+      enrollment_id?: string;
+      student_name?: string;
+      error?: string;
+      record?: string;
+    }> = [];
 
     // Process each record
     for (const record of payload.records) {
