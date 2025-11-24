@@ -1,3 +1,10 @@
+import { useState } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EnrollmentModal } from "@/components/EnrollmentModal";
 import { TransferCohortModal } from "@/components/TransferCohortModal";
 import { EnrollmentFilters } from "@/components/enrollments/EnrollmentFilters";
 import { EnrollmentList } from "@/components/enrollments/EnrollmentList";
@@ -165,16 +172,49 @@ const Enrollments = () => {
     setTransferCurrentCohortId(undefined);
     setTransferCurrentCohortName(undefined);
     setTransferModalOpen(true);
-            </p >
-          </div >
-  <EnrollmentFilters
-    sortBy={sortBy}
-    onSortChange={setSortBy}
-    showCancelled={showCancelled}
-    onShowCancelledChange={setShowCancelled}
-  />
-        </div >
-      </header >
+  };
+
+  const isPending = bulkDeleteMutation.isPending ||
+    bulkCancelMutation.isPending ||
+    bulkPayMutation.isPending ||
+    bulkMarkAsSignedMutation.isPending ||
+    bulkContractMutation.isPending;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="px-8 py-6 border-b border-border bg-card">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Todas as Matrículas</h1>
+              <p className="text-muted-foreground">
+                Gerencie todas as matrículas do sistema
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" asChild>
+                <a href="/documentation#gestao-de-matriculas" target="_blank" rel="noopener noreferrer">
+                  <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                </a>
+              </Button>
+              <Button onClick={() => {
+                setEditingEnrollment(null);
+                setModalOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Matrícula
+              </Button>
+            </div>
+          </div>
+
+          <EnrollmentFilters
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            showCancelled={showCancelled}
+            onShowCancelledChange={setShowCancelled}
+          />
+        </div>
+      </header>
 
       <section className="px-8 py-6 pb-24">
         <EnrollmentList
@@ -210,28 +250,28 @@ const Enrollments = () => {
         isPending={isPending}
       />
 
-{
-  editingEnrollment && (
-    <EnrollmentModal
-      open={modalOpen}
-      onOpenChange={handleModalClose}
-      cohortName={editingEnrollment.cohorts?.name || ''}
-      cohortId={editingEnrollment.cohort_id}
-      onSubmit={() => { }}
-      editingEnrollment={editingEnrollment}
-    />
-  )
-}
+      {
+        editingEnrollment && (
+          <EnrollmentModal
+            open={modalOpen}
+            onOpenChange={handleModalClose}
+            cohortName={editingEnrollment.cohorts?.name || ''}
+            cohortId={editingEnrollment.cohort_id}
+            onSubmit={() => { }}
+            editingEnrollment={editingEnrollment}
+          />
+        )
+      }
 
-<TransferCohortModal
-  open={transferModalOpen}
-  onOpenChange={setTransferModalOpen}
-  enrollmentIds={transferEnrollmentIds}
-  studentName={transferStudentName}
-  currentCohortId={transferCurrentCohortId}
-  currentCohortName={transferCurrentCohortName}
-/>
-    </>
+      <TransferCohortModal
+        open={transferModalOpen}
+        onOpenChange={setTransferModalOpen}
+        enrollmentIds={transferEnrollmentIds}
+        studentName={transferStudentName}
+        currentCohortId={transferCurrentCohortId}
+        currentCohortName={transferCurrentCohortName}
+      />
+    </div>
   );
 };
 

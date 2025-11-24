@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link, HelpCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link, HelpCircle, Calendar } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CancellationReasonsSettings } from "@/components/settings/CancellationReasonsSettings";
 import { UTMSettings } from "@/components/settings/UTMSettings";
+import CohortsAdmin from "./CohortsAdmin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -238,14 +239,18 @@ const Settings = () => {
 
       {/* Content */}
       <section className="px-8 py-8">
-        <Tabs defaultValue="sales-reps" className="w-full">
-          <TabsList className="grid w-full max-w-4xl grid-cols-4">
-            <TabsTrigger value="sales-reps">
-              <Users className="mr-2 h-4 w-4" />
+        <Tabs defaultValue="cohorts" className="w-full">
+          <TabsList className="bg-secondary/50 grid w-full max-w-4xl grid-cols-5">
+            <TabsTrigger value="cohorts" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Turmas
+            </TabsTrigger>
+            <TabsTrigger value="sales-reps" className="gap-2">
+              <Users className="h-4 w-4" />
               Vendedores
             </TabsTrigger>
-            <TabsTrigger value="sources">
-              <Tag className="mr-2 h-4 w-4" />
+            <TabsTrigger value="sources" className="gap-2">
+              <Tag className="h-4 w-4" />
               Origens
             </TabsTrigger>
             <TabsTrigger value="cancellation" className="gap-2">
@@ -258,14 +263,175 @@ const Settings = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* Cohorts Tab */}
+          <TabsContent value="cohorts" className="mt-6">
+            <CohortsAdmin />
+          </TabsContent>
+
           {/* Sales Reps Tab */}
           <TabsContent value="sales-reps" className="mt-6">
-            {/* ... existing content ... */}
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">Vendedores</h2>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie a equipe de vendas
+                </p>
+              </div>
+              <Button onClick={() => {
+                setSelectedSalesRep(null);
+                setSalesRepFormData({ name: "", email: "", phone: "", active: true });
+                setSalesRepModalOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Vendedor
+              </Button>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesRepsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ) : salesReps?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        Nenhum vendedor cadastrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    salesReps?.map((rep) => (
+                      <TableRow key={rep.id}>
+                        <TableCell className="font-medium">{rep.name}</TableCell>
+                        <TableCell>{rep.email || "-"}</TableCell>
+                        <TableCell>{rep.phone || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant={rep.active ? "default" : "secondary"}>
+                            {rep.active ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleSalesRepEdit(rep)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setSalesRepToDelete(rep.id);
+                                setSalesRepDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
 
           {/* Custom Sources Tab */}
           <TabsContent value="sources" className="mt-6">
-            {/* ... existing content ... */}
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">Origens de Matrícula</h2>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie as origens de leads (ex: Instagram, Google, Indicação)
+                </p>
+              </div>
+              <Button onClick={() => {
+                setSelectedSource(null);
+                setSourceFormData({ name: "", description: "", active: true });
+                setSourceModalOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Origem
+              </Button>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sourcesLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ) : customSources?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                        Nenhuma origem cadastrada.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    customSources?.map((source) => (
+                      <TableRow key={source.id}>
+                        <TableCell className="font-medium">{source.name}</TableCell>
+                        <TableCell>{source.description || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant={source.active ? "default" : "secondary"}>
+                            {source.active ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleSourceEdit(source)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setSourceToDelete(source.id);
+                                setSourceDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
 
           {/* Cancellation Reasons Tab */}

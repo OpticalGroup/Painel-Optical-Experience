@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatBRL } from "@/lib/utils";
 import { EnrollmentQuickActions } from "../EnrollmentQuickActions";
 import { Enrollment } from "./types";
 
@@ -174,76 +175,83 @@ export const EnrollmentList = ({
                         >
                             <Card className={`border border-border bg-card hover:bg-muted/30 transition-colors ${isSelected ? 'border-primary/50 bg-primary/5' : ''}`}>
                                 <div className="p-4">
-                                    <div className="flex items-center gap-4">
-                                        <CollapsibleTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                            </Button>
-                                        </CollapsibleTrigger>
+                                    <div className="flex flex-col md:grid md:grid-cols-12 gap-4 items-center w-full">
+                                        {/* Col 1: Trigger + Name (4 cols) */}
+                                        <div className="w-full md:col-span-4 flex items-center gap-3 min-w-0">
+                                            <CollapsibleTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="p-0 h-8 w-8 shrink-0">
+                                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                </Button>
+                                            </CollapsibleTrigger>
 
-                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                                            <div className="flex flex-col md:col-span-4">
+                                            <div className="flex flex-col min-w-0">
                                                 <span className={`font-medium text-foreground flex items-center gap-2 truncate ${(enrollment.external_metadata as any)?.status === 'cancelled' ? 'line-through text-muted-foreground' : ''}`}>
                                                     {enrollment.student_name}
                                                 </span>
-                                                <span className="text-sm text-muted-foreground truncate">{enrollment.email}</span>
-                                            </div>
-
-                                            <div className="flex flex-col md:col-span-3">
-                                                <span className="text-sm text-muted-foreground">Turma</span>
-                                                <span className="font-medium truncate">
-                                                    {enrollment.cohorts?.name || cohortName || 'Sem turma'}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex flex-col md:col-span-3">
-                                                <span className="text-sm text-muted-foreground">Vendedor</span>
-                                                <span className="font-medium truncate">{enrollment.sales_rep || '-'}</span>
-                                            </div>
-
-                                            <div className="flex flex-col md:col-span-2">
-                                                <span className="text-sm text-muted-foreground">Valor</span>
-                                                <span className="font-medium">
-                                                    {enrollment.payment_amount
-                                                        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(enrollment.payment_amount)
-                                                        : '-'}
-                                                </span>
+                                                <span className="text-sm text-muted-foreground truncate" title={enrollment.email}>{enrollment.email}</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 justify-end">
+                                        {/* Col 2: Turma (2 cols) */}
+                                        <div className="w-full md:col-span-2 flex flex-col justify-center min-w-0 pl-11 md:pl-0">
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider md:hidden">Turma</span>
+                                            <span className="font-medium truncate text-sm" title={enrollment.cohorts?.name || cohortName || 'Sem turma'}>
+                                                {enrollment.cohorts?.name || cohortName || 'Sem turma'}
+                                            </span>
+                                        </div>
+
+                                        {/* Col 3: Vendedor (2 cols) */}
+                                        <div className="w-full md:col-span-2 flex flex-col justify-center min-w-0 pl-11 md:pl-0">
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider md:hidden">Vendedor</span>
+                                            <span className="font-medium truncate text-sm">{enrollment.sales_rep || '-'}</span>
+                                        </div>
+
+                                        {/* Col 4: Valor (1 col) */}
+                                        <div className="w-full md:col-span-1 flex flex-col justify-center min-w-0 pl-11 md:pl-0">
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider md:hidden">Valor</span>
+                                            <span className="font-medium text-sm">
+                                                {enrollment.payment_amount
+                                                    ? formatBRL(enrollment.payment_amount)
+                                                    : '-'}
+                                            </span>
+                                        </div>
+
+                                        {/* Col 5: Actions (3 cols) */}
+                                        <div className="w-full md:col-span-3 flex items-center gap-2 justify-end pl-11 md:pl-0 flex-wrap md:flex-nowrap">
                                             {(enrollment.external_metadata as any)?.status === 'cancelled' ? (
-                                                <Badge variant="destructive">Cancelado</Badge>
+                                                <Badge variant="destructive" className="shrink-0">Cancelado</Badge>
                                             ) : (
                                                 <>
-                                                    <Badge variant={enrollment.financial_status === 'paid' ? 'default' : 'secondary'}>
+                                                    <Badge variant={enrollment.financial_status === 'paid' ? 'default' : 'secondary'} className="shrink-0">
                                                         {enrollment.financial_status === 'paid' ? 'Pago' : 'Pendente'}
                                                     </Badge>
 
                                                     {enrollment.contract_status === 'signed' && (
-                                                        <Badge variant="outline" className="border-green-500 text-green-500">
+                                                        <Badge variant="outline" className="border-green-500 text-green-500 shrink-0">
                                                             Contrato Assinado
                                                         </Badge>
                                                     )}
                                                 </>
                                             )}
 
-                                            <EnrollmentQuickActions
-                                                enrollmentId={enrollment.id}
-                                                currentFinancialStatus={enrollment.financial_status}
-                                                currentContractStatus={enrollment.contract_status}
-                                                cohortId={enrollment.cohort_id}
-                                                studentName={enrollment.student_name}
-                                                clicksignDocumentId={enrollment.clicksign_document_id}
-                                                onTransferClick={() => onTransfer?.(enrollment)}
-                                                isCancelled={(enrollment.external_metadata as any)?.status === 'cancelled'}
-                                            />
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <EnrollmentQuickActions
+                                                    enrollmentId={enrollment.id}
+                                                    currentFinancialStatus={enrollment.financial_status}
+                                                    currentContractStatus={enrollment.contract_status}
+                                                    cohortId={enrollment.cohort_id}
+                                                    studentName={enrollment.student_name}
+                                                    clicksignDocumentId={enrollment.clicksign_document_id}
+                                                    onTransferClick={() => onTransfer?.(enrollment)}
+                                                    isCancelled={(enrollment.external_metadata as any)?.status === 'cancelled'}
+                                                />
 
-                                            {onEdit && (
-                                                <Button variant="ghost" size="icon" onClick={() => onEdit(enrollment)}>
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                                                {onEdit && (
+                                                    <Button variant="ghost" size="icon" onClick={() => onEdit(enrollment)}>
+                                                        <FileText className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

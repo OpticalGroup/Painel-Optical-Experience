@@ -46,30 +46,30 @@ const FIELD_CONFIGS: FieldConfig[] = [
   { key: 'email', label: 'Email', csvLabel: 'Email / email', required: true, category: 'Identificação' },
   { key: 'cpf', label: 'CPF', csvLabel: 'CPF / cpf', required: true, category: 'Identificação' },
   { key: 'phone', label: 'Telefone', csvLabel: 'Telefone / phone', required: false, category: 'Identificação' },
-  
+
   // Categoria: Vendas
   { key: 'sales_rep', label: 'Vendedor', csvLabel: 'Vendedor / sales_rep', required: true, category: 'Vendas' },
   { key: 'source', label: 'Origem', csvLabel: 'Origem / source', required: true, category: 'Vendas' },
   { key: 'lead_date', label: 'Data do Lead', csvLabel: 'Data Lead / lead_date', required: false, category: 'Vendas' },
   { key: 'purchase_date', label: 'Data da Compra', csvLabel: 'Data Compra / purchase_date', required: false, category: 'Vendas' },
-  
+
   // Categoria: Pagamento
   { key: 'financial_status', label: 'Status Pagamento', csvLabel: 'Status Pagamento / financial_status', required: false, category: 'Pagamento' },
   { key: 'contract_status', label: 'Status Contrato', csvLabel: 'Status Contrato / contract_status', required: false, category: 'Pagamento' },
   { key: 'payment_details', label: 'Detalhes do Pagamento', csvLabel: 'Detalhes do Pagamento / payment_details', required: false, category: 'Pagamento' },
   { key: 'payment_amount', label: 'Valor', csvLabel: 'Valor / payment_amount', required: false, category: 'Pagamento' },
   { key: 'payment_proof_url', label: 'URL do Comprovante', csvLabel: 'URL Comprovante / payment_proof_url', required: false, category: 'Pagamento' },
-  
+
   // Categoria: Endereço
   { key: 'address', label: 'Endereço', csvLabel: 'Endereço / address', required: false, category: 'Endereço' },
   { key: 'city', label: 'Cidade', csvLabel: 'Cidade / city', required: false, category: 'Endereço' },
   { key: 'state', label: 'Estado', csvLabel: 'Estado / state', required: false, category: 'Endereço' },
   { key: 'zipcode', label: 'CEP', csvLabel: 'CEP / zipcode', required: false, category: 'Endereço' },
-  
+
   // Categoria: Produto
   { key: 'product_name', label: 'Nome do Produto', csvLabel: 'Produto / product_name', required: false, category: 'Produto' },
   { key: 'observations', label: 'Observações', csvLabel: 'Observações / observations', required: false, category: 'Produto' },
-  
+
   // Categoria: Marketing
   { key: 'utm_source', label: 'UTM Source', csvLabel: 'UTM Source / utm_source', required: false, category: 'Marketing' },
   { key: 'utm_medium', label: 'UTM Medium', csvLabel: 'UTM Medium / utm_medium', required: false, category: 'Marketing' },
@@ -80,8 +80,8 @@ const FIELD_CONFIGS: FieldConfig[] = [
 
 export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false }: CsvTemplateConfigModalProps) => {
   // Filtrar campos baseado no modo
-  const availableFields = multiCohort 
-    ? FIELD_CONFIGS 
+  const availableFields = multiCohort
+    ? FIELD_CONFIGS
     : FIELD_CONFIGS.filter(field => field.key !== 'cohort_identifier');
 
   // Inicializar com campos obrigatórios selecionados
@@ -166,10 +166,10 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
   const generateTemplate = () => {
     // Gerar CSV com campos selecionados
     const selectedConfigs = availableFields.filter(field => selectedFields.has(field.key));
-    
+
     // Header com labels bilíngues
     const headers = selectedConfigs.map(field => field.csvLabel).join(',');
-    
+
     // Linhas de exemplo
     const exampleRow1 = selectedConfigs.map(field => {
       const examples: Record<string, string> = {
@@ -183,7 +183,7 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
         financial_status: 'paid',
         contract_status: 'signed',
         payment_details: 'À vista - Pix realizado 10/11/2024',
-        payment_amount: '7500',
+        payment_amount: 'R$ 7.500,00',
         purchase_date: '06/11/2024',
         lead_date: '01/11/2024',
         address: 'Rua Exemplo, 123, Bairro',
@@ -201,7 +201,7 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
       };
       return examples[field.key] || '';
     }).join(',');
-    
+
     const exampleRow2 = selectedConfigs.map(field => {
       const examples: Record<string, string> = {
         cohort_identifier: 'Turma Março 2025',
@@ -214,7 +214,7 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
         financial_status: 'pending',
         contract_status: 'pending',
         payment_details: 'Entrada R$1000 + 10x R$350 no cartão',
-        payment_amount: '4500',
+        payment_amount: 'R$ 4.500,00',
         purchase_date: '07/11/2024',
         lead_date: '15/10/2024',
         address: 'Av Principal, 456',
@@ -234,14 +234,14 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
     }).join(',');
 
     const csvContent = `${headers}\n${exampleRow1}\n${exampleRow2}`;
-    
+
     // Download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `template_personalizado_${selectedFields.size}_campos.csv`;
     link.click();
-    
+
     onOpenChange(false);
   };
 
@@ -363,9 +363,8 @@ export const CsvTemplateConfigModal = ({ open, onOpenChange, multiCohort = false
                         />
                         <Label
                           htmlFor={field.key}
-                          className={`text-sm flex-1 cursor-pointer ${
-                            field.required ? 'font-medium' : ''
-                          }`}
+                          className={`text-sm flex-1 cursor-pointer ${field.required ? 'font-medium' : ''
+                            }`}
                         >
                           {field.label}
                           {field.required && (

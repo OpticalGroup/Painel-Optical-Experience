@@ -40,7 +40,7 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'financial_status', label: 'Status Pagamento', required: false, description: 'paid, pending, "Sim" ou "Não" (padrão: pending)' },
   { key: 'contract_status', label: 'Status Contrato', required: false, description: 'signed, pending ou texto contendo "assinado" (padrão: pending)' },
   { key: 'payment_details', label: 'Detalhes do Pagamento', required: false, description: 'Condições de pagamento (texto livre, pode ser verbose)' },
-  { key: 'payment_amount', label: 'Valor', required: false, description: 'Valor monetário (ex: 7500, "R$7.500", "R$8.500,00")' },
+  { key: 'payment_amount', label: 'Valor', required: false, description: 'Valor monetário (ex: 7500, "R$ 7.500,00")' },
   { key: 'purchase_date', label: 'Data da Compra', required: false, description: 'Data da compra/venda (DD/MM/AAAA ou AAAA-MM-DD)' },
   { key: 'lead_date', label: 'Data do Lead', required: false, description: 'Data de chegada do lead no funil (DD/MM/AAAA)' },
   { key: 'nationality', label: 'Nacionalidade', required: false, description: 'País de origem do aluno' },
@@ -327,10 +327,10 @@ export const CsvColumnMappingModal = ({
                         >
                           <SelectTrigger
                             className={`w-full transition-colors ${field.required && !columnMapping[field.key]
-                                ? 'border-destructive focus:ring-destructive'
-                                : columnMapping[field.key]
-                                  ? 'border-primary/50 bg-primary/5'
-                                  : 'focus:ring-primary'
+                              ? 'border-destructive focus:ring-destructive'
+                              : columnMapping[field.key]
+                                ? 'border-primary/50 bg-primary/5'
+                                : 'focus:ring-primary'
                               }`}
                           >
                             <SelectValue placeholder="Não mapeado" />

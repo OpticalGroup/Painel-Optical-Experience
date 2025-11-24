@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { MoneyInput } from "@/components/ui/money-input";
 import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -503,7 +504,11 @@ export const EnrollmentModal = ({
                       <FormItem>
                         <FormLabel>Valor (R$)</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" step="0.01" />
+                          <MoneyInput
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            placeholder="R$ 0,00"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

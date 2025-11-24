@@ -1,179 +1,133 @@
+import React from "react";
+import { Card } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import {
-  FileText,
-  Users,
-  Calendar,
-  Workflow,
-  Shield,
-  Database,
-  Book,
-  ExternalLink
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { UserMenu } from "@/components/UserMenu";
 
-const Documentation = () => {
-  // Dummy data for documentation cards
-  const docs = [
-    {
-      icon: FileText,
-      title: "Guia de Início Rápido",
-      description: "Comece a usar o sistema em minutos com este guia passo a passo.",
-    },
-    {
-      icon: Users,
-      title: "Gestão de Matrículas",
-      description: "Aprenda a cadastrar alunos, importar dados e gerenciar matrículas.",
-    },
-    {
-      icon: Calendar,
-      title: "Configuração de Turmas",
-      description: "Crie e gerencie turmas, defina capacidades e horários.",
-    },
-    {
-      icon: Workflow,
-      title: "Integrações",
-      description: "Conecte o sistema com ClickSign, Kommo CRM e outras ferramentas.",
-    },
-    {
-      icon: Shield,
-      title: "Segurança e Permissões",
-      description: "Entenda o controle de acesso baseado em função (RBAC) e RLS.",
-    },
-    {
-      icon: Database,
-      title: "API Reference",
-      description: "Documentação completa da API para desenvolvedores.",
-    },
-  ];
-
+export const Documentation = () => {
   return (
     <>
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="flex items-center justify-between px-8 py-4">
           <div className="flex items-center gap-4">
             <SidebarTrigger />
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                Documentação
+                Manual de Instruções
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Guias, tutoriais e referência da API
+                Guia completo de uso da aplicação
               </p>
             </div>
           </div>
-          <UserMenu />
         </div>
       </header>
 
-      {/* Content */}
-      <div className="p-8 max-w-7xl mx-auto space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {docs.map((doc, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer group">
-              <CardHeader>
-                <div className="mb-4 p-3 bg-primary/10 w-fit rounded-lg group-hover:bg-primary/20 transition-colors">
-                  <doc.icon className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="group-hover:text-primary transition-colors">
-                  {doc.title}
-                </CardTitle>
-                <CardDescription>
-                  {doc.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="ghost" className="w-full justify-between group-hover:translate-x-1 transition-transform" asChild>
-                  <a href={`#${doc.title.toLowerCase().replace(/ /g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`}>
-                    Acessar Guia
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="px-8 py-6 max-w-4xl mx-auto space-y-8">
+        {/* Visão Geral */}
+        <Card className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Visão Geral</h1>
+          <p>
+            Este manual descreve como usar a aplicação <strong>Optical Cohort Sparkle</strong>. Ele cobre todo o fluxo, desde a configuração inicial até a
+            utilização das funcionalidades de matrícula, importação CSV, dashboard e a nova padronização financeira.
+          </p>
+        </Card>
 
-        {/* Detailed Sections */}
-        <div className="space-y-12">
-          <section id="gestao-de-matriculas" className="scroll-mt-24">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              Gestão de Matrículas
-            </h2>
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <p>
-                  A gestão de matrículas permite acompanhar todo o ciclo de vida do aluno, desde o interesse inicial até a assinatura do contrato.
-                </p>
-                <div id="importacao-csv" className="scroll-mt-24 pt-4 border-t">
-                  <h3 className="text-lg font-semibold mb-2">Importação de CSV</h3>
-                  <p className="mb-4">
-                    Para importar alunos em massa, utilize o modelo CSV padrão. O sistema aceita arquivos .csv com codificação UTF-8.
-                  </p>
-                  <div className="bg-muted p-4 rounded-lg overflow-x-auto">
-                    <h4 className="font-medium mb-2">Campos Obrigatórios:</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      <li><strong>student_name</strong>: Nome completo do aluno</li>
-                      <li><strong>email</strong>: Email válido</li>
-                      <li><strong>cpf</strong>: CPF válido (apenas números)</li>
-                      <li><strong>cohort_name</strong>: Nome exato da turma (deve existir no sistema)</li>
-                      <li><strong>sales_rep</strong>: Nome do vendedor</li>
-                      <li><strong>source</strong>: Origem do lead (ex: Instagram, Google)</li>
-                      <li><strong>status</strong>: Status inicial (pending, paid, confirmed)</li>
-                    </ul>
-                  </div>
-                  <div className="mt-4">
-                    <Button variant="outline" asChild>
-                      <a href="/template_importacao.csv" download>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Baixar Modelo CSV
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+        {/* Configuração Inicial */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">1. Configuração Inicial</h2>
+          <ol className="list-decimal list-inside space-y-2">
+            <li>
+              <strong>Clonar o repositório</strong>
+              <pre className="bg-gray-100 p-2 rounded"><code>git clone https://github.com/your-org/optical-cohort-sparkle.git</code></pre>
+            </li>
+            <li>
+              <strong>Instalar dependências</strong>
+              <pre className="bg-gray-100 p-2 rounded"><code>npm install</code></pre>
+            </li>
+            <li>
+              <strong>Configurar Supabase</strong>
+              <p>Crie um arquivo <code>.env.local</code> na raiz do projeto com as variáveis necessárias (URL e chave pública do Supabase).</p>
+            </li>
+            <li>
+              <strong>Executar a aplicação</strong>
+              <pre className="bg-gray-100 p-2 rounded"><code>npm run dev</code></pre>
+              <p>Acesse <code>http://localhost:3000</code> no navegador.</p>
+            </li>
+          </ol>
+        </Card>
 
-          <section id="configuracao-de-turmas" className="scroll-mt-24">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-primary" />
-              Configuração de Turmas
-            </h2>
-            <Card>
-              <CardContent className="p-6">
-                <p>
-                  Crie turmas definindo data de início, fim, capacidade máxima e localização.
-                  O sistema alertará automaticamente sobre turmas lotadas ou com baixa ocupação.
-                </p>
-              </CardContent>
-            </Card>
-          </section>
-        </div>
+        {/* Matrícula Manual */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">2. Matrícula Manual</h2>
+          <p>Para cadastrar um novo aluno:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Clique no botão <strong>Nova Matrícula</strong> no dashboard.</li>
+            <li>Preencha os campos do formulário. O campo <em>Valor (R$)</em> utiliza o componente <code>MoneyInput</code>, que formata o valor automaticamente (ex.: <code>7.500,00</code>).</li>
+            <li>Salve a matrícula. O registro será armazenado no Supabase e aparecerá na lista de matrículas.</li>
+          </ul>
+        </Card>
 
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Book className="h-5 w-5 text-primary" />
-              Precisa de ajuda adicional?
-            </CardTitle>
-            <CardDescription>
-              Nossa equipe de suporte está disponível para ajudar com dúvidas técnicas e integrações.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <Button>
-                Falar com Suporte
-              </Button>
-              <Button variant="outline">
-                Ver Status do Sistema
-              </Button>
-            </div>
-          </CardContent>
+        {/* Importação de CSV */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">3. Importação de CSV</h2>
+          <p>Use o modelo de CSV disponibilizado em <code>public/template_matriculas.csv</code>. Os requisitos são:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Colunas obrigatórias: <code>name</code>, <code>email</code>, <code>payment_amount</code>, etc.</li>
+            <li>Valores monetários devem estar no formato <code>R$ 7.500,00</code>.</li>
+            <li>Inclua as 6 colunas UTM (ex.: <code>utm_source</code>, <code>utm_medium</code>).</li>
+          </ul>
+          <p>No painel, clique em <strong>Importar CSV</strong>, faça o upload do arquivo e confirme o mapeamento automático das colunas.</p>
+        </Card>
+
+        {/* Dashboard */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">4. Dashboard</h2>
+          <p>Na página inicial (<code>/</code>) você encontrará:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li><strong>Cards de resumo</strong>: total de alunos, turmas ativas, matrículas pagas e receita total (todos os valores em <code>R$ 1.000,00</code>).</li>
+            <li><strong>Gráficos UTM</strong>: visualização dos canais de aquisição.</li>
+            <li><strong>Ranking de Vendedores</strong>: ordenado por valor total arrecadado, formatado em BRL.</li>
+            <li><strong>Filtros</strong>: por turma e intervalo de datas.</li>
+          </ul>
+        </Card>
+
+        {/* Padronização Financeira */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">5. Padronização Financeira</h2>
+          <p>Todos os valores monetários são exibidos e processados no padrão brasileiro:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Utilização da função <code>formatBRL</code> para exibição.</li>
+            <li>Componente <code>MoneyInput</code> para entrada de valores, com formatação automática.</li>
+            <li>Correção de cálculos que dividiam valores por 100 indevidamente.</li>
+          </ul>
+        </Card>
+
+        {/* Configurações e UTM */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">6. Configurações e UTM</h2>
+          <p>Na página de <strong>Configurações</strong> você pode ativar/desativar os parâmetros UTM. Cada toggle salva automaticamente no Supabase.</p>
+        </Card>
+
+        {/* Perguntas Frequentes */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">7. Perguntas Frequentes</h2>
+          <details className="mb-2">
+            <summary className="cursor-pointer font-medium">Como corrigir valores negativos?</summary>
+            <p className="mt-1">A aplicação já trata valores negativos usando <code>Math.max(0, valor)</code>. Caso ainda encontre, verifique se o CSV contém o sinal “-”.</p>
+          </details>
+          <details className="mb-2">
+            <summary className="cursor-pointer font-medium">Onde encontrar o template CSV?</summary>
+            <p className="mt-1">O arquivo <code>public/template_matriculas.csv</code> está incluído no repositório.</p>
+          </details>
+          <details className="mb-2">
+            <summary className="cursor-pointer font-medium">Como usar o filtro de data?</summary>
+            <p className="mt-1">Clique no campo de data no dashboard e selecione o intervalo desejado. O filtro será aplicado automaticamente.</p>
+          </details>
+        </Card>
+
+        {/* Contato */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-3">8. Suporte</h2>
+          <p>Em caso de dúvidas ou problemas, abra uma issue no repositório ou entre em contato com a equipe de desenvolvimento.</p>
         </Card>
       </div>
     </>

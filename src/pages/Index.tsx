@@ -348,7 +348,7 @@ const Index = () => {
               />
               <StatsCard
                 title="Receita Total"
-                value={formatBRL(totalRevenue / 100)}
+                value={formatBRL(totalRevenue)}
                 subtitle="arrecadado (valores pagos)"
                 icon={DollarSign}
                 trend={{ value: "15%", isPositive: true }}
@@ -538,7 +538,7 @@ const Index = () => {
                 items={analytics.salesReps.map(rep => ({
                   name: rep.name,
                   value: rep.totalSales,
-                  subtitle: formatBRL(rep.totalRevenue / 100),
+                  subtitle: formatBRL(rep.totalRevenue),
                 }))}
                 action={<ExportButton type="sales-reps" label="Exportar" size="sm" variant="ghost" />}
               />

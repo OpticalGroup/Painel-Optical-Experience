@@ -1,18 +1,17 @@
 -- Seed initial data for courses, cohorts, and enrollments
 
--- Insert courses
+-- Insert courses (only Optical Experience)
 INSERT INTO public.courses (id, name, description) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Optical Experience', 'Curso imersivo de experiência óptica'),
-  ('22222222-2222-2222-2222-222222222222', 'Optical Advanced', 'Curso avançado de óptica')
+  ('11111111-1111-1111-1111-111111111111', 'Optical Experience', 'Curso imersivo de experiência óptica presencial')
 ON CONFLICT (id) DO NOTHING;
 
--- Insert cohorts (matching the mock data)
+-- Insert cohorts (matching the mock data) - all using Optical Experience
 INSERT INTO public.cohorts (id, course_id, name, year, start_date, end_date, location, capacity, status) VALUES
   ('c1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'Optical Experience Setembro 2025', 2025, '2025-07-16', '2025-07-19', 'São Paulo, BR', 30, 'open'),
   ('c2222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Optical Experience Outubro 2025', 2025, '2025-08-06', '2025-08-09', 'Rio de Janeiro, BR', 30, 'open'),
   ('c3333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Optical Experience Novembro 2025', 2025, '2025-09-10', '2025-09-13', 'São Paulo, BR', 30, 'open'),
   ('c4444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111', 'Optical Experience Dezembro 2025', 2025, '2025-11-19', '2025-11-22', 'Curitiba, BR', 30, 'open'),
-  ('c5555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222', 'Optical Advanced Janeiro 2026', 2026, '2025-11-27', '2025-11-29', 'São Paulo, BR', 22, 'open'),
+  ('c5555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111', 'Optical Experience Janeiro 2026', 2026, '2025-11-27', '2025-11-29', 'São Paulo, BR', 22, 'open'),
   ('c6666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111', 'Optical Experience Internacional - Madrid', 2025, '2025-11-07', '2025-11-09', 'Madrid, Espanha', 30, 'full')
 ON CONFLICT (id) DO NOTHING;
 

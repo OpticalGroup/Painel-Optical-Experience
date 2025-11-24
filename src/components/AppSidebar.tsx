@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, Settings, FileText, Shield, ScrollText, BookOpen, History, GraduationCap, Palette, Plug, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, FileText, Shield, ScrollText, BookOpen, History, GraduationCap, Palette, Plug, ChevronDown, BookMarked } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,14 +41,14 @@ const mainMenuItems = [
     url: "/enrollments",
     icon: GraduationCap,
   },
+  {
+    title: "Tutoriais",
+    url: "/tutorials",
+    icon: BookMarked,
+  },
 ];
 
 const settingsMenuItems = [
-  {
-    title: "Administração",
-    url: "/cohorts/admin",
-    icon: Settings,
-  },
   {
     title: "Configurações Gerais",
     url: "/settings",
@@ -79,18 +79,13 @@ const settingsMenuItems = [
     url: "/import-history",
     icon: History,
   },
-  {
-    title: "Documentação",
-    url: "/documentation",
-    icon: BookOpen,
-  },
 ];
 
 export function AppSidebar() {
   const { open } = useSidebar();
   const { userRole } = useAuth();
   const location = useLocation();
-  
+
   // Check if any settings submenu item is active
   const isSettingsActive = settingsMenuItems.some(item => location.pathname === item.url);
   const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
@@ -143,9 +138,8 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
-                        className={`transition-colors hover:bg-secondary/50 ${
-                          isSettingsActive ? 'bg-primary/10 text-primary font-medium border-l-2 border-primary' : ''
-                        }`}
+                        className={`transition-colors hover:bg-secondary/50 ${isSettingsActive ? 'bg-primary/10 text-primary font-medium border-l-2 border-primary' : ''
+                          }`}
                       >
                         <Settings className="h-4 w-4" />
                         {open && <span>Configurações</span>}
@@ -179,7 +173,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter className="border-t border-border">
         <div className="flex items-center justify-between px-4 py-3">
           {open && (
