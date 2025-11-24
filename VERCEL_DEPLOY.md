@@ -27,7 +27,11 @@ Este documento contém instruções específicas para fazer deploy deste projeto
 ```
 VITE_SUPABASE_URL=https://nheacgdfprqhuovubeed.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oZWFjZ2RmcHJxaHVvdnViZWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDM2ODAsImV4cCI6MjA3ODgxOTY4MH0.F0gyQyk6Yu1Pf0IzZ7zPCtlw7fOPl5XC9KbML_fOmms
+SUPABASE_SERVICE_ROLE_KEY=seu-service-role-key-aqui
 ```
+
+**Nota importante**: `SUPABASE_SERVICE_ROLE_KEY` é necessário para as Serverless Functions (webhooks) funcionarem. Obtenha em:
+- Supabase Dashboard → Project Settings → API → Service Role Key (secret)
 
 **Nota**: As credenciais acima são valores padrão. Para produção, você pode:
 - Manter esses valores (funcionam como fallback)

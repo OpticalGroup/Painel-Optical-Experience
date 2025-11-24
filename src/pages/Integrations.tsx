@@ -48,6 +48,16 @@ export default function Integrations() {
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   const getWebhookUrl = (system: string) => {
+    // Para n8n, usar a URL da Vercel (Serverless Function)
+    if (system === 'n8n') {
+      // Usa a URL atual do deployment (Vercel)
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin 
+        : 'https://optical-cohort-sparkle-main-auy1h6mob-gabriel-tudes-projects.vercel.app';
+      return `${baseUrl}/api/webhook/enrollment`;
+    }
+    
+    // Para outros sistemas, usar Supabase Edge Functions
     const projectId = 'nheacgdfprqhuovubeed';
     return `https://${projectId}.supabase.co/functions/v1/${system}-webhook`;
   };
