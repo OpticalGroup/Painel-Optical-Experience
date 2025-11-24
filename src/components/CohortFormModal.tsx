@@ -39,6 +39,13 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
   );
 
   const { data: courses, isLoading: coursesLoading } = useCoursesQuery();
+
+  // Deduplicate courses by name (just in case)
+  const uniqueCourses = courses?.filter((course, index, self) =>
+    index === self.findIndex((t) => (
+      t.name === course.name
+    ))
+  );
   const createCohort = useCreateCohort();
   const updateCohort = useUpdateCohort();
 
@@ -136,7 +143,7 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
                 {coursesLoading ? (
                   <SelectItem value="__loading__" disabled>Carregando...</SelectItem>
                 ) : (
-                  courses?.map((course) => (
+                  uniqueCourses?.map((course) => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.name}
                     </SelectItem>

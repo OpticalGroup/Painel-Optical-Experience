@@ -98,7 +98,7 @@ export const useTestWebhook = () => {
   return useMutation({
     mutationFn: async ({ system, testPayload }: { system: string; testPayload: any }) => {
       let functionName = '';
-      
+
       switch (system) {
         case 'kommo':
           functionName = 'kommo-webhook';
@@ -108,6 +108,9 @@ export const useTestWebhook = () => {
           break;
         case 'typeform':
           functionName = 'typeform-webhook';
+          break;
+        case 'n8n':
+          functionName = 'notify-n8n';
           break;
         default:
           throw new Error('Sistema inválido');

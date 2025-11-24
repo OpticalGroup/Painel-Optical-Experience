@@ -1,0 +1,3 @@
+Turma,Nome do Aluno,Email,CPF,Telefone,Vendedor,Origem,Status Financeiro,Status Contrato,Detalhes Pagamento,Valor
+Turma Teste Nova,Aluno Teste 1,aluno1@teste.com,123.456.789-00,11999999999,Vendedor Novo,Origem Nova,Pago,Assinado,Pix,1000.00
+Turma Teste Nova,Aluno Teste 2,aluno2@teste.com,123.456.789-01,11999999999,Vendedor Novo,Origem Nova,Pendente,Pendente,Boleto,1000.00

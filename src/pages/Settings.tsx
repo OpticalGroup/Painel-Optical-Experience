@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link, HelpCircle, Cale
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CancellationReasonsSettings } from "@/components/settings/CancellationReasonsSettings";
 import { UTMSettings } from "@/components/settings/UTMSettings";
+import { ProductsTab } from "@/components/settings/ProductsTab";
 import CohortsAdmin from "./CohortsAdmin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -240,7 +241,7 @@ const Settings = () => {
       {/* Content */}
       <section className="px-8 py-8">
         <Tabs defaultValue="cohorts" className="w-full">
-          <TabsList className="bg-secondary/50 grid w-full max-w-4xl grid-cols-5">
+          <TabsList className="bg-secondary/50 grid w-full max-w-5xl grid-cols-6">
             <TabsTrigger value="cohorts" className="gap-2">
               <Calendar className="h-4 w-4" />
               Turmas
@@ -248,6 +249,10 @@ const Settings = () => {
             <TabsTrigger value="sales-reps" className="gap-2">
               <Users className="h-4 w-4" />
               Vendedores
+            </TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              <Tag className="h-4 w-4" />
+              Produtos
             </TabsTrigger>
             <TabsTrigger value="sources" className="gap-2">
               <Tag className="h-4 w-4" />
@@ -350,6 +355,11 @@ const Settings = () => {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* Products Tab */}
+          <TabsContent value="products" className="mt-6">
+            <ProductsTab />
           </TabsContent>
 
           {/* Custom Sources Tab */}

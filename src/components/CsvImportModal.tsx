@@ -10,7 +10,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CsvColumnMappingModal } from "./CsvColumnMappingModal";
 import { CohortCreationModal } from "./CohortCreationModal";
 import { CsvTemplateConfigModal } from "./CsvTemplateConfigModal";
+import { OriginCreationModal } from "./OriginCreationModal";
+import { SellerCreationModal } from "./SellerCreationModal";
 import { useCreateImportRecord } from "@/integrations/supabase/hooks/useImportHistory";
+import { useCustomSourcesQuery, useCreateCustomSource } from "@/integrations/supabase/hooks/useCustomSources";
+import { useSalesRepsQuery, useCreateSalesRep } from "@/integrations/supabase/hooks/useSalesReps";
+import { Constants } from "@/integrations/supabase/types";
 import { useQueryClient } from '@tanstack/react-query';
 import { normalizeCPF } from "@/lib/cpf";
 import { validateRow, RowValidation } from "@/lib/validators";
@@ -81,6 +86,12 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const createImportRecord = useCreateImportRecord();
   const queryClient = useQueryClient();
 
+  // Hooks para Origens e Vendedores
+  const { data: customSources } = useCustomSourcesQuery();
+  const { data: salesReps } = useSalesRepsQuery();
+  const createCustomSource = useCreateCustomSource();
+  const createSalesRep = useCreateSalesRep();
+
   // Novo estado para mapeamento de colunas
   const [csvRawData, setCsvRawData] = useState<{ headers: string[]; rows: string[][] }>({ headers: [], rows: [] });
   const [columnMapping, setColumnMapping] = useState<Record<string, string | undefined>>({});
@@ -91,6 +102,15 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const [missingCohorts, setMissingCohorts] = useState<string[]>([]);
   const [cohortMapping, setCohortMapping] = useState<Record<string, string>>({}); // nome -> id
   const [showCohortCreationModal, setShowCohortCreationModal] = useState(false);
+
+  // Novo estado para Origens e Vendedores
+  const [missingOrigins, setMissingOrigins] = useState<string[]>([]);
+  const [showOriginCreationModal, setShowOriginCreationModal] = useState(false);
+  const [originMapping, setOriginMapping] = useState<Record<string, string>>({}); // nome csv -> nome sistema
+
+  const [missingSellers, setMissingSellers] = useState<string[]>([]);
+  const [showSellerCreationModal, setShowSellerCreationModal] = useState(false);
+  const [sellerMapping, setSellerMapping] = useState<Record<string, string>>({}); // nome csv -> nome sistema
 
   // Estado para modal de configuração de template
   const [showTemplateConfigModal, setShowTemplateConfigModal] = useState(false);
@@ -174,7 +194,22 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     const normalized = value.toLowerCase().trim()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
 
-    // Mapeamento de valores comuns para valores válidos do enum
+    // 1. Verificar mapeamento manual (criado no modal)
+    if (originMapping[value]) return originMapping[value];
+
+    // 2. Verificar origens customizadas existentes (case insensitive)
+    const customMatch = customSources?.find(s =>
+      s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
+    );
+    if (customMatch) return customMatch.name;
+
+    // 3. Verificar enums padrão
+    const enumMatch = Constants.public.Enums.enrollment_source.find(s =>
+      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
+    );
+    if (enumMatch) return enumMatch;
+
+    // 4. Mapeamento de valores comuns
     const mapping: Record<string, string> = {
       'instagram': 'Instagram',
       'insta': 'Instagram',
@@ -200,7 +235,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       'other': 'Outro',
     };
 
-    return mapping[normalized] || 'Outro';
+    return mapping[normalized] || value; // Retorna o valor original se não encontrar mapeamento, para ser pego no checkOrigins
   };
 
   // Parse CSV bruto (sem mapeamento)
@@ -278,7 +313,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         email: row.email?.toLowerCase().trim() || '',
         cpf: cpfResult.normalized,
         phone: normalizedPhone || undefined,
-        sales_rep: row.sales_rep || '',
+        sales_rep: sellerMapping[row.sales_rep] || row.sales_rep || '',
         source: normalizeEnrollmentSource(row.source || ''),
         financial_status: parsePaymentStatus(row.financial_status || 'pending'),
         contract_status: parseContractStatus(row.contract_status || 'pending'),
@@ -358,25 +393,19 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     const mappedData = parseCSVWithMapping(mapping);
     setPreviewData(mappedData);
 
-    // Se multiCohort, verificar turmas
+    // Se multiCohort, verificar turmas -> origens -> vendedores -> duplicatas
     if (multiCohort) {
       await checkCohorts(mappedData);
     } else {
-      // Importação de turma única - verificar duplicatas e ir para preview
-      await checkDuplicateEmails(mappedData);
-      setStep("preview");
-
-      const duplicateCount = mappedData.filter(row => row.isDuplicate).length;
-      toast({
-        title: "Mapeamento confirmado!",
-        description: `${mappedData.length} linha(s) prontas para revisar${duplicateCount > 0 ? ` • ${duplicateCount} email(s) duplicado(s) detectado(s)` : ''}.`,
-      });
+      // Importação de turma única - verificar origens -> vendedores -> duplicatas
+      await checkOrigins(mappedData);
     }
   };
 
+  // --- Lógica de Verificação em Cadeia ---
+
   const checkCohorts = async (data: ParsedRow[]) => {
     try {
-      // Extrair turmas únicas
       const uniqueCohorts = Array.from(new Set(
         data.map(row => row.cohort_identifier).filter(Boolean)
       )) as string[];
@@ -392,7 +421,6 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         return;
       }
 
-      // Buscar turmas existentes no banco
       const { data: existingCohorts, error } = await supabase
         .from('cohorts')
         .select('id, name')
@@ -400,7 +428,6 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
       if (error) throw error;
 
-      // Criar mapeamento nome -> id para turmas existentes
       const mapping: Record<string, string> = {};
       existingCohorts?.forEach(cohort => {
         mapping[cohort.name] = cohort.id;
@@ -408,27 +435,18 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
       setCohortMapping(mapping);
 
-      // Identificar turmas ausentes
       const missing = uniqueCohorts.filter(name => !mapping[name]);
       setMissingCohorts(missing);
 
       if (missing.length > 0) {
-        // Mostrar modal de criação de turmas
         setShowCohortCreationModal(true);
         toast({
           title: "Turmas ausentes detectadas",
           description: `${missing.length} turma(s) não encontrada(s). Configure-as antes de continuar.`,
         });
       } else {
-        // Todas as turmas existem - verificar duplicatas e ir para preview
-        await checkDuplicateEmails(data);
-        setStep("preview");
-
-        const duplicateCount = data.filter(row => row.isDuplicate).length;
-        toast({
-          title: "Turmas identificadas!",
-          description: `${uniqueCohorts.length} turma(s) encontrada(s). Revise os dados${duplicateCount > 0 ? ` • ${duplicateCount} email(s) duplicado(s)` : ''}.`,
-        });
+        // Próximo passo: verificar origens
+        await checkOrigins(data);
       }
     } catch (error: any) {
       toast({
@@ -439,20 +457,104 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     }
   };
 
+  const checkOrigins = async (data: ParsedRow[]) => {
+    // Extrair origens únicas normalizadas
+    const uniqueOrigins = Array.from(new Set(
+      data.map(row => row.source).filter(Boolean)
+    )) as string[];
+
+    // Filtrar aquelas que NÃO são customizadas já existentes
+    const missing = uniqueOrigins.filter(origin => {
+      const normalized = origin.toLowerCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      // IGNORAR verificação de enum padrão para forçar criação de custom source
+      // se o usuário quiser gerenciá-la.
+      // const isEnum = Constants.public.Enums.enrollment_source.some(s => ...);
+
+      // Verifica se é custom source existente
+      const isCustom = customSources?.some(s =>
+        s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
+      );
+      if (isCustom) return false;
+
+      // Verifica se já foi mapeado
+      if (originMapping[origin]) return false;
+
+      return true;
+    });
+
+    setMissingOrigins(missing);
+
+    if (missing.length > 0) {
+      setShowOriginCreationModal(true);
+      toast({
+        title: "Origens desconhecidas detectadas",
+        description: `${missing.length} origem(ns) não encontrada(s). Configure-as antes de continuar.`,
+      });
+    } else {
+      // Próximo passo: verificar vendedores
+      await checkSellers(data);
+    }
+  };
+
+  const checkSellers = async (data: ParsedRow[]) => {
+    // Extrair vendedores únicos
+    const uniqueSellers = Array.from(new Set(
+      data.map(row => row.sales_rep).filter(Boolean)
+    )) as string[];
+
+    // Filtrar aqueles que NÃO existem no banco
+    const missing = uniqueSellers.filter(seller => {
+      const normalized = seller.toLowerCase().trim();
+
+      // Verifica se existe no banco
+      const exists = salesReps?.some(s => s.name.toLowerCase().trim() === normalized);
+      if (exists) return false;
+
+      // Verifica se já foi mapeado
+      if (sellerMapping[seller]) return false;
+
+      return true;
+    });
+
+    setMissingSellers(missing);
+
+    if (missing.length > 0) {
+      setShowSellerCreationModal(true);
+      toast({
+        title: "Vendedores desconhecidos detectados",
+        description: `${missing.length} vendedor(es) não encontrado(s). Configure-os antes de continuar.`,
+      });
+    } else {
+      // Próximo passo: verificar duplicatas e finalizar
+      await checkDuplicateEmails(data);
+      setStep("preview");
+
+      const duplicateCount = data.filter(row => row.isDuplicate).length;
+      toast({
+        title: "Dados processados!",
+        description: `${data.length} linha(s) prontas para revisar${duplicateCount > 0 ? ` • ${duplicateCount} email(s) duplicado(s)` : ''}.`,
+      });
+    }
+  };
+
+  // --- Handlers de Criação ---
+
   const handleCohortsCreated = async (cohortForms: any) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Criar turmas no banco
       const cohortsToInsert = Object.entries(cohortForms).map(([name, form]: [string, any]) => ({
         name,
         course_id: form.courseId,
         year: form.year,
         start_date: form.startDate,
+        end_date: form.endDate || null, // Novo campo
         location: form.location,
         capacity: form.capacity,
-        status: 'open' as const,
+        status: form.status || 'open', // Novo campo
       }));
 
       const { data: createdCohorts, error } = await supabase
@@ -462,7 +564,6 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
       if (error) throw error;
 
-      // Atualizar mapeamento com as turmas recém-criadas
       const newMapping = { ...cohortMapping };
       createdCohorts?.forEach(cohort => {
         newMapping[cohort.name] = cohort.id;
@@ -471,14 +572,12 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
       setShowCohortCreationModal(false);
 
-      // Verificar duplicatas antes de ir para preview
-      await checkDuplicateEmails(previewData);
-      setStep("preview");
+      // Continuar fluxo
+      await checkOrigins(previewData);
 
-      const duplicateCount = previewData.filter(row => row.isDuplicate).length;
       toast({
         title: "Turmas criadas!",
-        description: `${createdCohorts?.length} turma(s) criada(s)${duplicateCount > 0 ? ` • ${duplicateCount} email(s) duplicado(s) detectado(s)` : ''}.`,
+        description: `${createdCohorts?.length} turma(s) criada(s).`,
       });
     } catch (error: any) {
       toast({
@@ -489,21 +588,117 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     }
   };
 
+  const handleOriginsCreated = async (originForms: Record<string, any>) => {
+    try {
+      const originsToCreate = Object.values(originForms).map((form: any) => ({
+        name: form.name,
+        description: form.description || null,
+        active: true,
+      }));
+
+      // Criar um por um para evitar erros de constraint unique se houver duplicatas no batch
+      for (const origin of originsToCreate) {
+        await createCustomSource.mutateAsync(origin);
+      }
+
+      // Atualizar mapeamento local para que normalizeEnrollmentSource use os novos nomes
+      const newMapping = { ...originMapping };
+      Object.entries(originForms).forEach(([original, form]: [string, any]) => {
+        newMapping[original] = form.name;
+      });
+      setOriginMapping(newMapping);
+
+      // Re-normalizar dados com os novos mapeamentos
+      const updatedData = previewData.map(row => ({
+        ...row,
+        source: normalizeEnrollmentSource(row.source)
+      }));
+      setPreviewData(updatedData);
+
+      setShowOriginCreationModal(false);
+
+      // Continuar fluxo
+      await checkSellers(updatedData);
+
+      toast({
+        title: "Origens criadas!",
+        description: `${originsToCreate.length} origem(ns) adicionada(s).`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar origens",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSellersCreated = async (sellerForms: Record<string, any>) => {
+    try {
+      const sellersToCreate = Object.values(sellerForms).map((form: any) => ({
+        name: form.name,
+        email: form.email || null,
+        phone: form.phone || null,
+        active: true,
+      }));
+
+      for (const seller of sellersToCreate) {
+        await createSalesRep.mutateAsync(seller);
+      }
+
+      // Atualizar mapeamento
+      const newMapping = { ...sellerMapping };
+      Object.entries(sellerForms).forEach(([original, form]: [string, any]) => {
+        newMapping[original] = form.name;
+      });
+      setSellerMapping(newMapping);
+
+      // Atualizar dados
+      const updatedData = previewData.map(row => ({
+        ...row,
+        sales_rep: newMapping[row.sales_rep] || row.sales_rep
+      }));
+      setPreviewData(updatedData);
+
+      setShowSellerCreationModal(false);
+
+      // Finalizar fluxo
+      await checkDuplicateEmails(updatedData);
+      setStep("preview");
+
+      toast({
+        title: "Vendedores criados!",
+        description: `${sellersToCreate.length} vendedor(es) adicionado(s).`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar vendedores",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSkipMissingCohorts = () => {
-    // Filtrar apenas alunos de turmas existentes
     const filteredData = previewData.filter(row =>
       row.cohort_identifier && cohortMapping[row.cohort_identifier]
     );
-
-    // Revalidar todas as linhas com os novos índices
     setPreviewData(revalidateAllRows(filteredData));
     setShowCohortCreationModal(false);
-    setStep("preview");
 
-    toast({
-      title: "Turmas ausentes ignoradas",
-      description: `${filteredData.length} linha(s) de turmas existentes serão importadas.`,
-    });
+    // Continuar fluxo com dados filtrados
+    checkOrigins(filteredData);
+  };
+
+  const handleSkipMissingOrigins = () => {
+    setShowOriginCreationModal(false);
+    checkSellers(previewData);
+  };
+
+  const handleSkipMissingSellers = () => {
+    setShowSellerCreationModal(false);
+    checkDuplicateEmails(previewData);
+    setStep("preview");
   };
 
   const handleMappingBack = () => {
@@ -889,8 +1084,29 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         onSkip={handleSkipMissingCohorts}
       />
 
+      <OriginCreationModal
+        open={showOriginCreationModal}
+        onOpenChange={setShowOriginCreationModal}
+        missingOrigins={missingOrigins}
+        onOriginsCreated={handleOriginsCreated}
+        onSkip={handleSkipMissingOrigins}
+      />
+
+      <SellerCreationModal
+        open={showSellerCreationModal}
+        onOpenChange={setShowSellerCreationModal}
+        missingSellers={missingSellers}
+        onSellersCreated={handleSellersCreated}
+        onSkip={handleSkipMissingSellers}
+      />
+
+      <CsvTemplateConfigModal
+        open={showTemplateConfigModal}
+        onOpenChange={setShowTemplateConfigModal}
+      />
+
       {/* Modal Principal de Importação */}
-      <Dialog open={open && !showMappingModal && !showCohortCreationModal} onOpenChange={handleClose}>
+      <Dialog open={open && !showMappingModal && !showCohortCreationModal && !showOriginCreationModal && !showSellerCreationModal && !showTemplateConfigModal} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-primary">
@@ -1441,6 +1657,22 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
           </div>
         </DialogContent>
       </Dialog>
+
+      <OriginCreationModal
+        open={showOriginCreationModal}
+        onOpenChange={setShowOriginCreationModal}
+        missingOrigins={missingOrigins}
+        onOriginsCreated={handleOriginsCreated}
+        onSkip={handleSkipMissingOrigins}
+      />
+
+      <SellerCreationModal
+        open={showSellerCreationModal}
+        onOpenChange={setShowSellerCreationModal}
+        missingSellers={missingSellers}
+        onSellersCreated={handleSellersCreated}
+        onSkip={handleSkipMissingSellers}
+      />
 
       {/* Modal de configuração de template personalizado */}
       <CsvTemplateConfigModal

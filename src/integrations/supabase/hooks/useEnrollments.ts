@@ -86,6 +86,11 @@ export const useCreateEnrollment = () => {
         title: 'Matrícula criada!',
         description: 'A matrícula foi adicionada com sucesso.',
       });
+
+      // Notify Integrations
+      supabase.functions.invoke('notify-integrations', {
+        body: { enrollmentId: data.id, event: 'enrollment_created' }
+      }).catch(console.error);
     },
     onError: (error: Error) => {
       toast({
@@ -136,6 +141,11 @@ export const useUpdateEnrollment = () => {
         title: 'Matrícula atualizada!',
         description: 'A matrícula foi atualizada com sucesso.',
       });
+
+      // Notify Integrations
+      supabase.functions.invoke('notify-integrations', {
+        body: { enrollmentId: result.data.id, event: 'enrollment_updated' }
+      }).catch(console.error);
     },
     onError: (error: Error) => {
       toast({

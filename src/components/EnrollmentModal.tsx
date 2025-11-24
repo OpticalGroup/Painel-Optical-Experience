@@ -154,9 +154,10 @@ export const EnrollmentModal = ({
   const isEditing = !!editingEnrollment;
 
   // Combine enum sources with custom sources
+  // Combine enum sources with custom sources
   const allSources = [
-    ...Constants.public.Enums.enrollment_source,
-    ...(customSources?.filter(s => s.active).map(s => s.name) || [])
+    ...(customSources?.filter(s => s.active).map(s => s.name) || []),
+    'Outro'
   ];
 
   const form = useForm<z.infer<typeof formSchema>>({

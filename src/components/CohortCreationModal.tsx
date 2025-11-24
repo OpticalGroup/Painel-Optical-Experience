@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ interface CohortCreationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   missingCohorts: string[];
-  onCohortsCreated: (cohortMapping: Record<string, string>) => void;
+  onCohortsCreated: (cohortMapping: Record<string, any>) => void;
   onSkip: () => void;
 }
 
@@ -21,8 +21,10 @@ interface CohortFormData {
   courseId: string;
   year: number;
   startDate: string;
+  endDate: string;
   location: string;
   capacity: number;
+  status: "open" | "full" | "completed" | "cancelled";
 }
 
 export const CohortCreationModal = ({
@@ -33,7 +35,16 @@ export const CohortCreationModal = ({
   onSkip,
 }: CohortCreationModalProps) => {
   const { data: courses } = useCoursesQuery();
-  const [cohortForms, setCohortForms] = useState<Record<string, CohortFormData>>(() => {
+
+  // Deduplicate courses by name
+  const uniqueCourses = courses?.filter((course, index, self) =>
+    index === self.findIndex((t) => (
+      t.name === course.name
+    ))
+  ) || [];
+  const [cohortForms, setCohortForms] = useState<Record<string, CohortFormData>>({});
+
+  useEffect(() => {
     const forms: Record<string, CohortFormData> = {};
     missingCohorts.forEach(cohortName => {
       forms[cohortName] = {
@@ -41,12 +52,14 @@ export const CohortCreationModal = ({
         courseId: '', // Será validado antes do submit
         year: new Date().getFullYear(),
         startDate: '',
+        endDate: '',
         location: '',
         capacity: 22,
+        status: 'open',
       };
     });
-    return forms;
-  });
+    setCohortForms(forms);
+  }, [missingCohorts]);
 
   const updateCohortForm = (cohortName: string, field: keyof CohortFormData, value: string | number) => {
     setCohortForms(prev => ({
@@ -67,7 +80,7 @@ export const CohortCreationModal = ({
   const handleCreateCohorts = async () => {
     // Esta função será chamada quando o usuário confirmar a criação
     // Retornaremos os dados para o componente pai processar
-    onCohortsCreated(cohortForms as any);
+    onCohortsCreated(cohortForms);
   };
 
   return (
@@ -112,7 +125,7 @@ export const CohortCreationModal = ({
                       <SelectValue placeholder="Selecione o curso" />
                     </SelectTrigger>
                     <SelectContent className="bg-card z-50">
-                      {courses?.map((course) => (
+                      {uniqueCourses.map((course) => (
                         <SelectItem key={course.id} value={course.id}>
                           {course.name}
                         </SelectItem>
@@ -148,6 +161,19 @@ export const CohortCreationModal = ({
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor={`endDate-${index}`}>
+                    Data de Término
+                  </Label>
+                  <Input
+                    id={`endDate-${index}`}
+                    type="date"
+                    value={cohortForms[cohortName]?.endDate}
+                    onChange={(e) => updateCohortForm(cohortName, 'endDate', e.target.value)}
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor={`location-${index}`}>
                     Local *
                   </Label>
@@ -158,6 +184,26 @@ export const CohortCreationModal = ({
                     placeholder="Ex: São Paulo - SP"
                     className="focus-visible:ring-primary"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor={`status-${index}`}>
+                    Status
+                  </Label>
+                  <Select
+                    value={cohortForms[cohortName]?.status}
+                    onValueChange={(value: any) => updateCohortForm(cohortName, 'status', value)}
+                  >
+                    <SelectTrigger className="focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card z-50">
+                      <SelectItem value="open">Aberta</SelectItem>
+                      <SelectItem value="full">Lotada</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="cancelled">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

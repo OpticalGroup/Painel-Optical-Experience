@@ -98,6 +98,11 @@ export default function Integrations() {
             { field: { ref: "email" }, email: "teste@example.com" },
           ]
         }
+      },
+      n8n: {
+        event: 'test_connection',
+        timestamp: new Date().toISOString(),
+        message: 'Hello from Optical Cohort Sparkle!'
       }
     };
 
@@ -121,6 +126,7 @@ export default function Integrations() {
   const kommoSettings = settings?.find(s => s.system_name === 'kommo');
   const clicksignSettings = settings?.find(s => s.system_name === 'clicksign');
   const typeformSettings = settings?.find(s => s.system_name === 'typeform');
+  const n8nSettings = settings?.find(s => s.system_name === 'n8n');
 
   return (
     <>
@@ -569,6 +575,143 @@ export default function Integrations() {
                   <Button variant="outline" asChild>
                     <a
                       href="https://www.typeform.com/developers/webhooks/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Documentação
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* N8N */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Activity className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle>N8N (Workflow Automation)</CardTitle>
+                      <CardDescription>
+                        Automatize fluxos de trabalho com webhooks
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={n8nSettings?.enabled || false}
+                    onCheckedChange={(enabled) => {
+                      if (n8nSettings) {
+                        updateSettings.mutate({ id: n8nSettings.id, enabled });
+                      }
+                    }}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Webhook URL (Output)</Label>
+                  <Input
+                    placeholder="https://your-n8n-instance.com/webhook/..."
+                    value={editingSystem === 'n8n' ? formData.config?.webhook_url || '' : n8nSettings?.config?.webhook_url || ''}
+                    onChange={(e) => {
+                      setEditingSystem('n8n');
+                      setFormData({
+                        ...formData,
+                        config: { ...formData.config, webhook_url: e.target.value }
+                      });
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O sistema enviará um POST para esta URL sempre que uma matrícula for criada ou atualizada.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Webhook de Entrada (Input)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={getWebhookUrl('n8n')}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyWebhookUrl('n8n')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use este endpoint para criar ou atualizar matrículas a partir do N8N.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Segurança (Webhook Secret)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={n8nSettings?.webhook_secret || 'Não configurado'}
+                      readOnly
+                      type="password"
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        if (n8nSettings?.webhook_secret) {
+                          navigator.clipboard.writeText(n8nSettings.webhook_secret);
+                          toast({ title: "Secret copiado", description: "Use o header 'x-webhook-secret' no N8N." });
+                        }
+                      }}
+                      disabled={!n8nSettings?.webhook_secret}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        const newSecret = crypto.randomUUID();
+                        if (n8nSettings) {
+                          await updateSettings.mutateAsync({ id: n8nSettings.id, webhook_secret: newSecret });
+                          toast({ title: "Novo Secret Gerado", description: "Atualize seus workflows no N8N!" });
+                        }
+                      }}
+                      disabled={!n8nSettings}
+                    >
+                      Gerar Novo
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Adicione o header <code>x-webhook-secret</code> nas suas requisições do N8N para autenticação.
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  {editingSystem === 'n8n' && (
+                    <Button
+                      onClick={() => n8nSettings && handleSave(n8nSettings.id)}
+                      disabled={updateSettings.isPending}
+                    >
+                      Salvar Configurações
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTest('n8n')}
+                    disabled={testWebhook.isPending || !n8nSettings?.enabled || !n8nSettings?.config?.webhook_url}
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    Testar Conexão
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a
+                      href="https://docs.n8n.io/"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

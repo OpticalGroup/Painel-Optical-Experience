@@ -250,18 +250,16 @@ const Enrollments = () => {
         isPending={isPending}
       />
 
-      {
-        editingEnrollment && (
-          <EnrollmentModal
-            open={modalOpen}
-            onOpenChange={handleModalClose}
-            cohortName={editingEnrollment.cohorts?.name || ''}
-            cohortId={editingEnrollment.cohort_id}
-            onSubmit={() => { }}
-            editingEnrollment={editingEnrollment}
-          />
-        )
-      }
+      <EnrollmentModal
+        open={modalOpen}
+        onOpenChange={handleModalClose}
+        cohortName={editingEnrollment?.cohorts?.name || ''}
+        cohortId={editingEnrollment?.cohort_id}
+        onSubmit={() => {
+          queryClient.invalidateQueries({ queryKey: ["all-enrollments"] });
+        }}
+        editingEnrollment={editingEnrollment || undefined}
+      />
 
       <TransferCohortModal
         open={transferModalOpen}
