@@ -375,42 +375,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         normalizedSource = normalizeEnrollmentSource(sourceValue);
 
-        // Check if it's a valid enum value or needs to be custom
-        const validEnumSources = [
-          'Instagram', 'Facebook', 'Indicação', 'Tráfego Pago', 'Direto', 'Outro',
-          'Instagram Bio', 'Instagram Manychat', 'WEB - Downsell',
-          'Área de Membros FOTS', 'Tráfego Pago (Público Frio)',
-          'Tráfego Pago (Público Quente)', 'API Remarketing',
-          'Aluno Mentoria', 'Programa de Indicação', 'Não Rastreada'
-        ];
+        // Always check/create in custom_enrollment_sources for tracking/management
+        // This works even if it's a valid enum value
+        const { data: existingCustomSource } = await supabase
+          .from('custom_enrollment_sources')
+          .select('name')
+          .ilike('name', normalizedSource)
+          .maybeSingle();
 
-        const isEnumSource = validEnumSources.some(s => s.toLowerCase() === normalizedSource.toLowerCase());
-
-        // If not an enum source, check/create custom source
-        if (!isEnumSource) {
-          const { data: existingCustomSource } = await supabase
+        if (!existingCustomSource) {
+          console.log(`Source not found in custom_enrollment_sources, creating automatically: ${normalizedSource}`);
+          const { error: createSourceError } = await supabase
             .from('custom_enrollment_sources')
-            .select('name')
-            .ilike('name', normalizedSource)
-            .maybeSingle();
+            .insert({
+              name: normalizedSource,
+              description: `Criado automaticamente via webhook`,
+              active: true,
+            });
 
-          if (!existingCustomSource) {
-            console.log(`Custom source not found, creating automatically: ${normalizedSource}`);
-            const { error: createSourceError } = await supabase
-              .from('custom_enrollment_sources')
-              .insert({
-                name: normalizedSource,
-                description: `Criado automaticamente via webhook`,
-                active: true,
-              });
-
-            if (createSourceError) {
-              console.error('Error creating custom source:', createSourceError);
-              // Fallback to 'Outro' if creation fails
-              normalizedSource = 'Outro';
-            } else {
-              console.log(`Custom source created successfully: ${normalizedSource}`);
-            }
+          if (createSourceError) {
+            console.error('Error creating custom source:', createSourceError);
+            // Continue anyway, will use the normalized source value
+          } else {
+            console.log(`Custom source created successfully: ${normalizedSource}`);
           }
         }
 
