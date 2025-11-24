@@ -50,10 +50,10 @@ export default function Integrations() {
   const getWebhookUrl = (system: string) => {
     // Para n8n, usar a URL da Vercel (Serverless Function)
     if (system === 'n8n') {
-      // Usa a URL atual do deployment (Vercel)
+      // Usa a URL de produção da Vercel
       const baseUrl = typeof window !== 'undefined' 
         ? window.location.origin 
-        : 'https://optical-cohort-sparkle-main-auy1h6mob-gabriel-tudes-projects.vercel.app';
+        : 'https://optical-cohort-sparkle-main.vercel.app';
       return `${baseUrl}/api/webhook/enrollment`;
     }
     

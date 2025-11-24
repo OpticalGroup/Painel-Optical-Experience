@@ -7,15 +7,12 @@ Este documento explica como usar o webhook para cadastrar alunos via N8N.
 O webhook está hospedado na **Vercel** (Serverless Function):
 
 ```
-https://SEU_DOMINIO_VERCEL/api/webhook/enrollment
+https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment
 ```
 
-**Exemplo de produção:**
-```
-https://optical-cohort-sparkle-main-auy1h6mob-gabriel-tudes-projects.vercel.app/api/webhook/enrollment
-```
+**Importante**: Esta é a URL de produção. Use esta URL para configurar seus workflows no N8N.
 
-A URL será automaticamente detectada na página de Integrações do sistema.
+A URL também é exibida na página de Integrações do sistema (pode ser copiada clicando no botão de copiar).
 
 ## 🔐 Autenticação
 
@@ -138,13 +135,18 @@ Se `sales_rep` não for informado, usa "Não Informado" como padrão.
 
 #### 3. Origem (Source)
 
-Quando a origem não é um valor do enum padrão e não existe em `custom_enrollment_sources`, o sistema cria automaticamente:
+O sistema **sempre** verifica se a origem existe em `custom_enrollment_sources`. Se não existir, cria automaticamente (mesmo que seja um valor válido do enum):
 - **Nome**: Valor normalizado do campo `source` do webhook
 - **Description**: "Criado automaticamente via webhook"
 - **Active**: true
 
-**Exemplos:**
-- `"Turma Janeiro 2025"` → busca exata
+**Exemplos de normalização:**
+- `"instagram bio"` → normaliza para `"Instagram Bio"` e cria se não existir
+- `"Instagram Bio"` → cria em `custom_enrollment_sources` se não existir
+- `"Nova Origem"` → cria automaticamente como origem customizada
+
+**Exemplos de turma:**
+- `"Turma Janeiro 2025"` → busca exata, cria se não encontrar
 - `"Janeiro 2025"` → normaliza para "Turma Janeiro 2025" e busca, ou cria se não encontrar
 - `"Janeiro"` → normaliza para "Turma Janeiro 2025" e busca, ou cria se não encontrar
 - `"Turma Março 2026"` → cria automaticamente se não existir
@@ -240,15 +242,26 @@ O webhook suporta múltiplos registros no array `records`. Todos serão processa
 ### Erros Comuns
 
 1. **Cohort não encontrada**
-   - Verifique se a turma existe no sistema
-   - Verifique se o nome da turma está correto
+   - ⚠️ **Não é mais um erro!** O sistema agora cria automaticamente a turma se ela não existir
+   - Verifique se o nome da turma está no formato correto (ex: "Turma Janeiro 2025")
 
 2. **Webhook Secret inválido**
-   - Verifique se o secret está correto
-   - Gere um novo secret na página de Integrações
+   - Verifique se o secret está correto no payload
+   - Gere um novo secret na página de Integrações → N8N → "Gerar Novo Secret"
+   - O secret deve estar no campo `webhook_secret` do payload
 
 3. **Campos obrigatórios faltando**
-   - `cohort_identifier`, `student_name`, `email` são obrigatórios
+   - `webhook_secret`, `records` (array), `cohort_identifier`, `student_name`, `email` são obrigatórios
+   - `sales_rep` e `source` são opcionais, mas serão criados automaticamente se informados
+
+### ✅ Criação Automática
+
+O sistema agora cria automaticamente:
+- ✅ **Turma** - se não encontrar pelo nome
+- ✅ **Vendedor** - se não encontrar na tabela de vendedores
+- ✅ **Origem** - sempre verifica e cria em `custom_enrollment_sources` se não existir
+
+Você não precisa mais criar essas entidades manualmente antes de enviar o webhook!
 
 ## 📊 Logs
 
