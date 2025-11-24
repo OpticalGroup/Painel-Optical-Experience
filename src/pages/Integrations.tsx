@@ -48,13 +48,9 @@ export default function Integrations() {
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   const getWebhookUrl = (system: string) => {
-    // Para n8n, usar a URL da Vercel (Serverless Function)
+    // Para n8n, sempre usar a URL de produção da Vercel (Serverless Function)
     if (system === 'n8n') {
-      // Usa a URL de produção da Vercel
-      const baseUrl = typeof window !== 'undefined' 
-        ? window.location.origin 
-        : 'https://optical-cohort-sparkle-main.vercel.app';
-      return `${baseUrl}/api/webhook/enrollment`;
+      return 'https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment';
     }
     
     // Para outros sistemas, usar Supabase Edge Functions
