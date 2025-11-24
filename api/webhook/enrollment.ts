@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .select('id, name')
           .ilike('name', cohortIdentifier)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (exactMatch) {
           cohortId = exactMatch.id;
@@ -184,13 +184,102 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
 
+        // If cohort not found, create it automatically
         if (!cohortId) {
-          results.push({
-            success: false,
-            error: `Cohort not found: ${cohortIdentifier}`,
-            record: record.student_name || 'Unknown',
-          });
-          continue;
+          console.log(`Cohort not found, creating automatically: ${cohortIdentifier}`);
+          
+          // Get default course (Optical Experience) or first available course
+          const { data: courses } = await supabase
+            .from('courses')
+            .select('id, name')
+            .or('name.ilike.%Optical Experience%,name.ilike.%Optical%')
+            .limit(1);
+          
+          let courseId: string | null = null;
+          
+          if (courses && courses.length > 0) {
+            courseId = courses[0].id;
+          } else {
+            // Get any course as fallback
+            const { data: anyCourse } = await supabase
+              .from('courses')
+              .select('id')
+              .limit(1)
+              .single();
+            
+            if (anyCourse) {
+              courseId = anyCourse.id;
+            }
+          }
+          
+          if (!courseId) {
+            results.push({
+              success: false,
+              error: `No course found. Please create a course first.`,
+              record: record.student_name || 'Unknown',
+            });
+            continue;
+          }
+          
+          // Extract year from cohort name (e.g., "Turma Janeiro 2025" -> 2025)
+          const yearMatch = cohortIdentifier.match(/\b(\d{4})\b/);
+          const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+          
+          // Extract month name to calculate start date
+          const monthMap: Record<string, number> = {
+            'janeiro': 0, 'fevereiro': 1, 'março': 2, 'marco': 2,
+            'abril': 3, 'maio': 4, 'junho': 5, 'julho': 6,
+            'agosto': 7, 'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11,
+          };
+          
+          const lowerName = cohortIdentifier.toLowerCase();
+          let month = new Date().getMonth(); // Default to current month
+          
+          for (const [monthName, monthNum] of Object.entries(monthMap)) {
+            if (lowerName.includes(monthName)) {
+              month = monthNum;
+              break;
+            }
+          }
+          
+          // Calculate start date (first day of the month)
+          const startDate = new Date(year, month, 1);
+          // Calculate end date (3 days after start date for a 4-day course)
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 3);
+          
+          // Create cohort with default values
+          const newCohort = {
+            name: cohortIdentifier,
+            course_id: courseId,
+            year: year,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
+            location: record.city && record.state 
+              ? `${record.city}, ${record.state}` 
+              : 'São Paulo, BR',
+            capacity: 30,
+            status: 'open' as const,
+          };
+          
+          const { data: createdCohort, error: createCohortError } = await supabase
+            .from('cohorts')
+            .insert(newCohort)
+            .select('id')
+            .single();
+          
+          if (createCohortError || !createdCohort) {
+            console.error('Error creating cohort:', createCohortError);
+            results.push({
+              success: false,
+              error: `Failed to create cohort: ${createCohortError?.message || 'Unknown error'}`,
+              record: record.student_name || 'Unknown',
+            });
+            continue;
+          }
+          
+          cohortId = createdCohort.id;
+          console.log(`Cohort created successfully: ${cohortIdentifier} (${cohortId})`);
         }
 
         // Normalize data

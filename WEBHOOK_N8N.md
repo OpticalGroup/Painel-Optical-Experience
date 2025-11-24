@@ -103,17 +103,32 @@ Todos os outros campos são opcionais. Se não informados, valores padrão serã
 | `observations` | `observations` | string | - |
 | `utm_*` | `external_metadata.utm_*` | string | - |
 
-## 🔍 Busca de Turma
+## 🔍 Busca e Criação Automática de Turma
 
 O sistema busca a turma pelo campo `cohort_identifier` usando:
 
 1. **Busca exata** primeiro (case-insensitive)
 2. **Busca parcial** se não encontrar (procura pelo nome sem "Turma")
+3. **Criação automática** se não encontrar (✨ novo comportamento)
+
+### Criação Automática
+
+Quando uma turma não é encontrada, o sistema **cria automaticamente** com valores padrão:
+
+- **Nome**: Valor normalizado do `cohort_identifier`
+- **Curso**: "Optical Experience" (ou primeiro curso disponível)
+- **Ano**: Extraído do nome da turma (ex: "2025" de "Turma Janeiro 2025")
+- **Data de Início**: Primeiro dia do mês correspondente
+- **Data de Fim**: 3 dias após a data de início (curso de 4 dias)
+- **Localização**: Cidade + Estado do aluno, ou "São Paulo, BR" como padrão
+- **Capacidade**: 30 vagas
+- **Status**: "open"
 
 **Exemplos:**
 - `"Turma Janeiro 2025"` → busca exata
-- `"Janeiro 2025"` → normaliza para "Turma Janeiro 2025" e busca
-- `"Janeiro"` → normaliza para "Turma Janeiro 2025" e busca
+- `"Janeiro 2025"` → normaliza para "Turma Janeiro 2025" e busca, ou cria se não encontrar
+- `"Janeiro"` → normaliza para "Turma Janeiro 2025" e busca, ou cria se não encontrar
+- `"Turma Março 2026"` → cria automaticamente se não existir
 
 ## ✨ Comportamento
 
