@@ -9,49 +9,106 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Optical Dental Academy Brand Colors */
-    --background: 0 0% 93%; /* #EDEDED */
-    --foreground: 0 0% 14%; /* #242424 */
+    --background: 0 0% 93%;
+    /* #EDEDED */
+    --foreground: 0 0% 14%;
+    /* #242424 */
 
-    --card: 0 0% 100%; /* #FFFFFF */
+    --card: 0 0% 100%;
+    /* #FFFFFF */
     --card-foreground: 0 0% 14%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 14%;
 
-    --primary: 245 56% 63%; /* #6E66D9 - Brand Purple */
+    --primary: 245 56% 63%;
+    /* #6E66D9 - Brand Purple */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 23 19% 82%; /* #D6CDC8 - Sand/Gold */
-    --secondary-foreground: 23 23% 40%; /* Darker sand for text */
+    --secondary: 23 19% 82%;
+    /* #D6CDC8 - Sand/Gold */
+    --secondary-foreground: 23 23% 40%;
+    /* Darker sand for text */
 
     --muted: 0 0% 93%;
-    --muted-foreground: 23 7% 59%; /* #9E9791 - Taupe */
+    --muted-foreground: 23 7% 59%;
+    /* #9E9791 - Taupe */
 
-    --accent: 23 19% 82%; /* Sand accent */
+    --accent: 23 19% 82%;
+    /* Sand accent */
     --accent-foreground: 0 0% 14%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 23 19% 82%; /* Sand borders */
+    --border: 23 19% 82%;
+    /* Sand borders */
     --input: 0 0% 100%;
-    --ring: 245 56% 63%; /* Purple focus ring */
+    --ring: 245 56% 63%;
+    /* Purple focus ring */
 
     --radius: 0.5rem;
 
     /* Status badge colors */
-    --badge-paid-bg: 245 56% 63% / 0.1; /* Purple 10% */
+    --badge-paid-bg: 245 56% 63% / 0.1;
+    /* Purple 10% */
     --badge-paid-text: 245 56% 63%;
-    --badge-signed-bg: 23 19% 82% / 0.3; /* Sand 30% */
+    --badge-signed-bg: 23 19% 82% / 0.3;
+    /* Sand 30% */
     --badge-signed-text: 23 23% 40%;
     --badge-pending-bg: 0 0% 93%;
     --badge-pending-text: 23 7% 59%;
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --background: 224 71% 4%;
+    /* Deep dark blue-black */
+    --foreground: 213 31% 91%;
+    /* Light gray-blue text */
+
+    --card: 224 71% 6%;
+    /* Slightly lighter than background */
+    --card-foreground: 213 31% 91%;
+
+    --popover: 224 71% 6%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 245 62% 67%;
+    /* Slightly lighter purple for dark mode */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    /* Dark blue-gray */
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 216 34% 17%;
+    --accent-foreground: 213 31% 91%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 213 31% 91%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 245 62% 67%;
+
+    /* Status badge colors for dark mode */
+    --badge-paid-bg: 245 62% 67% / 0.15;
+    --badge-paid-text: 245 82% 77%;
+    --badge-signed-bg: 23 19% 82% / 0.1;
+    --badge-signed-text: 23 39% 72%;
+    --badge-pending-bg: 223 47% 11%;
+    --badge-pending-text: 215 20% 65%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
 
   body {
@@ -62,9 +119,12 @@ All colors MUST be HSL.
 
 /* Custom animations for Optical Dental Academy */
 @keyframes pulse-purple {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }

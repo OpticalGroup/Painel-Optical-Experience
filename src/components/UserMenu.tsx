@@ -8,13 +8,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Moon, Sun, Monitor } from 'lucide-react';
+import { useTheme } from '@/components/ThemeProvider';
 
 export function UserMenu() {
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   if (!user) return null;
 
@@ -31,6 +37,18 @@ export function UserMenu() {
       viewer: 'Visualizador',
     };
     return userRole ? roleLabels[userRole] : 'Sem permissão';
+  };
+
+  const getThemeIcon = () => {
+    if (theme === "dark") return <Moon className="mr-2 h-4 w-4" />;
+    if (theme === "light") return <Sun className="mr-2 h-4 w-4" />;
+    return <Monitor className="mr-2 h-4 w-4" />;
+  };
+
+  const getThemeLabel = () => {
+    if (theme === "dark") return "Escuro";
+    if (theme === "light") return "Claro";
+    return "Sistema";
   };
 
   return (
@@ -53,6 +71,29 @@ export function UserMenu() {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            {getThemeIcon()}
+            <span>Tema: {getThemeLabel()}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun className="mr-2 h-4 w-4" />
+                <span>Claro</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon className="mr-2 h-4 w-4" />
+                <span>Escuro</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                <Monitor className="mr-2 h-4 w-4" />
+                <span>Sistema</span>
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="mr-2 h-4 w-4" />
