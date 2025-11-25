@@ -108,22 +108,25 @@ export default function Users() {
         password,
         options: {
           emailRedirectTo: window.location.origin,
+          data: {
+            full_name: fullName || '',
+          }
         },
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error("Falha ao criar usuário");
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          user_id: authData.user.id,
-          email: email,
-          full_name: fullName || null,
-        });
+      // Wait for the automatic profile creation trigger
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (profileError) throw profileError;
+      // Update profile with full_name if needed
+      if (fullName) {
+        await supabase
+          .from("profiles")
+          .update({ full_name: fullName })
+          .eq("user_id", authData.user.id);
+      }
 
       // Assign role
       const { error: roleError } = await supabase
