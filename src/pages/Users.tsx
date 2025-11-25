@@ -7,6 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -23,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Users as UsersIcon, Loader2, Trash2, Edit2 } from "lucide-react";
+import { Shield, Users as UsersIcon, Loader2, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -45,12 +56,18 @@ export default function Users() {
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  // Create user form state
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState<UserRole>("viewer");
+  const [newUserName, setNewUserName] = useState("");
 
   // Fetch users with their profiles and roles
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      // Get all profiles with email
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
@@ -58,17 +75,14 @@ export default function Users() {
 
       if (profilesError) throw profilesError;
 
-      // Get all user roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
 
       if (rolesError) throw rolesError;
 
-      // Merge data
       const usersData: UserProfile[] = profiles.map((profile) => {
         const role = roles.find((r) => r.user_id === profile.user_id);
-
         return {
           id: profile.id,
           user_id: profile.user_id,
@@ -85,7 +99,59 @@ export default function Users() {
     enabled: userRole === "admin",
   });
 
-  // Mutation to update user role
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async ({ email, password, role, fullName }: { email: string; password: string; role: UserRole; fullName: string }) => {
+      // Create user via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Falha ao criar usuário");
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: authData.user.id,
+          email: email,
+          full_name: fullName || null,
+        });
+
+      if (profileError) throw profileError;
+
+      // Assign role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: role,
+        });
+
+      if (roleError) throw roleError;
+
+      return authData.user;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuário criado com sucesso!");
+      setIsCreateDialogOpen(false);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserRole("viewer");
+      setNewUserName("");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao criar usuário");
+    },
+  });
+
+  // Update role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: UserRole }) => {
       const { data: existingRole } = await supabase
@@ -118,10 +184,29 @@ export default function Users() {
     },
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // Delete from profiles (will cascade if properly configured)
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Usuário removido com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao remover usuário");
+    },
+  });
+
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (userIds: string[]) => {
-      // Note: This only deletes from profiles. Deleting from auth.users requires admin API.
       const { error } = await supabase
         .from("profiles")
         .delete()
@@ -142,8 +227,6 @@ export default function Users() {
   // Bulk role update mutation
   const bulkUpdateRoleMutation = useMutation({
     mutationFn: async ({ userIds, newRole }: { userIds: string[]; newRole: UserRole }) => {
-      // This is a simplified approach. Ideally, we should use a stored procedure or multiple requests.
-      // For now, we'll iterate.
       for (const userId of userIds) {
         const { data: existingRole } = await supabase
           .from("user_roles")
@@ -207,7 +290,6 @@ export default function Users() {
     updateRoleMutation.mutate({ userId, newRole: newRole as UserRole });
   };
 
-  // Selection Logic
   const handleSelectAll = (checked: boolean) => {
     if (checked && users) {
       setSelectedUsers(users.map((u) => u.user_id));
@@ -252,6 +334,26 @@ export default function Users() {
     }
   };
 
+  const handleCreateUser = () => {
+    if (!newUserEmail || !newUserPassword) {
+      toast.error("Preencha email e senha");
+      return;
+    }
+
+    createUserMutation.mutate({
+      email: newUserEmail,
+      password: newUserPassword,
+      role: newUserRole,
+      fullName: newUserName,
+    });
+  };
+
+  const handleDeleteUser = (userId: string, email: string) => {
+    if (confirm(`Tem certeza que deseja remover o usuário ${email}?`)) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
   if (userRole !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -268,7 +370,6 @@ export default function Users() {
 
   return (
     <>
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="flex items-center justify-between px-8 py-4">
           <div className="flex items-center gap-4">
@@ -278,7 +379,7 @@ export default function Users() {
                 Gerenciamento de Usuários
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Visualize e gerencie permissões de usuários
+                Crie e gerencie usuários e permissões
               </p>
             </div>
           </div>
@@ -286,7 +387,6 @@ export default function Users() {
         </div>
       </header>
 
-      {/* Content */}
       <div className="px-8 py-6">
         <Card>
           <CardHeader>
@@ -320,6 +420,89 @@ export default function Users() {
                 <Badge variant="secondary">
                   {users?.length || 0} usuários
                 </Badge>
+
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Novo Usuário
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Criar Novo Usuário</DialogTitle>
+                      <DialogDescription>
+                        Preencha os dados do novo usuário. Ele receberá um email para confirmar a conta.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nome Completo (Opcional)</Label>
+                        <Input
+                          id="name"
+                          placeholder="João Silva"
+                          value={newUserName}
+                          onChange={(e) => setNewUserName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="usuario@email.com"
+                          value={newUserEmail}
+                          onChange={(e) => setNewUserEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Senha Temporária *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="Mínimo 6 caracteres"
+                          value={newUserPassword}
+                          onChange={(e) => setNewUserPassword(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          O usuário deverá trocar a senha no primeiro acesso
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Nível de Permissão *</Label>
+                        <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as UserRole)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">👑 Administrador - Acesso total</SelectItem>
+                            <SelectItem value="operator">⚙️ Operador - Gerenciar turmas e matrículas</SelectItem>
+                            <SelectItem value="sales">💰 Vendas - Criar matrículas</SelectItem>
+                            <SelectItem value="viewer">👁️ Visualizador - Apenas leitura</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleCreateUser}
+                        disabled={createUserMutation.isPending}
+                      >
+                        {createUserMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Criando...
+                          </>
+                        ) : (
+                          'Criar Usuário'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </CardHeader>
@@ -351,14 +534,7 @@ export default function Users() {
                       <TableCell>
                         <Checkbox
                           checked={selectedUsers.includes(user.user_id)}
-                          onCheckedChange={(checked) => {
-                            // We need to pass the event to handle shift click, but onCheckedChange doesn't give it directly.
-                            // We'll use onClick on the wrapper or just handle it differently.
-                            // Actually, Radix Checkbox doesn't pass the event in onCheckedChange easily.
-                            // Let's use onClick on the checkbox container div or similar.
-                          }}
                           onClick={(e) => {
-                            // e.stopPropagation();
                             const checked = !selectedUsers.includes(user.user_id);
                             handleSelectUser(user.user_id, checked, e);
                           }}
@@ -394,23 +570,32 @@ export default function Users() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Select
-                          value={user.role || ""}
-                          onValueChange={(value) =>
-                            handleRoleChange(user.user_id, value)
-                          }
-                          disabled={updatingUserId === user.user_id}
-                        >
-                          <SelectTrigger className="w-[180px] ml-auto">
-                            <SelectValue placeholder="Selecionar permissão" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="operator">Operador</SelectItem>
-                            <SelectItem value="sales">Vendas</SelectItem>
-                            <SelectItem value="viewer">Visualizador</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-end gap-2">
+                          <Select
+                            value={user.role || ""}
+                            onValueChange={(value) =>
+                              handleRoleChange(user.user_id, value)
+                            }
+                            disabled={updatingUserId === user.user_id}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Selecionar permissão" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="operator">Operador</SelectItem>
+                              <SelectItem value="sales">Vendas</SelectItem>
+                              <SelectItem value="viewer">Visualizador</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteUser(user.user_id, user.email)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -419,9 +604,13 @@ export default function Users() {
             ) : (
               <div className="text-center py-12">
                 <UsersIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   Nenhum usuário encontrado
                 </p>
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Criar Primeiro Usuário
+                </Button>
               </div>
             )}
           </CardContent>
