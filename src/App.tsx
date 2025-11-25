@@ -18,6 +18,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Users = lazy(() => import("./pages/Users"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
+const AccessPending = lazy(() => import("./pages/AccessPending"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 const Documentation = lazy(() => import("./pages/Documentation"));
 const Tutorials = lazy(() => import("./pages/Tutorials"));
@@ -33,6 +34,7 @@ const AppContent = () => {
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/access-pending" element={<AccessPending />} />
 
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/" element={<Index />} />

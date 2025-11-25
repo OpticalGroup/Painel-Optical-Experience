@@ -15,7 +15,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     if (!loading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+
+    // Redirect to access-pending if user has no role
+    if (!loading && user && userRole === null) {
+      navigate('/access-pending');
+    }
+  }, [user, userRole, loading, navigate]);
 
   if (loading) {
     return (
@@ -26,6 +31,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (!user) {
+    return null;
+  }
+
+  // Redirect if no role (belt and suspenders approach)
+  if (userRole === null) {
+    navigate('/access-pending');
     return null;
   }
 
