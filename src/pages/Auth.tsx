@@ -110,7 +110,10 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-primary">
-            Optical Dental Academy
+            <div className="flex justify-center mb-4">
+              <img src="/optical-experience-logo.png" alt="Optical Experience" className="h-12 w-auto" />
+            </div>
+            Optical Experience
           </CardTitle>
           <CardDescription>
             Sistema de Gestão de Matrículas

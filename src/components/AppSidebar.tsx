@@ -98,7 +98,7 @@ export function AppSidebar() {
       <SidebarContent className="pt-8">
         <div className="px-6 pb-6">
           <h2 className="text-xl font-bold text-foreground">
-            {open ? "Optical Dental" : "ODA"}
+            {open ? "Optical Experience" : "OE"}
           </h2>
           {open && (
             <p className="text-xs text-muted-foreground mt-1">
