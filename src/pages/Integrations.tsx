@@ -48,6 +48,13 @@ export default function Integrations() {
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   const getWebhookUrl = (system: string) => {
+    // Para n8n, SEMPRE usar a URL de produção da Vercel (Serverless Function)
+    const systemNormalized = system?.trim().toLowerCase();
+    if (systemNormalized === 'n8n') {
+      return 'https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment';
+    }
+    
+    // Para outros sistemas, usar Supabase Edge Functions
     const projectId = 'nheacgdfprqhuovubeed';
     return `https://${projectId}.supabase.co/functions/v1/${system}-webhook`;
   };
@@ -101,8 +108,11 @@ export default function Integrations() {
       },
       n8n: {
         event: 'test_connection',
-        timestamp: new Date().toISOString(),
-        message: 'Hello from Optical Cohort Sparkle!'
+        testPayload: {
+          timestamp: new Date().toISOString(),
+          message: 'Hello from Optical Cohort Sparkle!',
+          test: true
+        }
       }
     };
 
@@ -634,14 +644,20 @@ export default function Integrations() {
                   <Label>Webhook de Entrada (Input)</Label>
                   <div className="flex gap-2">
                     <Input
-                      value={getWebhookUrl('n8n')}
+                      value={'https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment'}
                       readOnly
                       className="font-mono text-sm"
                     />
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => copyWebhookUrl('n8n')}
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment');
+                        toast({
+                          title: "URL copiada",
+                          description: "A URL do webhook foi copiada para a área de transferência.",
+                        });
+                      }}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
