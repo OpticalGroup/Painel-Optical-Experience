@@ -4,6 +4,7 @@ import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useOrganizationSettings } from "@/integrations/supabase/hooks/useOrganizationSettings";
 import {
   Sidebar,
   SidebarContent,
@@ -85,6 +86,7 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const { userRole } = useAuth();
   const location = useLocation();
+  const { data: orgSettings } = useOrganizationSettings();
 
   // Check if any settings submenu item is active
   const isSettingsActive = settingsMenuItems.some(item => location.pathname === item.url);
@@ -97,13 +99,25 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border">
       <SidebarContent className="pt-8">
         <div className="px-6 pb-6">
-          <h2 className="text-xl font-bold text-foreground">
-            {open ? "Optical Experience" : "OE"}
-          </h2>
-          {open && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Sistema de Gestão
-            </p>
+          {orgSettings?.logo_url ? (
+            <div className="flex items-center justify-center">
+              <img
+                src={orgSettings.logo_url}
+                alt={orgSettings.organization_name || "Logo"}
+                className={open ? "h-12 w-auto object-contain" : "h-8 w-auto object-contain"}
+              />
+            </div>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-foreground">
+                {open ? (orgSettings?.organization_name || "Optical Experience") : "OE"}
+              </h2>
+              {open && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sistema de Gestão
+                </p>
+              )}
+            </>
           )}
         </div>
 
