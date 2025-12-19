@@ -21,6 +21,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { UserMenu } from "@/components/UserMenu";
 import { BulkActionsBar } from "@/components/enrollments/BulkActionsBar";
 import { TransferCohortModal } from "@/components/TransferCohortModal";
+import { OriginSegmentationCard } from "@/components/OriginSegmentationCard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -376,6 +377,14 @@ const CohortDetail = () => {
             </div>
           </Card>
         ) : null}
+      </section>
+
+      {/* Origin Segmentation */}
+      <section className="px-8 pb-6">
+        <OriginSegmentationCard
+          enrollments={enrollmentsData || []}
+          isLoading={isLoading}
+        />
       </section>
 
       {/* Enrollments List */}
