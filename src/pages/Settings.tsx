@@ -6,6 +6,7 @@ import { CancellationReasonsSettings } from "@/components/settings/CancellationR
 import { UTMSettings } from "@/components/settings/UTMSettings";
 import { ProductsTab } from "@/components/settings/ProductsTab";
 import CohortsAdmin from "./CohortsAdmin";
+import { OriginHierarchyManager } from "@/components/OriginHierarchyManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -362,86 +363,9 @@ const Settings = () => {
             <ProductsTab />
           </TabsContent>
 
-          {/* Custom Sources Tab */}
+          {/* Custom Sources Tab - Now using Hierarchy Manager */}
           <TabsContent value="sources" className="mt-6">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-lg font-semibold">Origens de Matrícula</h2>
-                <p className="text-sm text-muted-foreground">
-                  Gerencie as origens de leads (ex: Instagram, Google, Indicação)
-                </p>
-              </div>
-              <Button onClick={() => {
-                setSelectedSource(null);
-                setSourceFormData({ name: "", description: "", active: true });
-                setSourceModalOpen(true);
-              }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Origem
-              </Button>
-            </div>
-
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sourcesLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ) : customSources?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        Nenhuma origem cadastrada.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    customSources?.map((source) => (
-                      <TableRow key={source.id}>
-                        <TableCell className="font-medium">{source.name}</TableCell>
-                        <TableCell>{source.description || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={source.active ? "default" : "secondary"}>
-                            {source.active ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleSourceEdit(source)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setSourceToDelete(source.id);
-                                setSourceDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <OriginHierarchyManager />
           </TabsContent>
 
           {/* Cancellation Reasons Tab */}
