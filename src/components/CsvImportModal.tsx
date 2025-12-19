@@ -20,6 +20,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { normalizeCPF } from "@/lib/cpf";
 import { validateRow, RowValidation } from "@/lib/validators";
 import {
+  useFunnels,
+  useMacroOrigins,
+  useMicroOrigins,
+  useMicroVariations,
+  useCreateFunnel,
+  useCreateMacroOrigin,
+  useCreateMicroOrigin,
+  useCreateMicroVariation,
+} from "@/integrations/supabase/hooks/useOriginHierarchy";
+import {
   normalizeEnrollmentSource,
   normalizeCohortName,
   normalizePhone,
@@ -74,6 +84,16 @@ interface ParsedRow {
   utm_content?: string;
   utm_page?: string;
   submitted_at?: string; // Timestamp de submissão
+  // Campos da nova hierarquia de origem
+  funnel_name?: string; // Nome do funil de venda
+  macro_origin?: string; // Origem macro
+  micro_origin?: string; // Origem micro
+  micro_variation?: string; // Variação de origem
+  // IDs resolvidos da hierarquia (preenchidos durante import)
+  funnel_id?: string;
+  macro_origin_id?: string;
+  micro_origin_id?: string;
+  micro_variation_id?: string;
 }
 
 export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multiCohort = false }: CsvImportModalProps) => {
@@ -91,6 +111,16 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const { data: salesReps } = useSalesRepsQuery();
   const createCustomSource = useCreateCustomSource();
   const createSalesRep = useCreateSalesRep();
+
+  // Hooks para hierarquia de origem
+  const { data: funnels } = useFunnels();
+  const { data: macroOrigins } = useMacroOrigins();
+  const { data: microOrigins } = useMicroOrigins();
+  const { data: microVariations } = useMicroVariations();
+  const createFunnel = useCreateFunnel();
+  const createMacroOrigin = useCreateMacroOrigin();
+  const createMicroOrigin = useCreateMicroOrigin();
+  const createMicroVariation = useCreateMicroVariation();
 
   // Novo estado para mapeamento de colunas
   const [csvRawData, setCsvRawData] = useState<{ headers: string[]; rows: string[][] }>({ headers: [], rows: [] });
@@ -338,6 +368,11 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         utm_content: row.utm_content?.trim() || undefined,
         utm_page: row.utm_page?.trim() || undefined,
         submitted_at: submittedAt || undefined,
+        // Campos da hierarquia de origem
+        funnel_name: row.funnel_name?.trim() || undefined,
+        macro_origin: row.macro_origin?.trim() || undefined,
+        micro_origin: row.micro_origin?.trim() || undefined,
+        micro_variation: row.micro_variation?.trim() || undefined,
       };
 
       rows.push(parsedRow);
@@ -808,17 +843,105 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             targetCohortId = cohortId;
           }
 
+          // ====== RESOLUÇÃO DA HIERARQUIA DE ORIGEM ======
+          let resolvedFunnelId: string | undefined;
+          let resolvedMacroId: string | undefined;
+          let resolvedMicroId: string | undefined;
+          let resolvedVariationId: string | undefined;
+
+          const row = dataToImport[i];
+
+          // Se tiver funnel_name, resolver/criar hierarquia
+          if (row.funnel_name) {
+            // 1. Buscar ou criar funil
+            let funnel = funnels?.find(f =>
+              f.name.toLowerCase().trim() === row.funnel_name!.toLowerCase().trim()
+            );
+            if (!funnel) {
+              const created = await createFunnel.mutateAsync({
+                name: row.funnel_name,
+                description: 'Criado durante importação',
+                active: true,
+              });
+              resolvedFunnelId = created.id;
+            } else {
+              resolvedFunnelId = funnel.id;
+            }
+
+            // 2. Se tiver macro_origin, buscar ou criar
+            if (row.macro_origin && resolvedFunnelId) {
+              let macro = macroOrigins?.find(m =>
+                m.funnel_id === resolvedFunnelId &&
+                m.name.toLowerCase().trim() === row.macro_origin!.toLowerCase().trim()
+              );
+              if (!macro) {
+                const created = await createMacroOrigin.mutateAsync({
+                  funnel_id: resolvedFunnelId,
+                  name: row.macro_origin,
+                  description: 'Criado durante importação',
+                  active: true,
+                });
+                resolvedMacroId = created.id;
+              } else {
+                resolvedMacroId = macro.id;
+              }
+
+              // 3. Se tiver micro_origin, buscar ou criar
+              if (row.micro_origin && resolvedMacroId) {
+                let micro = microOrigins?.find(m =>
+                  m.macro_origin_id === resolvedMacroId &&
+                  m.name.toLowerCase().trim() === row.micro_origin!.toLowerCase().trim()
+                );
+                if (!micro) {
+                  const created = await createMicroOrigin.mutateAsync({
+                    macro_origin_id: resolvedMacroId,
+                    name: row.micro_origin,
+                    description: 'Criado durante importação',
+                    active: true,
+                  });
+                  resolvedMicroId = created.id;
+                } else {
+                  resolvedMicroId = micro.id;
+                }
+
+                // 4. Se tiver micro_variation, buscar ou criar
+                if (row.micro_variation && resolvedMicroId) {
+                  let variation = microVariations?.find(v =>
+                    v.micro_origin_id === resolvedMicroId &&
+                    v.name.toLowerCase().trim() === row.micro_variation!.toLowerCase().trim()
+                  );
+                  if (!variation) {
+                    const created = await createMicroVariation.mutateAsync({
+                      micro_origin_id: resolvedMicroId,
+                      name: row.micro_variation,
+                      description: 'Criado durante importação',
+                      active: true,
+                    });
+                    resolvedVariationId = created.id;
+                  } else {
+                    resolvedVariationId = variation.id;
+                  }
+                }
+              }
+            }
+          }
+
           const enrollmentData: any = {
             cohort_id: targetCohortId,
             student_name: dataToImport[i].student_name,
             email: dataToImport[i].email,
             cpf: dataToImport[i].cpf,
             sales_rep: dataToImport[i].sales_rep,
-            source: dataToImport[i].source,
+            source: dataToImport[i].source || dataToImport[i].macro_origin || 'Não Rastreada',
             financial_status: dataToImport[i].financial_status || 'pending',
             contract_status: dataToImport[i].contract_status || 'pending',
             payment_details: dataToImport[i].payment_details || 'Aguardando detalhes',
             created_by: user?.id,
+            // IDs da hierarquia resolvidos
+            funnel_id: resolvedFunnelId || undefined,
+            macro_origin_id: resolvedMacroId || undefined,
+            micro_origin_id: resolvedMicroId || undefined,
+            micro_variation_id: resolvedVariationId || undefined,
           };
 
           // Campos opcionais (apenas se preenchidos)

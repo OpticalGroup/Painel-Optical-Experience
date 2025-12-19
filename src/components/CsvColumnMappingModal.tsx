@@ -31,7 +31,12 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'email', label: 'Email', required: true, description: 'Email válido (único por turma)' },
   { key: 'cpf', label: 'CPF', required: true, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (será normalizado)' },
   { key: 'sales_rep', label: 'Vendedor', required: true, description: 'Nome do vendedor responsável' },
-  { key: 'source', label: 'Origem', required: true, description: 'Instagram Bio, Instagram Manychat, WEB - Downsell, Área de Membros FOTS, Tráfego Pago (Público Frio/Quente), API Remarketing, Aluno Mentoria, Programa de Indicação, Não Rastreada, Facebook, Instagram, Indicação, Tráfego Pago, Direto ou Outro' },
+  // Hierarquia de Origem (campos opcionais que substituem 'source')
+  { key: 'funnel_name', label: 'Funil de Venda', required: false, description: 'Nome do funil de vendas (nível 1 da hierarquia)' },
+  { key: 'macro_origin', label: 'Origem Macro', required: false, description: 'Origem macro - agrupamento principal (nível 2)' },
+  { key: 'micro_origin', label: 'Origem Micro', required: false, description: 'Origem micro - detalhamento (nível 3)' },
+  { key: 'micro_variation', label: 'Variação de Origem', required: false, description: 'Variação micro - variantes de teste (nível 4)' },
+  { key: 'source', label: 'Origem (Legado)', required: false, description: 'Campo legado para origens simples (use os campos de hierarquia acima)' },
 
   // Campos opcionais - Dados de contato
   { key: 'phone', label: 'Telefone', required: false, description: 'Telefone com DDD (será normalizado automaticamente)' },
@@ -103,6 +108,10 @@ export const CsvColumnMappingModal = ({
     'product_name': ['produto', 'product', 'item'],
     'payment_proof_url': ['comprovante', 'proof', 'url', 'link'],
     'observations': ['observacoes', 'obs', 'notas', 'observations', 'notes'],
+    'funnel_name': ['funil', 'funnel', 'vendas'],
+    'macro_origin': ['macro', 'origem macro', 'origemmacro'],
+    'micro_origin': ['micro', 'origem micro', 'origemmicro'],
+    'micro_variation': ['variacao', 'variacoes', 'variation', 'variações'],
     'utm_source': ['utm', 'source', 'origem'],
     'utm_medium': ['utm', 'medium', 'meio'],
     'utm_campaign': ['utm', 'campaign', 'campanha'],
