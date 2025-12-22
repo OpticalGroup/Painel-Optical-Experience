@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
+import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -79,74 +79,156 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4">
-          <div className="flex justify-center">
-            <img src="/optical-experience-logo.png" alt="Optical Experience" className="h-16 w-auto" />
-          </div>
-          <div className="text-center space-y-1">
-            <CardTitle className="text-2xl font-bold text-primary">
-              Optical Experience
-            </CardTitle>
-            <CardDescription>
-              Sistema de Gestão de Matrículas
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Gradient Orbs */}
+        <div
+          className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'radial-gradient(circle, hsl(172 66% 50%) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-10 blur-3xl"
+          style={{ background: 'radial-gradient(circle, hsl(199 89% 48%) 0%, transparent 70%)' }}
+        />
+        {/* Scan Line Effect */}
+        <div className="absolute inset-0 scan-line opacity-30" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md mx-4 relative z-10"
+      >
+        {/* Glass Card */}
+        <div className="glass-card hud-border p-8 rounded-2xl">
+          {/* Logo */}
+          <motion.div
+            className="flex justify-center mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <img
+              src="/optical-experience-logo.png"
+              alt="Optical Experience"
+              className="h-20 w-auto"
+            />
+          </motion.div>
+
+          {/* Subtitle */}
+          <motion.p
+            className="text-center text-muted-foreground text-sm mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Sistema de Gestão de Matrículas
+          </motion.p>
+
+          {/* Login Form */}
           <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-              <FormField
-                control={loginForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Entrando...' : 'Entrar'}
-              </Button>
+            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground/80 text-sm font-medium">Email</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="seu@email.com"
+                            className="pl-10 h-12 bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground/80 text-sm font-medium">Senha</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            className="pl-10 h-12 bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-medium bg-gradient-bio hover:opacity-90 transition-all duration-300 group"
+                  style={{ background: 'linear-gradient(135deg, hsl(172 66% 50%) 0%, hsl(199 89% 48%) 100%)' }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      Entrar
+                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
             </form>
           </Form>
 
-          <div className="mt-4 text-center">
+          {/* Forgot Password */}
+          <motion.div
+            className="mt-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
             <Dialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                <Button variant="link" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Esqueceu sua senha?
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="glass-card border-border/50">
                 <DialogHeader>
                   <DialogTitle>Recuperar Senha</DialogTitle>
                   <DialogDescription>
@@ -165,6 +247,7 @@ export default function Auth() {
                             <Input
                               type="email"
                               placeholder="seu@email.com"
+                              className="h-11"
                               {...field}
                               disabled={isResettingPassword}
                             />
@@ -173,22 +256,50 @@ export default function Auth() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isResettingPassword}>
-                      {isResettingPassword ? 'Enviando...' : 'Enviar Link de Recuperação'}
+                    <Button
+                      type="submit"
+                      className="w-full h-11"
+                      disabled={isResettingPassword}
+                    >
+                      {isResettingPassword ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Enviar Link de Recuperação'
+                      )}
                     </Button>
                   </form>
                 </Form>
               </DialogContent>
             </Dialog>
-          </div>
+          </motion.div>
 
-          <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border">
-            <p className="text-sm text-center text-muted-foreground">
-              <strong>Acesso Restrito:</strong> Não possui uma conta? Entre em contato com o administrador do sistema para solicitar acesso.
+          {/* Access Notice */}
+          <motion.div
+            className="mt-6 p-4 rounded-xl bg-secondary/20 border border-border/30"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <p className="text-xs text-center text-muted-foreground leading-relaxed">
+              <span className="text-foreground/70 font-medium">Acesso Restrito:</span>{' '}
+              Entre em contato com o administrador do sistema para solicitar acesso.
             </p>
-          </div>
-        </CardContent>
-      </Card>
+          </motion.div>
+        </div>
+
+        {/* Version indicator */}
+        <motion.p
+          className="text-center text-[10px] text-muted-foreground/40 mt-4 uppercase tracking-widest"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
+          Bio-System v1.0
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

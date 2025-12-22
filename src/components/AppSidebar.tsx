@@ -108,16 +108,28 @@ export function AppSidebar() {
               />
             </div>
           ) : (
-            <>
-              <h2 className="text-xl font-bold text-foreground">
-                {open ? (orgSettings?.organization_name || "Optical Experience") : "OE"}
-              </h2>
+            <div className="flex items-center gap-3">
+              {/* Bio-System Logo with Glow */}
+              <div
+                className="w-10 h-10 rounded-xl bg-gradient-bio flex items-center justify-center glow-cyan"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(172 66% 50%) 0%, hsl(199 89% 48%) 100%)',
+                  boxShadow: '0 0 25px hsl(172 66% 50% / 0.4)'
+                }}
+              >
+                <span className="text-lg font-bold text-white">O</span>
+              </div>
               {open && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Sistema de Gestão
-                </p>
+                <div>
+                  <h1 className="font-semibold text-foreground text-sm tracking-tight">
+                    {orgSettings?.organization_name || "Optical Experience"}
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                    Bio-System
+                  </p>
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
 

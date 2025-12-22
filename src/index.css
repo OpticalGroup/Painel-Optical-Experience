@@ -1,135 +1,540 @@
+/* Apple-like Typography: Inter + JetBrains Mono */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Apple-like Typography Variables */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', 'Monaco', monospace;
+
+  /* Apple-style letter spacing */
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: -0.011em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+
+  /* Apple-style line heights */
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+}
 
 @layer base {
   :root {
-    /* Optical Dental Academy Brand Colors */
-    --background: 0 0% 93%;
-    /* #EDEDED */
-    --foreground: 0 0% 14%;
-    /* #242424 */
+    --background: 222 47% 2%;
+    --foreground: 210 40% 96%;
 
-    --card: 0 0% 100%;
-    /* #FFFFFF */
-    --card-foreground: 0 0% 14%;
+    --card: 222 47% 4%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 14%;
+    --popover: 222 47% 5%;
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 245 56% 63%;
-    /* #6E66D9 - Brand Purple */
-    --primary-foreground: 0 0% 100%;
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 2%;
 
-    --secondary: 23 19% 82%;
-    /* #D6CDC8 - Sand/Gold */
-    --secondary-foreground: 23 23% 40%;
-    /* Darker sand for text */
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 0 0% 93%;
-    --muted-foreground: 23 7% 59%;
-    /* #9E9791 - Taupe */
+    --muted: 217 33% 10%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 23 19% 82%;
-    /* Sand accent */
-    --accent-foreground: 0 0% 14%;
+    --accent: 172 66% 50%;
+    --accent-foreground: 222 47% 2%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 23 19% 82%;
-    /* Sand borders */
-    --input: 0 0% 100%;
-    --ring: 245 56% 63%;
-    /* Purple focus ring */
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
 
-    --radius: 0.5rem;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 2%;
 
-    /* Status badge colors */
-    --badge-paid-bg: 245 56% 63% / 0.1;
-    /* Purple 10% */
-    --badge-paid-text: 245 56% 63%;
-    --badge-signed-bg: 23 19% 82% / 0.3;
-    /* Sand 30% */
-    --badge-signed-text: 23 23% 40%;
-    --badge-pending-bg: 0 0% 93%;
-    --badge-pending-text: 23 7% 59%;
+    --border: 217 33% 15%;
+    --input: 217 33% 15%;
+    --ring: 172 66% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 222 47% 3%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 172 66% 50%;
+    --sidebar-primary-foreground: 222 47% 2%;
+    --sidebar-accent: 217 33% 10%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 217 33% 12%;
+    --sidebar-ring: 172 66% 50%;
+
+    /* Custom Bio-System Tokens */
+    --glow-cyan: 0 0 30px hsl(172 66% 50% / 0.3);
+    --glow-success: 0 0 20px hsl(160 84% 39% / 0.4);
+    --glow-destructive: 0 0 20px hsl(0 84% 60% / 0.4);
+
+    --gradient-bio: linear-gradient(135deg, hsl(172 66% 50%) 0%, hsl(199 89% 48%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(222 47% 5%) 0%, hsl(222 47% 2%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(217 33% 8% / 0.8) 0%, hsl(217 33% 5% / 0.6) 100%);
+
+    --glass-bg: hsl(217 33% 8% / 0.6);
+    --glass-border: hsl(217 33% 20% / 0.5);
   }
 
-  .dark {
-    /* Dark mode colors */
-    --background: 224 71% 4%;
-    /* Deep dark blue-black */
-    --foreground: 213 31% 91%;
-    /* Light gray-blue text */
+  /* Light Mode Theme */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 224 71% 6%;
-    /* Slightly lighter than background */
-    --card-foreground: 213 31% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 245 62% 67%;
-    /* Slightly lighter purple for dark mode */
+    --primary: 172 66% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    /* Dark blue-gray */
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 213 31% 91%;
+    --accent: 172 66% 40%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 213 31% 91%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 245 62% 67%;
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 98%;
 
-    /* Status badge colors for dark mode */
-    --badge-paid-bg: 245 62% 67% / 0.15;
-    --badge-paid-text: 245 82% 77%;
-    --badge-signed-bg: 23 19% 82% / 0.1;
-    --badge-signed-text: 23 39% 72%;
-    --badge-pending-bg: 223 47% 11%;
-    --badge-pending-text: 215 20% 65%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 172 66% 40%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 172 66% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 172 66% 40%;
+
+    /* Light Mode Bio-System Tokens */
+    --glow-cyan: 0 0 20px hsl(172 66% 40% / 0.2);
+    --glow-success: 0 0 15px hsl(160 84% 39% / 0.2);
+    --glow-destructive: 0 0 15px hsl(0 84% 60% / 0.2);
+
+    --gradient-bio: linear-gradient(135deg, hsl(172 66% 40%) 0%, hsl(199 89% 40%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(220 14% 96%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100% / 0.9) 0%, hsl(220 14% 98% / 0.8) 100%);
+
+    --glass-bg: hsl(0 0% 100% / 0.8);
+    --glass-border: hsl(220 13% 91% / 0.8);
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    /* Inter OpenType features */
+    letter-spacing: var(--tracking-normal);
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Apple-like Headings */
+  h1 {
+    font-weight: 700;
+    letter-spacing: var(--tracking-tighter);
+    line-height: var(--leading-tight);
+  }
+
+  h2 {
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-tight);
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-snug);
+  }
+
+  /* Monospace font for data/numbers */
+  .font-mono {
+    font-family: var(--font-mono);
+    font-feature-settings: 'ss01', 'ss02';
+    /* Stylistic sets */
+  }
+
+  /* Apple-like Typography Utilities */
+  .text-display {
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  .text-headline {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .text-title {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+  }
+
+  .text-body {
+    font-weight: 400;
+    letter-spacing: -0.011em;
+    line-height: 1.5;
+  }
+
+  .text-callout {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+  }
+
+  .text-caption {
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
+
+  .text-overline {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+  }
+
+  /* Light weight for large numbers (Apple style) */
+  .text-light {
+    font-weight: 300;
   }
 }
 
-/* Custom animations for Optical Dental Academy */
-@keyframes pulse-purple {
+@layer components {
 
-  0%,
+  /* Glass Card Effect */
+  .glass-card {
+    @apply relative overflow-hidden rounded-xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(135deg, hsl(172 66% 50% / 0.05) 0%, transparent 50%);
+  }
+
+  /* Glow Effects */
+  .glow-cyan {
+    box-shadow: var(--glow-cyan);
+  }
+
+  .glow-success {
+    box-shadow: var(--glow-success);
+  }
+
+  .glow-destructive {
+    box-shadow: var(--glow-destructive);
+  }
+
+  /* Pulse Animation for Bio Elements */
+  .bio-pulse {
+    animation: bioPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes bioPulse {
+
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+
+  /* Pulse Glow for Champion Cards */
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+    }
+
+    50% {
+      box-shadow: 0 0 35px rgba(251, 191, 36, 0.4), 0 0 60px rgba(251, 191, 36, 0.15);
+    }
+  }
+
+  /* Scan Line Effect */
+  .scan-line {
+    @apply relative overflow-hidden;
+  }
+
+  .scan-line::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(180deg,
+        transparent 0%,
+        hsl(172 66% 50% / 0.03) 50%,
+        transparent 100%);
+    animation: scanLine 4s linear infinite;
+  }
+
+  @keyframes scanLine {
+    0% {
+      transform: translateY(-100%);
+    }
+
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  /* HUD Border */
+  .hud-border {
+    @apply relative;
+  }
+
+  .hud-border::before {
+    content: '';
+    @apply absolute -inset-px rounded-xl pointer-events-none;
+    background: linear-gradient(135deg, hsl(172 66% 50% / 0.3) 0%, transparent 50%, hsl(172 66% 50% / 0.1) 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    padding: 1px;
+  }
+
+  /* Ticker Animation */
+  .ticker-up {
+    @apply text-success;
+    animation: tickerUp 0.5s ease-out;
+  }
+
+  .ticker-down {
+    @apply text-destructive;
+    animation: tickerDown 0.5s ease-out;
+  }
+
+  @keyframes tickerUp {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes tickerDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Sidebar Active State */
+  .sidebar-item-active {
+    @apply relative bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+
+  .sidebar-item-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full;
+    background: var(--gradient-bio);
+    box-shadow: var(--glow-cyan);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-bio);
+  }
+
+  .bg-gradient-bio {
+    background: var(--gradient-bio);
+  }
+
+  .bg-gradient-dark {
+    background: var(--gradient-dark);
+  }
+
+  .bg-gradient-card {
+    background: var(--gradient-card);
+  }
+
+  /* Responsive utilities */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide on mobile, show on larger screens */
+  .mobile-hidden {
+    @apply hidden sm:block;
+  }
+
+  /* Show on mobile, hide on larger screens */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+
+  /* Responsive text sizes */
+  .text-responsive-sm {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive {
+    @apply text-sm md:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+
+  /* Responsive padding */
+  .p-responsive {
+    @apply p-2 sm:p-3 md:p-4 lg:p-6;
+  }
+
+  .px-responsive {
+    @apply px-2 sm:px-3 md:px-4 lg:px-6;
+  }
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
   100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
+    transform: translateX(100%);
   }
 }
 
-.animate-pulse-purple {
-  animation: pulse-purple 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Dark Mode Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(222 47% 5%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(217 33% 20%);
+  border-radius: 4px;
+  border: 2px solid hsl(222 47% 5%);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(172 66% 40%);
+}
+
+::-webkit-scrollbar-corner {
+  background: hsl(222 47% 5%);
+}
+
+/* Firefox Scrollbar - Dark */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(217 33% 20%) hsl(222 47% 5%);
+}
+
+/* Always Visible Scrollbar for Preview Tables */
+.always-show-scrollbar {
+  overflow: auto !important;
+}
+
+.always-show-scrollbar::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.always-show-scrollbar::-webkit-scrollbar-track {
+  background: hsl(217 33% 12%) !important;
+  border-radius: 5px !important;
+}
+
+.always-show-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(199 89% 48%) !important;
+  border-radius: 5px !important;
+  border: 2px solid hsl(217 33% 12%) !important;
+}
+
+.always-show-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(172 66% 50%) !important;
+}
+
+/* Light Mode Scrollbar Styling */
+.light ::-webkit-scrollbar-track {
+  background: hsl(220 14% 96%);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: hsl(220 13% 80%);
+  border: 2px solid hsl(220 14% 96%);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: hsl(172 66% 40%);
+}
+
+.light ::-webkit-scrollbar-corner {
+  background: hsl(220 14% 96%);
+}
+
+/* Firefox Scrollbar - Light */
+.light * {
+  scrollbar-color: hsl(220 13% 80%) hsl(220 14% 96%);
 }

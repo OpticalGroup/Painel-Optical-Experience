@@ -1,10 +1,13 @@
 import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Users, GraduationCap, TrendingUp, DollarSign, ArrowRight, Calendar, MapPin, Upload, FileSignature, Clock, Target, CalendarIcon, HelpCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn, formatBRL } from "@/lib/utils";
-import { StatsCard } from "@/components/StatsCard";
+import { HeroKPIs } from "@/components/dashboard/HeroKPIs";
+import { HierarchyCards } from "@/components/dashboard/HierarchyCards";
+import { ChartsPanel } from "@/components/dashboard/ChartsPanel";
 import { Card } from "@/components/ui/card";
 import { EnrollmentModal, EnrollmentData } from "@/components/EnrollmentModal";
 import { CsvImportModal } from "@/components/CsvImportModal";
@@ -32,6 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePurchaseWindow } from "@/hooks/usePurchaseWindow";
+import { useUtmData } from "@/hooks/useUtmData";
+import { useOriginHierarchy } from "@/hooks/useOriginHierarchy";
 
 const Index = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,6 +51,9 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: cohorts, isLoading } = useCohortsQuery();
+  const { data: purchaseWindowData } = usePurchaseWindow();
+  const { data: utmData } = useUtmData();
+  const { data: originHierarchy } = useOriginHierarchy();
   const { data: analytics, isLoading: isLoadingAnalytics } = useEnrollmentAnalytics({
     ...dateRange,
     cohortId: selectedCohortId,
@@ -312,193 +321,113 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Dados Vitais do Funil - PRIMEIRA DOBRA */}
-      <section className="px-8 pt-6 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {isLoading ? (
-            <>
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-24 w-full" />
-              ))}
-            </>
-          ) : (
-            <>
-              <StatsCard
-                title="Total de Alunos"
-                value={totalEnrolled}
-                subtitle={`de ${totalCapacity} vagas`}
-                icon={Users}
-                trend={{ value: "12%", isPositive: true }}
-                tooltip="Total de alunos matriculados em todas as turmas ativas no período selecionado."
-              />
-              <StatsCard
-                title="Turmas Ativas"
-                value={cohorts?.length || 0}
-                subtitle="em andamento"
-                icon={GraduationCap}
-                tooltip="Número de turmas que estão atualmente em andamento ou programadas."
-              />
-              <StatsCard
-                title="Matrículas Pagas"
-                value={totalPaid}
-                subtitle="pagamento confirmado"
-                icon={TrendingUp}
-                trend={{ value: "8%", isPositive: true }}
-                tooltip="Total de alunos que já realizaram o pagamento integral ou da primeira parcela."
-              />
-              <StatsCard
-                title="Receita Total"
-                value={formatBRL(totalRevenue)}
-                subtitle="arrecadado (valores pagos)"
-                icon={DollarSign}
-                trend={{ value: "15%", isPositive: true }}
-                tooltip="Receita total gerada pelas matrículas no período selecionado."
-              />
-            </>
-          )}
+      {/* Hero KPIs - Estilo Nexus Cortex */}
+      <motion.section
+        className="px-8 pt-6 pb-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <HeroKPIs
+          totalRevenue={totalRevenue}
+          totalEnrolled={totalEnrolled}
+          totalPaid={totalPaid}
+          totalCapacity={totalCapacity}
+          cohortsCount={cohorts?.length || 0}
+          isLoading={isLoading}
+        />
+      </motion.section>
+
+      {/* Main Content: Grid 7:5 - Estilo Nexus Cortex */}
+      <section className="px-8 py-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT: Hierarchy Cards (7 colunas) */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-7"
+          >
+            <HierarchyCards
+              cohorts={filteredCohorts.map(c => ({
+                id: c.id,
+                name: c.name,
+                location: c.location,
+                startDate: c.start_date,
+                capacity: c.capacity,
+                enrolledCount: c.stats?.enrolled_count || 0,
+                reservedCount: c.stats?.reserved_count || 0,
+                paidCount: c.stats?.paid_count || 0,
+                signedCount: c.stats?.signed_count || 0,
+                revenue: (c.stats?.paid_count || 0) * (c.price || 2000), // Estimativa se não tiver preço
+                hasChildren: true,
+              }))}
+              vendedores={analytics?.salesReps?.map(rep => ({
+                id: rep.name,
+                name: rep.name,
+                totalSales: rep.totalSales,
+                totalRevenue: rep.totalRevenue,
+                conversionRate: rep.conversionRate,
+              })) || []}
+              origens={analytics?.sources?.map(src => ({
+                id: src.source,
+                source: src.source,
+                count: src.count,
+                paidCount: src.paidCount,
+                revenue: src.paidCount * 2000, // Estimativa
+                conversionRate: src.conversionRate,
+              })) || []}
+              onCohortClick={(id) => navigate(`/cohorts/${id}`)}
+              isLoading={isLoading}
+            />
+          </motion.div>
+
+          {/* RIGHT: Charts Panel (5 colunas) */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:col-span-5"
+          >
+            <ChartsPanel
+              nextCohort={nextCohort ? {
+                id: nextCohort.id,
+                name: nextCohort.name,
+                location: nextCohort.location,
+                startDate: nextCohort.start_date,
+                endDate: nextCohort.end_date,
+                capacity: nextCohort.capacity,
+                enrolledCount: nextCohort.stats?.enrolled_count || 0,
+                reservedCount: nextCohort.stats?.reserved_count || 0,
+                paidCount: nextCohort.stats?.paid_count || 0,
+                signedCount: nextCohort.stats?.signed_count || 0,
+                isOverbooked: nextCohort.stats?.is_overbooked,
+              } : null}
+              trendData={trendData}
+              onNewEnrollment={() => setModalOpen(true)}
+              onViewCohort={(id) => navigate(`/cohorts/${id}`)}
+              isLoading={isLoading}
+              cohorts={filteredCohorts.map(c => ({
+                id: c.id,
+                name: c.name,
+                enrolledCount: c.stats?.enrolled_count || 0,
+                paidCount: c.stats?.paid_count || 0,
+                revenue: (c.stats?.paid_count || 0) * (c.price || 2000),
+                reservedCount: c.stats?.reserved_count || 0,
+              }))}
+              vendedores={analytics?.salesReps?.map(rep => ({
+                id: rep.name,
+                name: rep.name,
+                totalSales: rep.totalSales,
+                totalRevenue: rep.totalRevenue,
+              })) || []}
+              originHierarchy={originHierarchy}
+              utmData={utmData}
+              purchaseWindowData={purchaseWindowData}
+            />
+          </motion.div>
         </div>
       </section>
-
-      {/* Próxima Turma - DESTAQUE PRINCIPAL */}
-      <section className="px-8 py-6">
-        {isLoading ? (
-          <Skeleton className="h-96 w-full" />
-        ) : !nextCohort ? (
-          <Card className="border border-border bg-card p-8">
-            <p className="text-center text-muted-foreground">
-              Nenhuma turma encontrada. Crie uma nova turma para começar.
-            </p>
-          </Card>
-        ) : (
-          <Card className="border border-border bg-card hover:shadow-xl transition-all duration-300">
-            <div className="p-10">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-8">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                    Próxima Turma
-                  </p>
-                  <h2 className="text-4xl font-bold text-foreground leading-tight mb-4">
-                    {nextCohort.name}
-                  </h2>
-                  <div className="flex flex-col gap-2.5 text-base text-muted-foreground">
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="h-5 w-5" />
-                      <span>
-                        {format(new Date(nextCohort.start_date), "dd 'a' ", { locale: ptBR })}
-                        {nextCohort.end_date && format(new Date(nextCohort.end_date), "dd/MM", { locale: ptBR })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="h-5 w-5" />
-                      <span>{nextCohort.location}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {isOverbooked && (
-                  <div className="px-4 py-2 bg-primary/10 rounded-full">
-                    <span className="text-base font-bold text-primary animate-pulse-purple">
-                      LOTADO
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* 4 Stages Visualization */}
-              <div className="space-y-6 mb-8">
-                {/* Stacked Progress Bar */}
-                <div className="relative">
-                  <div className="h-6 bg-muted rounded-full overflow-hidden flex">
-                    {/* Confirmados (paid) */}
-                    <div
-                      className="h-full bg-primary transition-all duration-500"
-                      style={{ width: `${(paid / nextCohort.capacity) * 100}%` }}
-                    />
-                    {/* Reservados */}
-                    <div
-                      className="h-full bg-secondary transition-all duration-500"
-                      style={{ width: `${(reserved / nextCohort.capacity) * 100}%` }}
-                    />
-                    {/* Assinados - overlay with pattern */}
-                    <div
-                      className="h-full bg-secondary/60 border-r-2 border-secondary transition-all duration-500"
-                      style={{ width: `${((nextCohort.stats?.signed_count || 0) / nextCohort.capacity) * 100}%` }}
-                    />
-                  </div>
-                  <div className="mt-3 text-center">
-                    <span className="text-3xl font-bold text-foreground">
-                      {Math.round(percentage)}%
-                    </span>
-                    <span className="text-sm text-muted-foreground ml-2">ocupado</span>
-                  </div>
-                </div>
-
-                {/* 4 Stages Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-                  {/* Disponíveis / Lista de Espera */}
-                  <div className="text-center p-4 rounded-lg bg-muted/30">
-                    <div className="text-3xl font-bold text-foreground mb-1">
-                      {available > 0 ? available : Math.abs(available)}
-                    </div>
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {available > 0 ? "Disponíveis" : "Lista de Espera"}
-                    </div>
-                  </div>
-
-                  {/* Reservados */}
-                  <div className="text-center p-4 rounded-lg bg-secondary/20 border border-secondary">
-                    <div className="text-3xl font-bold text-foreground mb-1">
-                      {reserved}
-                    </div>
-                    <div className="text-sm font-medium text-secondary-foreground">
-                      Reservados
-                    </div>
-                  </div>
-
-                  {/* Confirmados/Pagos */}
-                  <div className="text-center p-4 rounded-lg bg-primary/10 border border-primary/30">
-                    <div className="text-3xl font-bold text-primary mb-1">
-                      {paid}
-                    </div>
-                    <div className="text-sm font-medium text-primary">
-                      Confirmados
-                    </div>
-                  </div>
-
-                  {/* Contratos Assinados */}
-                  <div className="text-center p-4 rounded-lg bg-secondary/40 border-2 border-secondary shadow-sm">
-                    <div className="text-3xl font-bold text-secondary-foreground mb-1">
-                      {nextCohort.stats?.signed_count || 0}
-                    </div>
-                    <div className="text-sm font-semibold text-secondary-foreground">
-                      Assinados
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-border">
-                <Button
-                  onClick={() => setModalOpen(true)}
-                  className="flex-1 bg-primary hover:bg-primary/90 h-12 text-base font-medium"
-                >
-                  Nova Matrícula
-                </Button>
-                <Button
-                  onClick={() => navigate(`/cohorts/${nextCohort.id}`)}
-                  variant="outline"
-                  className="flex-1 border-secondary hover:bg-secondary/10 h-12 text-base font-medium"
-                >
-                  Ver Inscritos
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-      </section >
 
       {/* Smart Alerts */}
       {
@@ -520,54 +449,7 @@ const Index = () => {
         )
       }
 
-      {/* Rankings e Análise de Conversão */}
-      {
-        !isLoadingAnalytics && analytics && (
-          <section className="px-8 pb-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Performance e Inteligência</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">Rankings e análise de comportamento</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <RankingCard
-                title="Top Vendedores"
-                icon={Target}
-                items={analytics.salesReps.map(rep => ({
-                  name: rep.name,
-                  value: rep.totalSales,
-                  subtitle: formatBRL(rep.totalRevenue),
-                }))}
-                action={<ExportButton type="sales-reps" label="Exportar" size="sm" variant="ghost" />}
-              />
-              <RankingCard
-                title="Melhores Origens"
-                icon={TrendingUp}
-                items={analytics.sources.map(source => ({
-                  name: source.source,
-                  value: source.count,
-                  subtitle: `${source.paidCount} pagos`,
-                  percentage: source.conversionRate,
-                }))}
-                action={<ExportButton type="sources" label="Exportar" size="sm" variant="ghost" />}
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <UtmAnalytics
-                data={analytics.utmStats}
-                onStatusFilterChange={setUtmStatusFilter}
-                currentStatusFilter={utmStatusFilter}
-              />
-              <ConversionAnalysis
-                data={analytics.conversions}
-                action={<ExportButton type="conversion" label="Exportar" size="sm" variant="ghost" />}
-              />
-            </div>
-          </section>
-        )
-      }
 
       {/* Saúde Operacional */}
       {

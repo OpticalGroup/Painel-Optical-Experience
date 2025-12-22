@@ -28,17 +28,17 @@ export const StatsCard = ({
   tooltip,
 }: StatsCardProps & { tooltip?: string }) => {
   const CardContent = (
-    <Card className="p-6 border border-border bg-card hover:shadow-md transition-all duration-300 h-full">
+    <Card className="glass-card hud-border p-6 hover:glow-cyan transition-all duration-300 h-full group">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
           </div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-bold text-foreground">{value}</h3>
+            <h3 className="text-3xl font-bold text-foreground font-mono">{value}</h3>
             {trend && (
               <span
-                className={`text-sm font-medium ${trend.isPositive ? "text-primary" : "text-destructive"
+                className={`text-sm font-medium ${trend.isPositive ? "text-success ticker-up" : "text-destructive ticker-down"
                   }`}
               >
                 {trend.isPositive ? "+" : ""}
@@ -50,7 +50,12 @@ export const StatsCard = ({
             <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
           )}
         </div>
-        <div className="p-3 bg-primary/10 rounded-xl">
+        <div
+          className="p-3 rounded-xl transition-all duration-300 group-hover:scale-110"
+          style={{
+            background: 'linear-gradient(135deg, hsl(172 66% 50% / 0.15) 0%, hsl(199 89% 48% / 0.1) 100%)',
+          }}
+        >
           <Icon className="h-5 w-5 text-primary" />
         </div>
       </div>

@@ -61,7 +61,7 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="optical-experience-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="optical-experience-theme">
       <TooltipProvider>
         <Toaster />
         <Sonner />
