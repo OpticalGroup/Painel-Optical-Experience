@@ -195,7 +195,7 @@ const Index = () => {
     <>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-4">
             <SidebarTrigger />
             <div>
@@ -207,7 +207,7 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button
               variant="ghost"
               size="icon"
@@ -339,14 +339,14 @@ const Index = () => {
       </motion.section>
 
       {/* Main Content: Grid 7:5 - Estilo Nexus Cortex */}
-      <section className="px-8 py-2">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section className="px-4 sm:px-6 lg:px-8 py-2">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
           {/* LEFT: Hierarchy Cards (7 colunas) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="lg:col-span-7"
+            className="xl:col-span-7"
           >
             <HierarchyCards
               cohorts={filteredCohorts.map(c => ({
@@ -387,7 +387,7 @@ const Index = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-5"
+            className="xl:col-span-5"
           >
             <ChartsPanel
               nextCohort={nextCohort ? {

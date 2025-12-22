@@ -28,9 +28,9 @@ function HeroMetric({ label, value, subValue, trend, delay = 0, color = "default
             <span className="text-overline text-muted-foreground/60 mb-2">
                 {label}
             </span>
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
                 <span className={cn(
-                    "text-5xl md:text-6xl font-normal tracking-tight",
+                    "text-3xl sm:text-5xl md:text-6xl font-normal tracking-tight",
                     colorStyles[color]
                 )}>
                     {value}
@@ -124,9 +124,9 @@ export function HeroKPIs({
     }
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8">
             {/* Hero Section - 2 Main KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 px-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-12 px-0 sm:px-2">
                 <HeroMetric
                     label="Receita Total"
                     value={formatBRL(totalRevenue)}
