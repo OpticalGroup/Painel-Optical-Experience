@@ -298,8 +298,8 @@ export const HierarchyCreationModal = ({
                     </span>
                 </div>
 
-                <ScrollArea className="flex-1 max-h-[350px] pr-4">
-                    <div className="space-y-2 py-2">
+                <ScrollArea className="flex-1 min-h-0 h-[400px] pr-4">
+                    <div className="space-y-2 py-2 overflow-y-auto">
                         {(itemsToCreate || []).map((item, index) => {
                             const config = LEVEL_CONFIG[item.type];
                             const Icon = config.icon;
@@ -309,8 +309,8 @@ export const HierarchyCreationModal = ({
                                 <label
                                     key={index}
                                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected
-                                            ? 'border-primary/50 bg-primary/5'
-                                            : 'border-border hover:bg-accent/50'
+                                        ? 'border-primary/50 bg-primary/5'
+                                        : 'border-border hover:bg-accent/50'
                                         }`}
                                 >
                                     <Checkbox

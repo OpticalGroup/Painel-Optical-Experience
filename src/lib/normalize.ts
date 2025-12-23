@@ -307,10 +307,13 @@ export const normalizeDate = (value: string): string | null => {
     return trimmed;
   }
   
-  // Parse Brazilian format (DD/MM/YYYY)
-  const brFormatMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  // Parse Brazilian format (DD/MM/YYYY) with optional time
+  const brFormatMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/);
   if (brFormatMatch) {
-    const [, day, month, year] = brFormatMatch;
+    const [, day, month, year, hours, minutes, seconds] = brFormatMatch;
+    if (hours) {
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    }
     return `${year}-${month}-${day}`;
   }
   

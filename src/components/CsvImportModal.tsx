@@ -12,7 +12,7 @@ import { CohortCreationModal } from "./CohortCreationModal";
 import { CsvTemplateConfigModal } from "./CsvTemplateConfigModal";
 import { HierarchyCreationModal, HierarchyItemToCreate } from "./HierarchyCreationModal";
 import { SellerCreationModal } from "./SellerCreationModal";
-import { OriginCreationModal } from "./OriginCreationModal";
+
 import { useCreateImportRecord } from "@/integrations/supabase/hooks/useImportHistory";
 import { useSalesRepsQuery, useCreateSalesRep } from "@/integrations/supabase/hooks/useSalesReps";
 import { Constants } from "@/integrations/supabase/types";
@@ -258,7 +258,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       'other': 'Outro',
     };
 
-    return mapping[normalized] || value; // Retorna o valor original se não encontrar mapeamento
+    return mapping[normalized] || 'Outro';
   };
 
   // Função para revalidar todas as linhas
@@ -753,10 +753,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     checkOrigins(filteredData);
   };
 
-  const handleSkipMissingOrigins = () => {
-    setShowOriginCreationModal(false);
-    checkSellers(previewData);
-  };
+
 
   const handleSkipMissingSellers = () => {
     setShowSellerCreationModal(false);
