@@ -41,7 +41,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useSalesRepsQuery, useCreateSalesRep, useUpdateSalesRep, useDeleteSalesRep } from "@/integrations/supabase/hooks/useSalesReps";
-import { useCustomSourcesQuery, useCreateCustomSource, useUpdateCustomSource, useDeleteCustomSource } from "@/integrations/supabase/hooks/useCustomSources";
+
 import { useNucleosQuery } from "@/integrations/supabase/hooks/useNucleos";
 import { NucleosTab } from "@/components/settings/NucleosTab";
 import { z } from "zod";
@@ -50,7 +50,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { Constants } from "@/integrations/supabase/types";
 
 type SalesRep = Tables<'sellers'>;
-type CustomSource = Tables<'custom_enrollment_sources'>;
+
 
 // Validation schemas
 const salesRepSchema = z.object({
@@ -61,18 +61,7 @@ const salesRepSchema = z.object({
   nucleo_id: z.string().optional().or(z.literal("")),
 });
 
-const customSourceSchema = z.object({
-  name: z.string()
-    .trim()
-    .min(1, "Nome é obrigatório")
-    .max(50, "Nome muito longo")
-    .refine(
-      (name) => !Constants.public.Enums.enrollment_source.includes(name as any),
-      "Este nome já existe nas origens padrão do sistema. Escolha outro nome."
-    ),
-  description: z.string().trim().max(200, "Descrição muito longa").optional().or(z.literal("")),
-  active: z.boolean(),
-});
+
 
 const Settings = () => {
   // Sales Reps state
@@ -83,24 +72,16 @@ const Settings = () => {
   const [salesRepFormData, setSalesRepFormData] = useState({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
   const [salesRepFormErrors, setSalesRepFormErrors] = useState<Record<string, string>>({});
 
-  // Custom Sources state
-  const [sourceModalOpen, setSourceModalOpen] = useState(false);
-  const [selectedSource, setSelectedSource] = useState<CustomSource | null>(null);
-  const [sourceDeleteDialogOpen, setSourceDeleteDialogOpen] = useState(false);
-  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
-  const [sourceFormData, setSourceFormData] = useState({ name: "", description: "", active: true });
-  const [sourceFormErrors, setSourceFormErrors] = useState<Record<string, string>>({});
+
 
   // Queries and mutations
   const { data: salesReps, isLoading: salesRepsLoading } = useSalesRepsQuery();
-  const { data: customSources, isLoading: sourcesLoading } = useCustomSourcesQuery();
+
   const { data: nucleos } = useNucleosQuery();
   const createSalesRep = useCreateSalesRep();
   const updateSalesRep = useUpdateSalesRep();
   const deleteSalesRep = useDeleteSalesRep();
-  const createSource = useCreateCustomSource();
-  const updateSource = useUpdateCustomSource();
-  const deleteSource = useDeleteCustomSource();
+
 
   // Sales Rep handlers
   const handleSalesRepEdit = (salesRep: SalesRep) => {
@@ -163,62 +144,7 @@ const Settings = () => {
     }
   };
 
-  // Custom Source handlers
-  const handleSourceEdit = (source: CustomSource) => {
-    setSelectedSource(source);
-    setSourceFormData({
-      name: source.name,
-      description: source.description || "",
-      active: source.active,
-    });
-    setSourceModalOpen(true);
-  };
 
-  const handleSourceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSourceFormErrors({});
-
-    try {
-      const validatedData = customSourceSchema.parse(sourceFormData);
-
-      if (selectedSource) {
-        await updateSource.mutateAsync({
-          id: selectedSource.id,
-          name: validatedData.name,
-          active: validatedData.active,
-          description: validatedData.description || null,
-        });
-      } else {
-        await createSource.mutateAsync({
-          name: validatedData.name,
-          active: validatedData.active,
-          description: validatedData.description || null,
-        });
-      }
-
-      setSourceModalOpen(false);
-      setSelectedSource(null);
-      setSourceFormData({ name: "", description: "", active: true });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            errors[err.path[0].toString()] = err.message;
-          }
-        });
-        setSourceFormErrors(errors);
-      }
-    }
-  };
-
-  const handleSourceDelete = async () => {
-    if (sourceToDelete) {
-      await deleteSource.mutateAsync(sourceToDelete);
-      setSourceDeleteDialogOpen(false);
-      setSourceToDelete(null);
-    }
-  };
 
   return (
     <>
@@ -515,71 +441,7 @@ const Settings = () => {
         </DialogContent>
       </Dialog >
 
-      {/* Custom Source Modal */}
-      < Dialog open={sourceModalOpen} onOpenChange={setSourceModalOpen} >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-primary">
-              {selectedSource ? "Editar Origem" : "Nova Origem"}
-            </DialogTitle>
-            <DialogDescription>
-              Preencha as informações da origem
-            </DialogDescription>
-          </DialogHeader>
 
-          <form onSubmit={handleSourceSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="sourceName">Nome *</Label>
-              <Input
-                id="sourceName"
-                value={sourceFormData.name}
-                onChange={(e) => setSourceFormData({ ...sourceFormData, name: e.target.value })}
-                className="focus:border-[#D6CDC8]"
-                maxLength={50}
-              />
-              {sourceFormErrors.name && (
-                <p className="text-sm text-destructive">{sourceFormErrors.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={sourceFormData.description}
-                onChange={(e) => setSourceFormData({ ...sourceFormData, description: e.target.value })}
-                className="focus:border-[#D6CDC8]"
-                maxLength={200}
-              />
-              {sourceFormErrors.description && (
-                <p className="text-sm text-destructive">{sourceFormErrors.description}</p>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="sourceActive"
-                checked={sourceFormData.active}
-                onCheckedChange={(checked) => setSourceFormData({ ...sourceFormData, active: checked })}
-              />
-              <Label htmlFor="sourceActive" className="cursor-pointer">Ativo</Label>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setSourceModalOpen(false)} className="flex-1">
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-primary hover:bg-primary/90"
-                disabled={createSource.isPending || updateSource.isPending}
-              >
-                {selectedSource ? "Atualizar" : "Criar"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog >
 
       {/* Sales Rep Delete Dialog */}
       < AlertDialog open={salesRepDeleteDialogOpen} onOpenChange={setSalesRepDeleteDialogOpen} >
@@ -599,23 +461,7 @@ const Settings = () => {
         </AlertDialogContent>
       </AlertDialog >
 
-      {/* Source Delete Dialog */}
-      < AlertDialog open={sourceDeleteDialogOpen} onOpenChange={setSourceDeleteDialogOpen} >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Isso irá remover permanentemente a origem.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSourceDelete} className="bg-destructive hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog >
+
     </>
   );
 };

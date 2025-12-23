@@ -311,7 +311,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       // Parse datas
       const purchaseDate = normalizeDate(row.purchase_date);
       const leadDate = normalizeDate(row.lead_date);
-      const submittedAt = row.submitted_at; // Mantém formato original
+      const submittedAt = normalizeDate(row.submitted_at);
 
       // Parse valor monetário
       const amount = parseMoneyValue(row.payment_amount);

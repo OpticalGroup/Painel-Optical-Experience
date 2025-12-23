@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/select";
 import { useSalesRepsQuery } from "@/integrations/supabase/hooks/useSalesReps";
 import { useCohortsQuery } from "@/integrations/supabase/hooks/useCohorts";
-import { useCustomSourcesQuery } from "@/integrations/supabase/hooks/useCustomSources";
+
 import { useUtmSettings } from "@/integrations/supabase/hooks/useUtmSettings";
 import { normalizeCPF } from "@/lib/cpf";
 import {
@@ -85,11 +85,11 @@ const formSchema = z.object({
   state: z.string().optional().or(z.literal("")),
   zipcode: z.string().optional().or(z.literal("")),
   purchaseDate: z.string().optional().or(z.literal("")),
-    observations: z.string().optional().or(z.literal("")),
-    paymentProofUrl: z.string().optional().or(z.literal("")),
-    kommoContactId: z.string().optional().or(z.literal("")),
-    kommoLeadId: z.string().optional().or(z.literal("")),
-    typeformResponseId: z.string().optional().or(z.literal("")),
+  observations: z.string().optional().or(z.literal("")),
+  paymentProofUrl: z.string().optional().or(z.literal("")),
+  kommoContactId: z.string().optional().or(z.literal("")),
+  kommoLeadId: z.string().optional().or(z.literal("")),
+  typeformResponseId: z.string().optional().or(z.literal("")),
   leadDate: z.string().optional().or(z.literal("")),
   nationality: z.string().optional().default("Brasil"),
   utmSource: z.string().optional(),
@@ -151,14 +151,14 @@ export const EnrollmentModal = ({
   const updateEnrollment = useUpdateEnrollment();
   const { data: salesReps } = useSalesRepsQuery();
   const { data: cohorts } = useCohortsQuery();
-  const { data: customSources } = useCustomSourcesQuery();
+
   const { config: utmConfig } = useUtmSettings();
   const isEditing = !!editingEnrollment;
 
   // Combine enum sources with custom sources
   // Combine enum sources with custom sources
   const allSources = [
-    ...(customSources?.filter(s => s.active).map(s => s.name) || []),
+    ...(Constants?.public?.Enums?.enrollment_source || []),
     'Outro'
   ];
 
@@ -273,12 +273,12 @@ export const EnrollmentModal = ({
     const isFull = (selectedCohort?.stats?.available_spots || 0) <= 0;
     const status = isFull ? 'waiting_list' : 'active';
 
-      const enrollmentData = {
-        cohort_id: data.cohortId,
-        student_name: data.studentName,
-        email: data.email.toLowerCase(),
-        cpf: normalizedCPF || null,
-        phone: data.phone || null,
+    const enrollmentData = {
+      cohort_id: data.cohortId,
+      student_name: data.studentName,
+      email: data.email.toLowerCase(),
+      cpf: normalizedCPF || null,
+      phone: data.phone || null,
       sales_rep: data.salesRep,
       source: data.source as any,
       payment_amount: data.paymentAmount ? parseFloat(data.paymentAmount) : null,
@@ -422,19 +422,19 @@ export const EnrollmentModal = ({
                       </FormItem>
                     )}
                   />
-                    <FormField
-                      control={form.control}
-                      name="cpf"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CPF</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="cpf"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="phone"
@@ -753,35 +753,35 @@ export const EnrollmentModal = ({
                   </div>
                 )}
 
-                  {/* FASE 6: Campos de ID de Integração */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="kommoContactId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">ID do Contato (Kommo)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Opcional" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="kommoLeadId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">ID do Lead (Kommo)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Opcional" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                {/* FASE 6: Campos de ID de Integração */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="kommoContactId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">ID do Contato (Kommo)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Opcional" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="kommoLeadId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">ID do Lead (Kommo)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Opcional" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
