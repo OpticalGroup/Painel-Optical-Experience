@@ -170,12 +170,15 @@ function getMetricValue(item: any, metric: MetricType, type: 'turma' | 'vendedor
 function CustomSunburstTooltip({ active, payload, metric }: { active?: boolean; payload?: any[]; metric?: MetricType }) {
     if (!active || !payload || !payload.length) return null;
 
+    // Find the item with the highest value or the one with a payload
+    // Recharts multi-pie tooltips can be tricky, we want the specific segment hovered
     const data = payload[0].payload;
     const metricLabel = metric === 'receita' ? 'receita' : metric === 'pagos' ? 'pagos' : 'matrículas';
 
     return (
-        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl min-w-[160px]">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
+        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl min-w-[160px] z-[100]">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.color }} />
                 {data.ringLabel}
             </div>
             <p className="font-semibold text-foreground text-sm">{data.name}</p>
@@ -227,6 +230,23 @@ export function ChartsPanel({
         utmTerm: false,
     });
 
+    // Unified metric getter that handles different data shapes
+    const getUnifiedMetricValue = (item: any, metric: MetricType): number => {
+        // Handle cases where item might have different property names
+        const count = Number(item.count ?? item.enrolledCount ?? item.totalSales ?? 0);
+        const paidCount = Number(item.paidCount ?? item.paidSales ?? item.totalSales ?? 0);
+        const revenue = Number(item.revenue ?? item.totalRevenue ?? 0);
+        const reservedCount = Number(item.reservedCount ?? 0);
+
+        switch (metric) {
+            case "matriculas": return count;
+            case "pagos": return paidCount;
+            case "receita": return revenue;
+            case "reservados": return reservedCount;
+            default: return count;
+        }
+    };
+
     // Core Hierarchy ring configurations
     const coreRingConfigs = useMemo(() => [
         {
@@ -234,14 +254,14 @@ export function ChartsPanel({
             label: "Turmas",
             enabled: enabledRings.turmas,
             icon: "📚",
-            data: cohorts.map(c => ({ name: c.name, count: c.enrolledCount, paidCount: c.paidCount, revenue: c.revenue })),
+            data: cohorts || [],
         },
         {
             id: "vendedores",
             label: "Vendedores",
             enabled: enabledRings.vendedores,
             icon: "👤",
-            data: vendedores.map(v => ({ name: v.name, count: v.totalSales, paidCount: v.totalSales, revenue: v.totalRevenue })),
+            data: vendedores || [],
         },
     ], [enabledRings, cohorts, vendedores]);
 
@@ -266,25 +286,17 @@ export function ChartsPanel({
     // All ring configs combined
     const allRingConfigs = useMemo(() => [...coreRingConfigs, ...originRingConfigs, ...utmRingConfigs], [coreRingConfigs, originRingConfigs, utmRingConfigs]);
 
-    const activeRings = allRingConfigs.filter(r => r.enabled && r.data.length > 0);
+    const activeRings = useMemo(() => 
+        allRingConfigs.filter(r => r.enabled && r.data && r.data.length > 0),
+    [allRingConfigs]);
+    
     const enabledCount = activeRings.length;
 
-    // Simple metric getter for unified data structure
-    const getUnifiedMetricValue = (item: { count: number; paidCount: number; revenue: number }, metric: MetricType): number => {
-        switch (metric) {
-            case "matriculas": return item.count;
-            case "pagos": return item.paidCount;
-            case "receita": return item.revenue;
-            case "reservados": return item.count; // fallback
-            default: return item.count;
-        }
-    };
-
-    // Transform data for rings
+    // Transform data for rings with specific radii and colors
     const ringsData = useMemo(() => {
         return activeRings.map((ring, index) => {
             const radii = calculateRingRadii(enabledCount, index);
-            const colorConfig = DIMENSION_COLORS[ring.id];
+            const colorConfig = DIMENSION_COLORS[ring.id] || { primary: "#8B5CF6", shades: ["#8B5CF6"] };
 
             const total = ring.data.reduce((sum, item) =>
                 sum + getUnifiedMetricValue(item, selectedMetric), 0);
@@ -293,7 +305,7 @@ export function ChartsPanel({
                 const value = getUnifiedMetricValue(item, selectedMetric);
                 return {
                     id: `${ring.id}-${idx}`,
-                    name: item.name,
+                    name: item.name || item.source || "Outro",
                     value,
                     percentage: total > 0 ? (value / total) * 100 : 0,
                     color: colorConfig.shades[idx % colorConfig.shades.length],

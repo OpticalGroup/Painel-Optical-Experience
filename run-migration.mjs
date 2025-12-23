@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Read migration SQL
 const migrationSQL = readFileSync(
-    join(__dirname, 'supabase', 'migrations', '20251123163000_create_integration_settings.sql'),
+    join(__dirname, 'supabase', 'migrations', '20251125000000_fix_get_cohort_stats_left_join.sql'),
     'utf-8'
 );
 

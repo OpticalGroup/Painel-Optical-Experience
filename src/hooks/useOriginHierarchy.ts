@@ -3,10 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface OriginHierarchyData {
     funis: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
-    macroCOrigens: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
-    microOrigens: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
-    variacaoMicro: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
-    variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
+    macroOrigens: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
 }
 
 export function useOriginHierarchy() {
@@ -34,7 +31,7 @@ export function useOriginHierarchy() {
             if (!enrollments || enrollments.length === 0) {
                 return {
                     funis: [],
-                    macroCOrigens: [],
+                    macroOrigens: [],
                     microOrigens: [],
                     variacaoMicro: [],
                     variacaoNano: [],
@@ -55,7 +52,7 @@ export function useOriginHierarchy() {
                     map.set(value, {
                         count: current.count + 1,
                         paidCount: current.paidCount + (isPaid ? 1 : 0),
-                        revenue: current.revenue + (isPaid ? (e.payment_amount || 2000) : 0),
+                        revenue: current.revenue + (isPaid ? (Number(e.payment_amount) || 2000) : 0),
                     });
                 });
 
@@ -101,7 +98,7 @@ export function useOriginHierarchy() {
 
             return {
                 funis,
-                macroCOrigens: macroOrigens,
+                macroOrigens: macroOrigens,
                 microOrigens,
                 variacaoMicro,
                 variacaoNano,
