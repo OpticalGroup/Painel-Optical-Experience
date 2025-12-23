@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useCoursesQuery, useDeleteCourse } from "@/integrations/supabase/hooks/useCourses";
+import { useProductsQuery, useDeleteProduct } from "@/integrations/supabase/hooks/useProducts";
 import { ProductDialog } from "./ProductDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -16,18 +16,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Course = Tables<'courses'>;
+type Product = Tables<'products'>;
 
 export const ProductsTab = () => {
-    const { data: courses, isLoading } = useCoursesQuery();
-    const deleteCourse = useDeleteCourse();
+    const { data: products, isLoading } = useProductsQuery();
+    const deleteProduct = useDeleteProduct();
     const { toast } = useToast();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Course | null>(null);
-    const [deletingProduct, setDeletingProduct] = useState<Course | null>(null);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
-    const handleEdit = (product: Course) => {
+    const handleEdit = (product: Product) => {
         setEditingProduct(product);
         setIsDialogOpen(true);
     };
@@ -41,7 +41,7 @@ export const ProductsTab = () => {
         if (!deletingProduct) return;
 
         try {
-            await deleteCourse.mutateAsync(deletingProduct.id);
+            await deleteProduct.mutateAsync(deletingProduct.id);
             toast({ title: "Produto excluído com sucesso" });
         } catch (error: any) {
             toast({
@@ -54,6 +54,11 @@ export const ProductsTab = () => {
         }
     };
 
+    const formatPrice = (price: number | null) => {
+        if (price === null) return "-";
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+    };
+
     if (isLoading) {
         return <div>Carregando produtos...</div>;
     }
@@ -64,7 +69,7 @@ export const ProductsTab = () => {
                 <div>
                     <h2 className="text-lg font-medium">Produtos</h2>
                     <p className="text-sm text-muted-foreground">
-                        Gerencie os produtos (cursos) disponíveis no sistema
+                        Gerencie os produtos disponíveis no sistema
                     </p>
                 </div>
                 <Button onClick={handleCreate}>
@@ -76,26 +81,35 @@ export const ProductsTab = () => {
             <div className="border rounded-lg">
                 <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
                     <div className="col-span-4">Nome</div>
-                    <div className="col-span-6">Descrição</div>
+                    <div className="col-span-3">Preço</div>
+                    <div className="col-span-3">Status</div>
                     <div className="col-span-2 text-right">Ações</div>
                 </div>
 
                 <div className="divide-y">
-                    {courses?.map((course) => (
-                        <div key={course.id} className="grid grid-cols-12 gap-4 p-4 items-center text-sm">
-                            <div className="col-span-4 font-medium">{course.name}</div>
-                            <div className="col-span-6 text-muted-foreground truncate">
-                                {course.description || "-"}
+                    {products?.map((product) => (
+                        <div key={product.id} className="grid grid-cols-12 gap-4 p-4 items-center text-sm">
+                            <div className="col-span-4 font-medium">{product.name}</div>
+                            <div className="col-span-3 text-muted-foreground">
+                                {formatPrice(product.price)}
+                            </div>
+                            <div className="col-span-3">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.status === 'active'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                                    }`}>
+                                    {product.status === 'active' ? 'Ativo' : product.status || 'Inativo'}
+                                </span>
                             </div>
                             <div className="col-span-2 flex justify-end gap-2">
-                                <Button variant="ghost" size="icon" onClick={() => handleEdit(course)}>
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
                                     <Pencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive"
-                                    onClick={() => setDeletingProduct(course)}
+                                    onClick={() => setDeletingProduct(product)}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -103,7 +117,7 @@ export const ProductsTab = () => {
                         </div>
                     ))}
 
-                    {(!courses || courses.length === 0) && (
+                    {(!products || products.length === 0) && (
                         <div className="p-8 text-center text-muted-foreground">
                             Nenhum produto cadastrado.
                         </div>
