@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Users, GraduationCap, TrendingUp, DollarSign, ArrowRight, Calendar, MapPin, Upload, FileSignature, Clock, Target, CalendarIcon, HelpCircle } from "lucide-react";
+import { Users, GraduationCap, TrendingUp, DollarSign, ArrowRight, Calendar, MapPin, Upload, FileSignature, Clock, Target, CalendarIcon, HelpCircle, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn, formatBRL } from "@/lib/utils";
 import { HeroKPIs } from "@/components/dashboard/HeroKPIs";
 import { HierarchyCards } from "@/components/dashboard/HierarchyCards";
