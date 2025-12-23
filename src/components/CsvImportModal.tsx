@@ -10,10 +10,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CsvColumnMappingModal } from "./CsvColumnMappingModal";
 import { CohortCreationModal } from "./CohortCreationModal";
 import { CsvTemplateConfigModal } from "./CsvTemplateConfigModal";
-import { OriginCreationModal } from "./OriginCreationModal";
+import { HierarchyCreationModal, HierarchyItemToCreate } from "./HierarchyCreationModal";
 import { SellerCreationModal } from "./SellerCreationModal";
+import { OriginCreationModal } from "./OriginCreationModal";
 import { useCreateImportRecord } from "@/integrations/supabase/hooks/useImportHistory";
-import { useCustomSourcesQuery, useCreateCustomSource } from "@/integrations/supabase/hooks/useCustomSources";
 import { useSalesRepsQuery, useCreateSalesRep } from "@/integrations/supabase/hooks/useSalesReps";
 import { Constants } from "@/integrations/supabase/types";
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,10 +25,13 @@ import {
   useMacroOrigins,
   useMicroOrigins,
   useMicroVariations,
+  useNanoVariations,
   useCreateFunnel,
   useCreateMacroOrigin,
   useCreateMicroOrigin,
   useCreateMicroVariation,
+  useCreateNanoVariation,
+  useOriginHierarchy,
 } from "@/integrations/supabase/hooks/useOriginHierarchy";
 import {
   normalizeEnrollmentSource,
@@ -86,12 +89,12 @@ interface ParsedRow {
   utm_campaign?: string;
   utm_term?: string;
   utm_content?: string;
-    utm_page?: string;
-    submitted_at?: string; // Timestamp de submissão
-    kommo_contact_id?: string; // ID do contato no Kommo
-    kommo_lead_id?: string; // ID do lead no Kommo
-    external_lead_id?: string; // ID do lead externo (CRM)
-    // Campos da nova hierarquia de origem
+  utm_page?: string;
+  submitted_at?: string; // Timestamp de submissão
+  kommo_contact_id?: string; // ID do contato no Kommo
+  kommo_lead_id?: string; // ID do lead no Kommo
+  external_lead_id?: string; // ID do lead externo (CRM)
+  // Campos da nova hierarquia de origem
   funnel_name?: string; // Nome do funil de venda
   macro_origin?: string; // Origem macro
   micro_origin?: string; // Origem micro
@@ -113,21 +116,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const createImportRecord = useCreateImportRecord();
   const queryClient = useQueryClient();
 
-  // Hooks para Origens e Vendedores
-  const { data: customSources } = useCustomSourcesQuery();
+  // Hook para vendedores
   const { data: salesReps } = useSalesRepsQuery();
-  const createCustomSource = useCreateCustomSource();
   const createSalesRep = useCreateSalesRep();
 
-  // Hooks para hierarquia de origem
-  const { data: funnels } = useFunnels();
-  const { data: macroOrigins } = useMacroOrigins();
-  const { data: microOrigins } = useMicroOrigins();
-  const { data: microVariations } = useMicroVariations();
-  const createFunnel = useCreateFunnel();
-  const createMacroOrigin = useCreateMacroOrigin();
-  const createMicroOrigin = useCreateMicroOrigin();
-  const createMicroVariation = useCreateMicroVariation();
+  // Hook para hierarquia de origem completa (5 níveis)
+  const originHierarchy = useOriginHierarchy();
+  const { funnels, macroOrigins, microOrigins, microVariations, nanoVariations } = originHierarchy;
 
   // Novo estado para mapeamento de colunas
   const [csvRawData, setCsvRawData] = useState<{ headers: string[]; rows: string[][] }>({ headers: [], rows: [] });
@@ -140,10 +135,10 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const [cohortMapping, setCohortMapping] = useState<Record<string, string>>({}); // nome -> id
   const [showCohortCreationModal, setShowCohortCreationModal] = useState(false);
 
-  // Novo estado para Origens e Vendedores
-  const [missingOrigins, setMissingOrigins] = useState<string[]>([]);
-  const [showOriginCreationModal, setShowOriginCreationModal] = useState(false);
-  const [originMapping, setOriginMapping] = useState<Record<string, string>>({}); // nome csv -> nome sistema
+  // Estado para hierarquia de origens (5 níveis)
+  const [hierarchyItemsToCreate, setHierarchyItemsToCreate] = useState<HierarchyItemToCreate[]>([]);
+  const [showHierarchyCreationModal, setShowHierarchyCreationModal] = useState(false);
+  const [hierarchyMapping, setHierarchyMapping] = useState<Record<string, string>>({}); // nome csv -> nome sistema
 
   const [missingSellers, setMissingSellers] = useState<string[]>([]);
   const [showSellerCreationModal, setShowSellerCreationModal] = useState(false);
@@ -231,22 +226,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     const normalized = value.toLowerCase().trim()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
 
-    // 1. Verificar mapeamento manual (criado no modal)
-    if (originMapping[value]) return originMapping[value];
-
-    // 2. Verificar origens customizadas existentes (case insensitive)
-    const customMatch = customSources?.find(s =>
-      s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
-    );
-    if (customMatch) return customMatch.name;
-
-    // 3. Verificar enums padrão
+    // 1. Verificar enums padrão
     const enumMatch = Constants.public.Enums.enrollment_source.find(s =>
       s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
     );
     if (enumMatch) return enumMatch;
 
-    // 4. Mapeamento de valores comuns
+    // 3. Mapeamento de valores comuns
     const mapping: Record<string, string> = {
       'instagram': 'Instagram',
       'insta': 'Instagram',
@@ -272,7 +258,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       'other': 'Outro',
     };
 
-    return mapping[normalized] || value; // Retorna o valor original se não encontrar mapeamento, para ser pego no checkOrigins
+    return mapping[normalized] || value; // Retorna o valor original se não encontrar mapeamento
   };
 
   // Função para revalidar todas as linhas
@@ -315,7 +301,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       // Normalizar nome da turma
       // Se tiver cohort_identifier e cohort_year, combiná-los
       let cohortNameInput = row.cohort_identifier || '';
-      
+
       // Se o usuário mapeou "Turma Inscrita :" e ela contém o mês, 
       // e mapeou "Ano", normalizeCohortName fará o agrupamento
       const normalizedCohort = multiCohort
@@ -374,10 +360,10 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         utm_content: row.utm_content?.trim() || undefined,
         utm_page: row.utm_page?.trim() || undefined,
 
-          // Campos de integração
-          kommo_contact_id: row.kommo_contact_id?.trim() || undefined,
-          kommo_lead_id: row.kommo_lead_id?.trim() || undefined,
-          external_lead_id: row.external_lead_id?.trim() || undefined,
+        // Campos de integração
+        kommo_contact_id: row.kommo_contact_id?.trim() || undefined,
+        kommo_lead_id: row.kommo_lead_id?.trim() || undefined,
+        external_lead_id: row.external_lead_id?.trim() || undefined,
 
         // Campos da hierarquia de origem
         funnel_name: row.funnel_name?.trim() || undefined,
@@ -418,7 +404,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
             setCsvRawData({ headers, rows });
             setShowMappingModal(true);
-            
+
             toast({
               title: "Arquivo carregado!",
               description: `${rows.length} linha(s) encontrada(s). Configure o mapeamento das colunas.`,
@@ -517,39 +503,84 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   };
 
   const checkOrigins = async (data: ParsedRow[]) => {
-    // Extrair origens únicas normalizadas
-    const uniqueOrigins = Array.from(new Set(
-      data.map(row => row.source).filter(Boolean)
-    )) as string[];
+    // Lista de itens a criar, respeitando a ordem de dependência
+    const itemsToCreate: HierarchyItemToCreate[] = [];
+    const processedItems = new Set<string>();
 
-    // Filtrar aquelas que NÃO são customizadas já existentes
-    const missing = uniqueOrigins.filter(origin => {
-      const normalized = origin.toLowerCase().trim()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    data.forEach(row => {
+      // 1. Verificar Funil
+      if (row.funnel_name) {
+        const funnelName = row.funnel_name.trim();
+        const funnelExists = funnels.some(f => f.name.toLowerCase() === funnelName.toLowerCase());
+        const alreadyInList = itemsToCreate.some(i => i.type === 'funnel' && i.name.toLowerCase() === funnelName.toLowerCase());
+        
+        if (!funnelExists && !alreadyInList) {
+          itemsToCreate.push({ type: 'funnel', name: funnelName });
+        }
 
-      // IGNORAR verificação de enum padrão para forçar criação de custom source
-      // se o usuário quiser gerenciá-la.
-      // const isEnum = Constants.public.Enums.enrollment_source.some(s => ...);
+        // 2. Verificar Macro (depende do Funil)
+        if (row.macro_origin) {
+          const macroName = row.macro_origin.trim();
+          const macroExists = macroOrigins.some(m => 
+            m.name.toLowerCase() === macroName.toLowerCase() && 
+            funnels.find(f => f.id === m.funnel_id)?.name.toLowerCase() === funnelName.toLowerCase()
+          );
+          const alreadyInList = itemsToCreate.some(i => 
+            i.type === 'macro' && 
+            i.name.toLowerCase() === macroName.toLowerCase() && 
+            i.parentName?.toLowerCase() === funnelName.toLowerCase()
+          );
 
-      // Verifica se é custom source existente
-      const isCustom = customSources?.some(s =>
-        s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
-      );
-      if (isCustom) return false;
+          if (!macroExists && !alreadyInList) {
+            itemsToCreate.push({ type: 'macro', name: macroName, parentName: funnelName });
+          }
 
-      // Verifica se já foi mapeado
-      if (originMapping[origin]) return false;
+          // 3. Verificar Micro (depende da Macro)
+          if (row.micro_origin) {
+            const microName = row.micro_origin.trim();
+            const microExists = microOrigins.some(m => 
+              m.name.toLowerCase() === microName.toLowerCase() &&
+              macroOrigins.find(ma => ma.id === m.macro_origin_id)?.name.toLowerCase() === macroName.toLowerCase()
+            );
+            const alreadyInList = itemsToCreate.some(i => 
+              i.type === 'micro' && 
+              i.name.toLowerCase() === microName.toLowerCase() && 
+              i.parentName?.toLowerCase() === macroName.toLowerCase()
+            );
 
-      return true;
+            if (!microExists && !alreadyInList) {
+              itemsToCreate.push({ type: 'micro', name: microName, parentName: macroName });
+            }
+
+            // 4. Verificar Variação (depende da Micro)
+            if (row.micro_variation) {
+              const varName = row.micro_variation.trim();
+              const varExists = microVariations.some(v => 
+                v.name.toLowerCase() === varName.toLowerCase() &&
+                microOrigins.find(mi => mi.id === v.micro_origin_id)?.name.toLowerCase() === microName.toLowerCase()
+              );
+              const alreadyInList = itemsToCreate.some(i => 
+                i.type === 'microVar' && 
+                i.name.toLowerCase() === varName.toLowerCase() && 
+                i.parentName?.toLowerCase() === microName.toLowerCase()
+              );
+
+              if (!varExists && !alreadyInList) {
+                itemsToCreate.push({ type: 'microVar', name: varName, parentName: microName });
+              }
+            }
+          }
+        }
+      }
     });
 
-    setMissingOrigins(missing);
+    setHierarchyItemsToCreate(itemsToCreate);
 
-    if (missing.length > 0) {
-      setShowOriginCreationModal(true);
+    if (itemsToCreate.length > 0) {
+      setShowHierarchyCreationModal(true);
       toast({
-        title: "Origens desconhecidas detectadas",
-        description: `${missing.length} origem(ns) não encontrada(s). Configure-as antes de continuar.`,
+        title: "Hierarquia de origens ausente",
+        description: `${itemsToCreate.length} item(ns) precisam ser criados. Configure-os antes de continuar.`,
       });
     } else {
       // Próximo passo: verificar vendedores
@@ -650,45 +681,23 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     }
   };
 
-  const handleOriginsCreated = async (originForms: Record<string, any>) => {
+  const handleHierarchyCreated = async (createdMappings: Record<string, string>) => {
     try {
-      const originsToCreate = Object.values(originForms).map((form: any) => ({
-        name: form.name,
-        description: form.description || null,
-        active: true,
-      }));
+      // Atualizar mapeamento de hierarquia
+      setHierarchyMapping(prev => ({ ...prev, ...createdMappings }));
 
-      // Criar um por um para evitar erros de constraint unique se houver duplicatas no batch
-      for (const origin of originsToCreate) {
-        await createCustomSource.mutateAsync(origin);
-      }
+      setShowHierarchyCreationModal(false);
 
-      // Atualizar mapeamento local para que normalizeEnrollmentSource use os novos nomes
-      const newMapping = { ...originMapping };
-      Object.entries(originForms).forEach(([original, form]: [string, any]) => {
-        newMapping[original] = form.name;
-      });
-      setOriginMapping(newMapping);
-
-      // Re-normalizar dados com os novos mapeamentos
-      const updatedData = previewData.map(row => ({
-        ...row,
-        source: normalizeEnrollmentSource(row.source)
-      }));
-      setPreviewData(updatedData);
-
-      setShowOriginCreationModal(false);
-
-      // Continuar fluxo
-      await checkSellers(updatedData);
+      // Continuar fluxo - verificar vendedores
+      await checkSellers(previewData);
 
       toast({
-        title: "Origens criadas!",
-        description: `${originsToCreate.length} origem(ns) adicionada(s).`,
+        title: "Hierarquia criada!",
+        description: `${Object.keys(createdMappings).length} item(ns) de hierarquia adicionado(s).`,
       });
     } catch (error: any) {
       toast({
-        title: "Erro ao criar origens",
+        title: "Erro ao criar hierarquia",
         description: error.message,
         variant: "destructive",
       });
@@ -1040,19 +1049,19 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             enrollmentData.utm_page = dataToImport[i].utm_page;
           }
 
-            if (dataToImport[i].submitted_at) {
-              enrollmentData.submitted_at = dataToImport[i].submitted_at;
-            }
+          if (dataToImport[i].submitted_at) {
+            enrollmentData.submitted_at = dataToImport[i].submitted_at;
+          }
 
-            if (dataToImport[i].kommo_contact_id) {
-              enrollmentData.kommo_contact_id = dataToImport[i].kommo_contact_id;
-            }
+          if (dataToImport[i].kommo_contact_id) {
+            enrollmentData.kommo_contact_id = dataToImport[i].kommo_contact_id;
+          }
 
-            if (dataToImport[i].kommo_lead_id) {
-              enrollmentData.kommo_lead_id = dataToImport[i].kommo_lead_id;
-            }
+          if (dataToImport[i].kommo_lead_id) {
+            enrollmentData.kommo_lead_id = dataToImport[i].kommo_lead_id;
+          }
 
-            // Pular duplicatas se já marcadas
+          // Pular duplicatas se já marcadas
           if (dataToImport[i].isDuplicate) {
             errors.push(`Linha ${i + 2}${cohortInfo}: Email duplicado (ignorado)`);
             setProgress(Math.round(((i + 1) / dataToImport.length) * 100));
@@ -1242,13 +1251,17 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         onSkip={handleSkipMissingCohorts}
       />
 
-      <OriginCreationModal
-        open={showOriginCreationModal}
-        onOpenChange={setShowOriginCreationModal}
-        missingOrigins={missingOrigins}
-        onOriginsCreated={handleOriginsCreated}
-        onSkip={handleSkipMissingOrigins}
+      <HierarchyCreationModal
+        open={showHierarchyCreationModal}
+        onOpenChange={setShowHierarchyCreationModal}
+        itemsToCreate={hierarchyItemsToCreate}
+        onComplete={handleHierarchyCreated}
+        onSkip={() => {
+          setShowHierarchyCreationModal(false);
+          checkSellers(previewData);
+        }}
       />
+
 
       <SellerCreationModal
         open={showSellerCreationModal}
@@ -1264,7 +1277,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       />
 
       {/* Modal Principal de Importação */}
-      <Dialog open={open && !showMappingModal && !showCohortCreationModal && !showOriginCreationModal && !showSellerCreationModal && !showTemplateConfigModal} onOpenChange={onOpenChange}>
+      <Dialog open={open && !showMappingModal && !showCohortCreationModal && !showHierarchyCreationModal && !showSellerCreationModal && !showTemplateConfigModal} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-primary">
@@ -1417,19 +1430,28 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                             </div>
                           </>
                         )}
-                        {duplicateCount > 0 && (
-                          <>
-                            <div className="border-l border-border" />
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                              <div>
-                                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">{duplicateCount} Email(s) Duplicado(s)</p>
-                                <p className="text-xs text-muted-foreground">Já existe(m) na turma</p>
+                          {duplicateCount > 0 && (
+                            <>
+                              <div className="border-l border-border" />
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                <div>
+                                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">{duplicateCount} Email(s) Duplicado(s)</p>
+                                  <p className="text-xs text-muted-foreground">Já existe(m) na turma</p>
+                                </div>
                               </div>
+                            </>
+                          )}
+                          <div className="border-l border-border" />
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-5 w-5 text-purple-500" />
+                            <div>
+                              <p className="text-sm font-semibold text-purple-500">Hierarquia de Origem</p>
+                              <p className="text-xs text-muted-foreground">5 níveis configurados</p>
                             </div>
-                          </>
-                        )}
-                      </div>
+                          </div>
+                        </div>
+
 
                       {duplicateCount > 0 && (
                         <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
@@ -1485,23 +1507,28 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                               </Tooltip>
                             </div>
                           </th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">
-                              <div className="flex items-center gap-1">
-                                CPF
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">Formato: 000.000.000-00 ou 11 dígitos (opcional)</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </th>
-                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">Telefone</th>
-                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Vendedor *</th>
-                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Origem</th>
-                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[100px]">Valor</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">
+                            <div className="flex items-center gap-1">
+                              CPF
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Formato: 000.000.000-00 ou 11 dígitos (opcional)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">Telefone</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Vendedor *</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Funil</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Macro</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Micro</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Variação</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Origem (L)</th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[100px]">Valor</th>
+
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[110px]">Pagamento</th>
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[110px]">Contrato</th>
                           <th className="px-2 py-2 text-center font-semibold text-xs w-16">Ações</th>
@@ -1619,7 +1646,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                                   value={row.cpf || ""}
                                   onChange={(e) => updatePreviewRow(index, "cpf", e.target.value)}
                                   placeholder="000.000.000-00"
-                                    className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 border-border bg-background focus:ring-primary`}
+                                  className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 border-border bg-background focus:ring-primary`}
                                 />
                               </td>
 
@@ -1634,30 +1661,75 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                                 />
                               </td>
 
-                              {/* Vendedor */}
-                              <td className="px-2 py-1">
-                                <input
-                                  type="text"
-                                  value={row.sales_rep || ""}
-                                  onChange={(e) => updatePreviewRow(index, "sales_rep", e.target.value)}
-                                  placeholder="Nome do vendedor"
-                                  className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${!row.sales_rep
-                                    ? "border-destructive bg-destructive/5 focus:ring-destructive"
-                                    : "border-border bg-background focus:ring-primary"
-                                    }`}
-                                />
-                              </td>
+                                {/* Vendedor */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.sales_rep || ""}
+                                    onChange={(e) => updatePreviewRow(index, "sales_rep", e.target.value)}
+                                    placeholder="Nome do vendedor"
+                                    className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${!row.sales_rep
+                                      ? "border-destructive bg-destructive/5 focus:ring-destructive"
+                                      : "border-border bg-background focus:ring-primary"
+                                      }`}
+                                  />
+                                </td>
 
-                              {/* Origem */}
-                              <td className="px-2 py-1">
-                                <input
-                                  type="text"
-                                  value={row.source || ""}
-                                  onChange={(e) => updatePreviewRow(index, "source", e.target.value)}
-                                  placeholder="instagram, google..."
-                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                />
-                              </td>
+                                {/* Funil */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.funnel_name || ""}
+                                    onChange={(e) => updatePreviewRow(index, "funnel_name", e.target.value)}
+                                    placeholder="Funil"
+                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </td>
+
+                                {/* Macro */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.macro_origin || ""}
+                                    onChange={(e) => updatePreviewRow(index, "macro_origin", e.target.value)}
+                                    placeholder="Macro"
+                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </td>
+
+                                {/* Micro */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.micro_origin || ""}
+                                    onChange={(e) => updatePreviewRow(index, "micro_origin", e.target.value)}
+                                    placeholder="Micro"
+                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </td>
+
+                                {/* Variação */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.micro_variation || ""}
+                                    onChange={(e) => updatePreviewRow(index, "micro_variation", e.target.value)}
+                                    placeholder="Variação"
+                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </td>
+
+                                {/* Origem (L) */}
+                                <td className="px-2 py-1">
+                                  <input
+                                    type="text"
+                                    value={row.source || ""}
+                                    onChange={(e) => updatePreviewRow(index, "source", e.target.value)}
+                                    placeholder="instagram, google..."
+                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary opacity-70"
+                                  />
+                                </td>
+
 
                               {/* Valor */}
                               <td className="px-2 py-1">
@@ -1813,13 +1885,17 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         </DialogContent>
       </Dialog>
 
-      <OriginCreationModal
-        open={showOriginCreationModal}
-        onOpenChange={setShowOriginCreationModal}
-        missingOrigins={missingOrigins}
-        onOriginsCreated={handleOriginsCreated}
-        onSkip={handleSkipMissingOrigins}
+      <HierarchyCreationModal
+        open={showHierarchyCreationModal}
+        onOpenChange={setShowHierarchyCreationModal}
+        itemsToCreate={hierarchyItemsToCreate}
+        onComplete={handleHierarchyCreated}
+        onSkip={() => {
+          setShowHierarchyCreationModal(false);
+          checkSellers(previewData);
+        }}
       />
+
 
       <SellerCreationModal
         open={showSellerCreationModal}

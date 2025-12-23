@@ -46,6 +46,17 @@ export interface MicroVariation {
     micro_origin?: MicroOrigin;
 }
 
+export interface NanoVariation {
+    id: string;
+    micro_variation_id: string;
+    name: string;
+    description: string | null;
+    active: boolean;
+    created_at: string;
+    updated_at: string;
+    micro_variation?: MicroVariation;
+}
+
 // NOTE: Using 'any' temporarily until migration runs and types.ts is regenerated
 // After running the migration and `npx supabase gen types typescript`, these will have proper types
 
@@ -345,43 +356,124 @@ export function useDeleteMicroVariation() {
 }
 
 // ============================================
-// Utility Hook - Full Hierarchy
+// Nano Variations Hooks
+// ============================================
+export function useNanoVariations(microVariationId?: string) {
+    return useQuery({
+        queryKey: ['nano_variations', microVariationId],
+        queryFn: async () => {
+            let query = (supabase as any)
+                .from('nano_variations')
+                .select('*, micro_variation:micro_variations(*, micro_origin:micro_origins(*, macro_origin:macro_origins(*, funnel:funnels(*))))');
+
+            if (microVariationId) {
+                query = query.eq('micro_variation_id', microVariationId);
+            }
+
+            const { data, error } = await query.order('name');
+            if (error) throw error;
+            return (data || []) as NanoVariation[];
+        },
+    });
+}
+
+export function useCreateNanoVariation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (variation: Omit<NanoVariation, 'id' | 'created_at' | 'updated_at' | 'micro_variation'>) => {
+            const { data, error } = await (supabase as any)
+                .from('nano_variations')
+                .insert(variation)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nano_variations'] });
+        },
+    });
+}
+
+export function useUpdateNanoVariation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...updates }: Partial<NanoVariation> & { id: string }) => {
+            const { data, error } = await (supabase as any)
+                .from('nano_variations')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nano_variations'] });
+        },
+    });
+}
+
+export function useDeleteNanoVariation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await (supabase as any)
+                .from('nano_variations')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nano_variations'] });
+        },
+    });
+}
+
+// ============================================
+// Utility Hook - Full Hierarchy (5 levels)
 // ============================================
 export function useOriginHierarchy() {
     const funnels = useFunnels();
     const macroOrigins = useMacroOrigins();
     const microOrigins = useMicroOrigins();
     const microVariations = useMicroVariations();
+    const nanoVariations = useNanoVariations();
 
     return {
         funnels: funnels.data || [],
         macroOrigins: macroOrigins.data || [],
         microOrigins: microOrigins.data || [],
         microVariations: microVariations.data || [],
-        isLoading: funnels.isLoading || macroOrigins.isLoading || microOrigins.isLoading || microVariations.isLoading,
-        error: funnels.error || macroOrigins.error || microOrigins.error || microVariations.error,
+        nanoVariations: nanoVariations.data || [],
+        isLoading: funnels.isLoading || macroOrigins.isLoading || microOrigins.isLoading || microVariations.isLoading || nanoVariations.isLoading,
+        error: funnels.error || macroOrigins.error || microOrigins.error || microVariations.error || nanoVariations.error,
     };
 }
 
-// Helper para obter o caminho completo de uma variação
+// Helper para obter o caminho completo de uma nano variação
 export function getFullHierarchyPath(
-    variationId: string,
+    nanoVariationId: string,
+    nanoVariations: NanoVariation[],
     microVariations: MicroVariation[],
     microOrigins: MicroOrigin[],
     macroOrigins: MacroOrigin[],
     funnels: Funnel[]
 ): string {
-    const variation = microVariations.find(v => v.id === variationId);
-    if (!variation) return '';
+    const nano = nanoVariations.find(n => n.id === nanoVariationId);
+    if (!nano) return '';
 
-    const microOrigin = microOrigins.find(m => m.id === variation.micro_origin_id);
-    if (!microOrigin) return variation.name;
+    const microVar = microVariations.find(v => v.id === nano.micro_variation_id);
+    if (!microVar) return nano.name;
+
+    const microOrigin = microOrigins.find(m => m.id === microVar.micro_origin_id);
+    if (!microOrigin) return `${microVar.name} > ${nano.name}`;
 
     const macroOrigin = macroOrigins.find(m => m.id === microOrigin.macro_origin_id);
-    if (!macroOrigin) return `${microOrigin.name} > ${variation.name}`;
+    if (!macroOrigin) return `${microOrigin.name} > ${microVar.name} > ${nano.name}`;
 
     const funnel = funnels.find(f => f.id === macroOrigin.funnel_id);
-    if (!funnel) return `${macroOrigin.name} > ${microOrigin.name} > ${variation.name}`;
+    if (!funnel) return `${macroOrigin.name} > ${microOrigin.name} > ${microVar.name} > ${nano.name}`;
 
-    return `${funnel.name} > ${macroOrigin.name} > ${microOrigin.name} > ${variation.name}`;
+    return `${funnel.name} > ${macroOrigin.name} > ${microOrigin.name} > ${microVar.name} > ${nano.name}`;
 }
