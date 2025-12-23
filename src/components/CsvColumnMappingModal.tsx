@@ -31,34 +31,37 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'email', label: 'Email', required: true, description: 'Email válido (único por turma)' },
   { key: 'cpf', label: 'CPF', required: true, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (será normalizado)' },
   { key: 'sales_rep', label: 'Vendedor', required: true, description: 'Nome do vendedor responsável' },
+
   // Hierarquia de Origem (campos opcionais que substituem 'source')
   { key: 'funnel_name', label: 'Funil de Venda', required: false, description: 'Nome do funil de vendas (nível 1 da hierarquia)' },
   { key: 'macro_origin', label: 'Origem Macro', required: false, description: 'Origem macro - agrupamento principal (nível 2)' },
   { key: 'micro_origin', label: 'Origem Micro', required: false, description: 'Origem micro - detalhamento (nível 3)' },
   { key: 'micro_variation', label: 'Variação de Origem', required: false, description: 'Variação micro - variantes de teste (nível 4)' },
+  { key: 'origin_action_date', label: 'Data da Ação da Origem', required: false, description: 'Data em que a ação de origem ocorreu (captura do lead)' },
   { key: 'source', label: 'Origem (Legado)', required: false, description: 'Campo legado para origens simples (use os campos de hierarquia acima)' },
 
-  // Campos opcionais - Dados de contato
+  // Campos opcionais - Dados de contato e vendas
   { key: 'phone', label: 'Telefone', required: false, description: 'Telefone com DDD (será normalizado automaticamente)' },
+  { key: 'co_sales_rep', label: 'Co-Responsável', required: false, description: 'Segundo vendedor responsável pela venda' },
 
   // Campos opcionais - Dados financeiros e contratuais
   { key: 'financial_status', label: 'Status Pagamento', required: false, description: 'paid, pending, "Sim" ou "Não" (padrão: pending)' },
   { key: 'contract_status', label: 'Status Contrato', required: false, description: 'signed, pending ou texto contendo "assinado" (padrão: pending)' },
-  { key: 'payment_details', label: 'Detalhes do Pagamento', required: false, description: 'Condições de pagamento (texto livre, pode ser verbose)' },
-  { key: 'payment_amount', label: 'Valor', required: false, description: 'Valor monetário (ex: 7500, "R$ 7.500,00")' },
+  { key: 'payment_details', label: 'Forma de Pagamento', required: false, description: 'Condições de pagamento (texto livre, pode ser verbose)' },
+  { key: 'payment_amount', label: 'Valor Total (Ticket)', required: false, description: 'Valor monetário (ex: 7500, "R$ 7.500,00")' },
   { key: 'purchase_date', label: 'Data da Compra', required: false, description: 'Data da compra/venda (DD/MM/AAAA ou AAAA-MM-DD)' },
   { key: 'lead_date', label: 'Data do Lead', required: false, description: 'Data de chegada do lead no funil (DD/MM/AAAA)' },
-  { key: 'nationality', label: 'Nacionalidade', required: false, description: 'País de origem do aluno' },
+  { key: 'payment_proof_url', label: 'URL do Comprovante', required: false, description: 'Link/URL do comprovante de pagamento' },
 
   // Campos opcionais - Endereço
   { key: 'address', label: 'Endereço', required: false, description: 'Endereço completo (rua, número, complemento, bairro)' },
   { key: 'city', label: 'Cidade', required: false, description: 'Nome da cidade (ex: Salvador, Aracaju)' },
   { key: 'state', label: 'Estado', required: false, description: 'Sigla do estado/UF (ex: BA, SE, SP)' },
   { key: 'zipcode', label: 'CEP', required: false, description: 'CEP no formato XXXXX-XXX ou 8 dígitos (será normalizado)' },
+  { key: 'country', label: 'País', required: false, description: 'País de origem do lead (padrão: Brasil)' },
 
-  // Campos opcionais - Produto e comprovantes
+  // Campos opcionais - Produto e observações
   { key: 'product_name', label: 'Nome do Produto', required: false, description: 'Nome do produto adquirido (padrão: "Optical Experience")' },
-  { key: 'payment_proof_url', label: 'URL do Comprovante', required: false, description: 'Link/URL do comprovante de pagamento' },
   { key: 'observations', label: 'Observações', required: false, description: 'Observações gerais, notas, comentários sobre a matrícula' },
 
   // Campos opcionais - Parâmetros UTM
@@ -67,6 +70,11 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'utm_campaign', label: 'UTM Campaign', required: false, description: 'Nome da campanha (ex: black_friday, lancamento)' },
   { key: 'utm_term', label: 'UTM Term', required: false, description: 'Termo de pesquisa usado em anúncios' },
   { key: 'utm_content', label: 'UTM Content', required: false, description: 'Variação/versão do anúncio ou conteúdo' },
+  { key: 'utm_page', label: 'UTM Página', required: false, description: 'URL da página de captura do lead' },
+
+  // Campos opcionais - Integração e datas
+  { key: 'external_lead_id', label: 'ID Externo (CRM)', required: false, description: 'ID do lead em sistema externo (Kommo, HubSpot, etc)' },
+  { key: 'submitted_at', label: 'Data de Inscrição no Forms', required: false, description: 'Data de submissão do formulário de inscrição' },
 ];
 
 export const CsvColumnMappingModal = ({
@@ -88,33 +96,60 @@ export const CsvColumnMappingModal = ({
 
   // Mapa de sinônimos para melhor detecção
   const FIELD_SYNONYMS: Record<string, string[]> = {
-    'cohort_identifier': ['turma', 'cohort', 'classe', 'grupo'],
-    'student_name': ['nome', 'aluno', 'estudante', 'student', 'name', 'nomecompleto'],
-    'email': ['email', 'e-mail', 'mail', 'correio'],
+    // Identificadores
+    'cohort_identifier': ['turma', 'cohort', 'classe', 'grupo', 'turma inscrita', 'inscrita'],
+
+    // Dados pessoais
+    'student_name': ['nome', 'aluno', 'estudante', 'student', 'name', 'nomecompleto', 'nome completo'],
+    'email': ['email', 'e-mail', 'mail', 'correio', 'email lead', 'email comprador'],
     'cpf': ['cpf', 'documento', 'doc'],
-    'phone': ['telefone', 'fone', 'celular', 'tel', 'phone', 'contato'],
+    'phone': ['telefone', 'fone', 'celular', 'tel', 'phone', 'contato', 'telefone formatado'],
+
+    // Vendas
     'sales_rep': ['vendedor', 'representante', 'comercial', 'sales', 'rep'],
+    'co_sales_rep': ['co-responsável', 'co responsavel', 'coresponsavel', 'segundo vendedor'],
+
+    // Hierarquia de Origens
     'source': ['origem', 'fonte', 'source', 'canal'],
-    'financial_status': ['pagamento', 'financeiro', 'pago', 'payment', 'financial'],
+    'funnel_name': ['funil', 'funnel', 'vendas', 'funil de venda'],
+    'macro_origin': ['macro', 'origem macro', 'origemmacro'],
+    'micro_origin': ['micro', 'origem micro', 'origemmicro'],
+    'micro_variation': ['variacao', 'variacoes', 'variation', 'variações', 'variaçõesdeorigemmicro', 'variações de origem micro'],
+    'origin_action_date': ['data da ação', 'acao da origem', 'data da acao da origem'],
+
+    // Financeiro
+    'financial_status': ['pagamento', 'financeiro', 'pago', 'payment', 'financial', 'status do pagamento', 'status pagamento'],
     'contract_status': ['contrato', 'contract', 'assinado', 'signed'],
-    'payment_details': ['detalhes', 'condicao', 'pagamento', 'details', 'payment'],
-    'payment_amount': ['valor', 'preco', 'amount', 'price'],
-    'purchase_date': ['compra', 'venda', 'purchase', 'data'],
-    'lead_date': ['lead', 'chegada', 'entrada'],
+    'payment_details': ['detalhes', 'condicao', 'forma de pagamento', 'details', 'payment'],
+    'payment_amount': ['valor', 'preco', 'amount', 'price', 'ticket', 'valor total', 'valor total da venda'],
+    'payment_proof_url': ['comprovante', 'proof', 'url', 'link', 'anexe', 'anexo', 'anexe o comprovante'],
+
+    // Datas
+    'purchase_date': ['compra', 'venda', 'purchase', 'data compra', 'datacompra', 'data da compra'],
+    'lead_date': ['lead', 'chegada', 'entrada', 'data de chegada', 'chegada do lead', 'data de chegada do lead no funil'],
+    'submitted_at': ['forms', 'inscrição', 'inscricao', 'formulário', 'data de inscrição', 'data de inscrição no forms'],
+
+    // Endereço
     'address': ['endereco', 'rua', 'address', 'logradouro'],
     'city': ['cidade', 'city', 'municipio'],
     'state': ['estado', 'uf', 'state'],
     'zipcode': ['cep', 'zip', 'codigo', 'postal'],
+    'country': ['pais', 'country', 'nacionalidade'],
+
+    // Produto
     'product_name': ['produto', 'product', 'item'],
-    'payment_proof_url': ['comprovante', 'proof', 'url', 'link'],
-    'observations': ['observacoes', 'obs', 'notas', 'observations', 'notes'],
-    'funnel_name': ['funil', 'funnel', 'vendas'],
-    'macro_origin': ['macro', 'origem macro', 'origemmacro'],
-    'micro_origin': ['micro', 'origem micro', 'origemmicro'],
-    'micro_variation': ['variacao', 'variacoes', 'variation', 'variações'],
-    'utm_source': ['utm', 'source', 'origem'],
-    'utm_medium': ['utm', 'medium', 'meio'],
-    'utm_campaign': ['utm', 'campaign', 'campanha'],
+    'observations': ['observacoes', 'obs', 'notas', 'observations', 'notes', 'observações'],
+
+    // UTMs
+    'utm_source': ['utm_source', 'utmsource', 'source'],
+    'utm_medium': ['utm_medium', 'utmmedium', 'medium', 'meio'],
+    'utm_campaign': ['utm_campaign', 'utmcampaign', 'campaign', 'campanha'],
+    'utm_content': ['utm_content', 'utmcontent', 'content'],
+    'utm_term': ['utm_term', 'utmterm', 'term'],
+    'utm_page': ['utm_página', 'utmpagina', 'página', 'pagina', 'page', 'utmpágina'],
+
+    // Integração
+    'external_lead_id': ['id lead', 'id kommo', 'id lead kommo', 'lead id', 'crm id'],
   };
 
   // Função de similaridade melhorada
