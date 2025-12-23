@@ -2,8 +2,11 @@ import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, HelpCircle, Upload } from "lucide-react";
+import { Plus, HelpCircle, Upload, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { UserMenu } from "@/components/UserMenu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { EnrollmentModal } from "@/components/EnrollmentModal";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { TransferCohortModal } from "@/components/TransferCohortModal";
@@ -18,13 +21,13 @@ const Enrollments = () => {
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [page, setPage] = useState(1);
   const [showCancelled, setShowCancelled] = useState(false);
-    const pageSize = 10;
-  
-    const [editingEnrollment, setEditingEnrollment] = useState<Enrollment | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [csvImportModalOpen, setCsvImportModalOpen] = useState(false);
-  
-    // Transfer Modal State
+  const pageSize = 10;
+
+  const [editingEnrollment, setEditingEnrollment] = useState<Enrollment | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [csvImportModalOpen, setCsvImportModalOpen] = useState(false);
+
+  // Transfer Modal State
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferEnrollmentIds, setTransferEnrollmentIds] = useState<string[]>([]);
   const [transferStudentName, setTransferStudentName] = useState<string | undefined>(undefined);
@@ -184,38 +187,77 @@ const Enrollments = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="px-8 py-6 border-b border-border bg-card">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Todas as Matrículas</h1>
-              <p className="text-muted-foreground">
+      {/* Responsive Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4 gap-3">
+          {/* Left: Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <SidebarTrigger />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                Matrículas
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden md:block">
                 Gerencie todas as matrículas do sistema
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" asChild>
-                <a href="/documentation#gestao-de-matriculas" target="_blank" rel="noopener noreferrer">
-                  <HelpCircle className="h-5 w-5 text-muted-foreground" />
-                </a>
-              </Button>
-              <Button onClick={() => {
-                setEditingEnrollment(null);
-                setModalOpen(true);
-              }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Matrícula
-                </Button>
-                <Button
-                  onClick={() => setCsvImportModalOpen(true)}
-                  variant="outline"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Importar CSV
-                </Button>
-              </div>
           </div>
 
+          {/* Desktop Controls (lg+) */}
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+            <Button variant="ghost" size="icon" asChild>
+              <a href="/documentation#gestao-de-matriculas" target="_blank" rel="noopener noreferrer">
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
+              </a>
+            </Button>
+            <Button onClick={() => setCsvImportModalOpen(true)} variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar
+            </Button>
+            <Button onClick={() => { setEditingEnrollment(null); setModalOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Matrícula
+            </Button>
+            <UserMenu />
+          </div>
+
+          {/* Mobile/Tablet Controls */}
+          <div className="flex items-center gap-2 lg:hidden flex-shrink-0">
+            <Button onClick={() => { setEditingEnrollment(null); setModalOpen(true); }} size="sm" className="bg-primary hover:bg-primary/90 h-9 px-3 gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nova</span>
+            </Button>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-auto rounded-t-2xl">
+                <SheetHeader className="text-left mb-6">
+                  <SheetTitle>Opções</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-3">
+                  <Button onClick={() => setCsvImportModalOpen(true)} variant="outline" className="w-full justify-start h-11 gap-2">
+                    <Upload className="h-4 w-4" />
+                    Importar CSV
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-11 gap-2" asChild>
+                    <a href="/documentation#gestao-de-matriculas" target="_blank" rel="noopener noreferrer">
+                      <HelpCircle className="h-4 w-4" />
+                      Ver Documentação
+                    </a>
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <UserMenu />
+          </div>
+        </div>
+
+        {/* Filters - Below header on mobile */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-3">
           <EnrollmentFilters
             sortBy={sortBy}
             onSortChange={setSortBy}
@@ -225,7 +267,7 @@ const Enrollments = () => {
         </div>
       </header>
 
-      <section className="px-8 py-6 pb-24">
+      <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pb-24">
         <EnrollmentList
           enrollments={enrollments || []}
           isLoading={isLoading}

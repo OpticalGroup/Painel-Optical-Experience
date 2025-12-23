@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Users, Tag, AlertTriangle, Link, HelpCircle, Calendar } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { UserMenu } from "@/components/UserMenu";
 import { CancellationReasonsSettings } from "@/components/settings/CancellationReasonsSettings";
 import { UTMSettings } from "@/components/settings/UTMSettings";
 import { ProductsTab } from "@/components/settings/ProductsTab";
@@ -79,21 +80,21 @@ const Settings = () => {
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
   const [salesRepDeleteDialogOpen, setSalesRepDeleteDialogOpen] = useState(false);
   const [salesRepToDelete, setSalesRepToDelete] = useState<string | null>(null);
-    const [salesRepFormData, setSalesRepFormData] = useState({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
-    const [salesRepFormErrors, setSalesRepFormErrors] = useState<Record<string, string>>({});
+  const [salesRepFormData, setSalesRepFormData] = useState({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+  const [salesRepFormErrors, setSalesRepFormErrors] = useState<Record<string, string>>({});
 
-    // Custom Sources state
-    const [sourceModalOpen, setSourceModalOpen] = useState(false);
-    const [selectedSource, setSelectedSource] = useState<CustomSource | null>(null);
-    const [sourceDeleteDialogOpen, setSourceDeleteDialogOpen] = useState(false);
-    const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
-    const [sourceFormData, setSourceFormData] = useState({ name: "", description: "", active: true });
-    const [sourceFormErrors, setSourceFormErrors] = useState<Record<string, string>>({});
+  // Custom Sources state
+  const [sourceModalOpen, setSourceModalOpen] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<CustomSource | null>(null);
+  const [sourceDeleteDialogOpen, setSourceDeleteDialogOpen] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
+  const [sourceFormData, setSourceFormData] = useState({ name: "", description: "", active: true });
+  const [sourceFormErrors, setSourceFormErrors] = useState<Record<string, string>>({});
 
-    // Queries and mutations
-    const { data: salesReps, isLoading: salesRepsLoading } = useSalesRepsQuery();
-    const { data: customSources, isLoading: sourcesLoading } = useCustomSourcesQuery();
-    const { data: nucleos } = useNucleosQuery();
+  // Queries and mutations
+  const { data: salesReps, isLoading: salesRepsLoading } = useSalesRepsQuery();
+  const { data: customSources, isLoading: sourcesLoading } = useCustomSourcesQuery();
+  const { data: nucleos } = useNucleosQuery();
   const createSalesRep = useCreateSalesRep();
   const updateSalesRep = useUpdateSalesRep();
   const deleteSalesRep = useDeleteSalesRep();
@@ -102,46 +103,46 @@ const Settings = () => {
   const deleteSource = useDeleteCustomSource();
 
   // Sales Rep handlers
-    const handleSalesRepEdit = (salesRep: SalesRep) => {
-      setSelectedSalesRep(salesRep);
-      setSalesRepFormData({
-        name: salesRep.name,
-        email: salesRep.email || "",
-        phone: salesRep.phone || "",
-        active: salesRep.active,
-        nucleo_id: salesRep.nucleo_id || "",
-      });
-      setSalesRepModalOpen(true);
-    };
+  const handleSalesRepEdit = (salesRep: SalesRep) => {
+    setSelectedSalesRep(salesRep);
+    setSalesRepFormData({
+      name: salesRep.name,
+      email: salesRep.email || "",
+      phone: salesRep.phone || "",
+      active: salesRep.active,
+      nucleo_id: salesRep.nucleo_id || "",
+    });
+    setSalesRepModalOpen(true);
+  };
 
-    const handleSalesRepSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setSalesRepFormErrors({});
+  const handleSalesRepSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSalesRepFormErrors({});
 
-      try {
-        const validatedData = salesRepSchema.parse(salesRepFormData);
+    try {
+      const validatedData = salesRepSchema.parse(salesRepFormData);
 
-        const payload = {
-            name: validatedData.name,
-            active: validatedData.active,
-            email: validatedData.email || null,
-            phone: validatedData.phone || null,
-            nucleo_id: validatedData.nucleo_id || null,
-        };
+      const payload = {
+        name: validatedData.name,
+        active: validatedData.active,
+        email: validatedData.email || null,
+        phone: validatedData.phone || null,
+        nucleo_id: validatedData.nucleo_id || null,
+      };
 
-        if (selectedSalesRep) {
-          await updateSalesRep.mutateAsync({
-            id: selectedSalesRep.id,
-            ...payload
-          });
-        } else {
-          await createSalesRep.mutateAsync(payload);
-        }
+      if (selectedSalesRep) {
+        await updateSalesRep.mutateAsync({
+          id: selectedSalesRep.id,
+          ...payload
+        });
+      } else {
+        await createSalesRep.mutateAsync(payload);
+      }
 
-        setSalesRepModalOpen(false);
-        setSelectedSalesRep(null);
-        setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
-      } catch (error) {
+      setSalesRepModalOpen(false);
+      setSelectedSalesRep(null);
+      setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+    } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
@@ -221,166 +222,181 @@ const Settings = () => {
 
   return (
     <>
-      {/* Header */}
+      {/* Responsive Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4 gap-3">
+          {/* Left: Title */}
+          <div className="flex items-center gap-3 min-w-0">
             <SidebarTrigger />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                Configurações
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden md:block">
                 Gerencie vendedores e origens de matrícula
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-primary"
-            onClick={() => window.open('/documentation#configuracao-de-turmas', '_blank')}
-            title="Ver Documentação"
-          >
-            <HelpCircle className="h-5 w-5" />
-          </Button>
+
+          {/* Right Controls */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-primary hidden sm:inline-flex"
+              onClick={() => window.open('/documentation#configuracao-de-turmas', '_blank')}
+              title="Ver Documentação"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+            <UserMenu />
+          </div>
         </div>
       </header>
 
       {/* Content */}
-        <section className="px-8 py-8">
-          <Tabs defaultValue="cohorts" className="w-full">
-            <TabsList className="bg-secondary/50 grid w-full max-w-5xl grid-cols-7">
-              <TabsTrigger value="cohorts" className="gap-2">
-                <Calendar className="h-4 w-4" />
-                Turmas
+      <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+        <Tabs defaultValue="cohorts" className="w-full">
+          {/* Responsive Tab List */}
+          <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-2">
+            <TabsList className="bg-secondary/50 inline-flex min-w-max">
+              <TabsTrigger value="cohorts" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Turmas</span>
+                <span className="inline sm:hidden">Turmas</span>
               </TabsTrigger>
-              <TabsTrigger value="sales-reps" className="gap-2">
-                <Users className="h-4 w-4" />
-                Vendedores
+              <TabsTrigger value="products" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Produtos</span>
               </TabsTrigger>
-              <TabsTrigger value="products" className="gap-2">
-                <Tag className="h-4 w-4" />
-                Produtos
+              <TabsTrigger value="nucleos" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Núcleos</span>
               </TabsTrigger>
-              <TabsTrigger value="nucleos" className="gap-2">
-                <Tag className="h-4 w-4" />
-                Núcleos
+              <TabsTrigger value="sources" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Origens</span>
               </TabsTrigger>
-              <TabsTrigger value="sources" className="gap-2">
-                <Tag className="h-4 w-4" />
-                Origens
+              <TabsTrigger value="sales-reps" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Vendedores</span>
+                <span className="inline sm:hidden">Vend.</span>
               </TabsTrigger>
-              <TabsTrigger value="cancellation" className="gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Cancelamento
+              <TabsTrigger value="cancellation" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Cancelamento</span>
+                <span className="inline sm:hidden">Canc.</span>
               </TabsTrigger>
-              <TabsTrigger value="utm" className="gap-2">
-                <Link className="h-4 w-4" />
-                Rastreamento
+              <TabsTrigger value="utm" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Link className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Rastreamento</span>
+                <span className="inline sm:hidden">UTM</span>
               </TabsTrigger>
             </TabsList>
+          </div>
 
-            {/* Cohorts Tab */}
-            <TabsContent value="cohorts" className="mt-6">
-              <CohortsAdmin />
-            </TabsContent>
+          {/* Cohorts Tab */}
+          <TabsContent value="cohorts" className="mt-6">
+            <CohortsAdmin />
+          </TabsContent>
 
-            {/* Sales Reps Tab */}
-            <TabsContent value="sales-reps" className="mt-6">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Vendedores</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Gerencie a equipe de vendas
-                  </p>
-                </div>
-                <Button onClick={() => {
-                  setSelectedSalesRep(null);
-                  setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
-                  setSalesRepModalOpen(true);
-                }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Vendedor
-                </Button>
+          {/* Sales Reps Tab */}
+          <TabsContent value="sales-reps" className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">Vendedores</h2>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie a equipe de vendas
+                </p>
               </div>
+              <Button onClick={() => {
+                setSelectedSalesRep(null);
+                setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+                setSalesRepModalOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Vendedor
+              </Button>
+            </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Núcleo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesRepsLoading ? (
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefone</TableHead>
-                      <TableHead>Núcleo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {salesRepsLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
-                          <Skeleton className="h-4 w-full" />
+                  ) : salesReps?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        Nenhum vendedor cadastrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    salesReps?.map((rep) => (
+                      <TableRow key={rep.id}>
+                        <TableCell className="font-medium">{rep.name}</TableCell>
+                        <TableCell>{rep.email || "-"}</TableCell>
+                        <TableCell>{rep.phone || "-"}</TableCell>
+                        <TableCell>
+                          {nucleos?.find(n => n.id === rep.nucleo_id)?.name || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={rep.active ? "default" : "secondary"}>
+                            {rep.active ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleSalesRepEdit(rep)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setSalesRepToDelete(rep.id);
+                                setSalesRepDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ) : salesReps?.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                          Nenhum vendedor cadastrado.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      salesReps?.map((rep) => (
-                        <TableRow key={rep.id}>
-                          <TableCell className="font-medium">{rep.name}</TableCell>
-                          <TableCell>{rep.email || "-"}</TableCell>
-                          <TableCell>{rep.phone || "-"}</TableCell>
-                          <TableCell>
-                            {nucleos?.find(n => n.id === rep.nucleo_id)?.name || "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={rep.active ? "default" : "secondary"}>
-                              {rep.active ? "Ativo" : "Inativo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleSalesRepEdit(rep)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => {
-                                  setSalesRepToDelete(rep.id);
-                                  setSalesRepDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
 
-            {/* Products Tab */}
-            <TabsContent value="products" className="mt-6">
-              <ProductsTab />
-            </TabsContent>
+          {/* Products Tab */}
+          <TabsContent value="products" className="mt-6">
+            <ProductsTab />
+          </TabsContent>
 
-            {/* Nucleos Tab */}
-            <TabsContent value="nucleos" className="mt-6">
-              <NucleosTab />
-            </TabsContent>
+          {/* Nucleos Tab */}
+          <TabsContent value="nucleos" className="mt-6">
+            <NucleosTab />
+          </TabsContent>
 
           {/* Custom Sources Tab - Now using Hierarchy Manager */}
           <TabsContent value="sources" className="mt-6">
@@ -441,40 +457,40 @@ const Settings = () => {
               )}
             </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={salesRepFormData.phone}
-                  onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
-                  className="focus:border-[#D6CDC8]"
-                  maxLength={20}
-                />
-                {salesRepFormErrors.phone && (
-                  <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={salesRepFormData.phone}
+                onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
+                className="focus:border-[#D6CDC8]"
+                maxLength={20}
+              />
+              {salesRepFormErrors.phone && (
+                <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="nucleo">Núcleo</Label>
-                <Select
-                  value={salesRepFormData.nucleo_id}
-                  onValueChange={(value) => setSalesRepFormData({ ...salesRepFormData, nucleo_id: value })}
-                >
-                  <SelectTrigger id="nucleo">
-                    <SelectValue placeholder="Selecione um núcleo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {nucleos?.map((nucleo) => (
-                      <SelectItem key={nucleo.id} value={nucleo.id}>
-                        {nucleo.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="nucleo">Núcleo</Label>
+              <Select
+                value={salesRepFormData.nucleo_id}
+                onValueChange={(value) => setSalesRepFormData({ ...salesRepFormData, nucleo_id: value })}
+              >
+                <SelectTrigger id="nucleo">
+                  <SelectValue placeholder="Selecione um núcleo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {nucleos?.map((nucleo) => (
+                    <SelectItem key={nucleo.id} value={nucleo.id}>
+                      {nucleo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <Switch
                 id="active"
                 checked={salesRepFormData.active}

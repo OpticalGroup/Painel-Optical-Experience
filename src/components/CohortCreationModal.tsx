@@ -18,7 +18,7 @@ interface CohortCreationModalProps {
 
 interface CohortFormData {
   name: string;
-  productId: string;
+  courseId: string;
   year: number;
   startDate: string;
   endDate: string;
@@ -26,6 +26,43 @@ interface CohortFormData {
   capacity: number;
   status: "open" | "full" | "completed" | "cancelled";
 }
+
+const BRAZILIAN_STATES = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", 
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
+const COMMON_LOCATIONS = [
+  "São Paulo - SP",
+  "Rio de Janeiro - RJ",
+  "Belo Horizonte - MG",
+  "Salvador - BA",
+  "Fortaleza - CE",
+  "Brasília - DF",
+  "Curitiba - PR",
+  "Manaus - AM",
+  "Recife - PE",
+  "Porto Alegre - RS",
+  "Belém - PA",
+  "Goiânia - GO",
+  "São Luís - MA",
+  "Maceió - AL",
+  "Campo Grande - MS",
+  "Natal - RN",
+  "Teresina - PI",
+  "João Pessoa - PB",
+  "Aracaju - SE",
+  "Cuiabá - MT",
+  "Porto Velho - RO",
+  "Florianópolis - SC",
+  "Macapá - AP",
+  "Rio Branco - AC",
+  "Vitória - ES",
+  "Boa Vista - RR",
+  "Palmas - TO",
+  "Online",
+  "Híbrido"
+];
 
 export const CohortCreationModal = ({
   open,
@@ -47,11 +84,46 @@ export const CohortCreationModal = ({
   useEffect(() => {
     const forms: Record<string, CohortFormData> = {};
     missingCohorts.forEach(cohortName => {
+      // Tentar extrair o ano do nome da turma
+      const yearMatch = cohortName.match(/\d{4}/);
+      const suggestedYear = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
+
+      // Tentar encontrar um produto correspondente no nome da turma
+      let suggestedProductId = '';
+      if (uniqueProducts.length === 1) {
+        suggestedProductId = uniqueProducts[0].id;
+      } else if (uniqueProducts.length > 0) {
+        const lowerName = cohortName.toLowerCase();
+        const foundProduct = uniqueProducts.find(p => 
+          lowerName.includes(p.name.toLowerCase()) || 
+          p.name.toLowerCase().includes(lowerName.replace(/\d{4}/, '').trim())
+        );
+        if (foundProduct) {
+          suggestedProductId = foundProduct.id;
+        }
+      }
+
+      // Tentar extrair o mês para sugerir data de início
+      const monthMap: Record<string, number> = {
+        'janeiro': 0, 'fevereiro': 1, 'março': 2, 'marco': 2, 'abril': 3, 'maio': 4, 'junho': 5,
+        'julho': 6, 'agosto': 7, 'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11
+      };
+      
+      let suggestedStartDate = '';
+      const lowerName = cohortName.toLowerCase();
+      for (const [monthName, monthIndex] of Object.entries(monthMap)) {
+        if (lowerName.includes(monthName)) {
+          const date = new Date(suggestedYear, monthIndex, 1);
+          suggestedStartDate = date.toISOString().split('T')[0];
+          break;
+        }
+      }
+
       forms[cohortName] = {
         name: cohortName,
-        productId: '', // Será validado antes do submit
-        year: new Date().getFullYear(),
-        startDate: '',
+        courseId: suggestedProductId,
+        year: suggestedYear,
+        startDate: suggestedStartDate,
         endDate: '',
         location: '',
         capacity: 22,
@@ -73,7 +145,7 @@ export const CohortCreationModal = ({
 
   const validateForms = (): boolean => {
     return Object.values(cohortForms).every(
-      form => form.productId && form.startDate && form.location && form.capacity > 0
+      form => form.courseId && form.startDate && form.location && form.capacity > 0
     );
   };
 
@@ -113,78 +185,105 @@ export const CohortCreationModal = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`product-${index}`}>
-                    Produto *
-                  </Label>
-                  <Select
-                    value={cohortForms[cohortName]?.productId || undefined}
-                    onValueChange={(value) => updateCohortForm(cohortName, 'productId', value)}
-                  >
-                    <SelectTrigger className="focus:ring-primary">
-                      <SelectValue placeholder="Selecione o produto" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card z-50">
-                      {uniqueProducts.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`product-${index}`}>
+                      Produto *
+                    </Label>
+                    <Select
+                      value={cohortForms[cohortName]?.courseId || undefined}
+                      onValueChange={(value) => updateCohortForm(cohortName, 'courseId', value)}
+                    >
+                      <SelectTrigger className="focus:ring-primary">
+                        <SelectValue placeholder="Selecione o produto" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card z-50">
+                        {uniqueProducts.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`year-${index}`}>
-                    Ano *
-                  </Label>
-                  <Input
-                    id={`year-${index}`}
-                    type="number"
-                    value={cohortForms[cohortName]?.year || new Date().getFullYear()}
-                    onChange={(e) => updateCohortForm(cohortName, 'year', parseInt(e.target.value))}
-                    className="focus-visible:ring-primary"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`year-${index}`}>
+                      Ano *
+                    </Label>
+                    <Input
+                      id={`year-${index}`}
+                      type="number"
+                      value={cohortForms[cohortName]?.year || new Date().getFullYear()}
+                      onChange={(e) => updateCohortForm(cohortName, 'year', parseInt(e.target.value))}
+                      className="focus-visible:ring-primary"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`startDate-${index}`}>
-                    Data de Início *
-                  </Label>
-                  <Input
-                    id={`startDate-${index}`}
-                    type="date"
-                    value={cohortForms[cohortName]?.startDate || ''}
-                    onChange={(e) => updateCohortForm(cohortName, 'startDate', e.target.value)}
-                    className="focus-visible:ring-primary"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`startDate-${index}`}>
+                      Data de Início *
+                    </Label>
+                    <Input
+                      id={`startDate-${index}`}
+                      type="date"
+                      value={cohortForms[cohortName]?.startDate || ''}
+                      onChange={(e) => updateCohortForm(cohortName, 'startDate', e.target.value)}
+                      className="focus-visible:ring-primary"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`endDate-${index}`}>
-                    Data de Término
-                  </Label>
-                  <Input
-                    id={`endDate-${index}`}
-                    type="date"
-                    value={cohortForms[cohortName]?.endDate || ''}
-                    onChange={(e) => updateCohortForm(cohortName, 'endDate', e.target.value)}
-                    className="focus-visible:ring-primary"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`endDate-${index}`}>
+                      Data de Término
+                    </Label>
+                    <Input
+                      id={`endDate-${index}`}
+                      type="date"
+                      value={cohortForms[cohortName]?.endDate || ''}
+                      onChange={(e) => updateCohortForm(cohortName, 'endDate', e.target.value)}
+                      className="focus-visible:ring-primary"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`location-${index}`}>
-                    Local *
-                  </Label>
-                  <Input
-                    id={`location-${index}`}
-                    value={cohortForms[cohortName]?.location || ''}
-                    onChange={(e) => updateCohortForm(cohortName, 'location', e.target.value)}
-                    placeholder="Ex: São Paulo - SP"
-                    className="focus-visible:ring-primary"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`location-${index}`}>
+                      Local *
+                    </Label>
+                    <div className="space-y-2">
+                      <Select
+                        value={COMMON_LOCATIONS.includes(cohortForms[cohortName]?.location) ? cohortForms[cohortName]?.location : (cohortForms[cohortName]?.location ? "other" : undefined)}
+                        onValueChange={(value) => {
+                          if (value === "other") {
+                            updateCohortForm(cohortName, 'location', '');
+                          } else {
+                            updateCohortForm(cohortName, 'location', value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="focus:ring-primary">
+                          <SelectValue placeholder="Selecione o local" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card z-50">
+                          {COMMON_LOCATIONS.map((loc) => (
+                            <SelectItem key={loc} value={loc}>
+                              {loc}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="other">Outro...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {(!COMMON_LOCATIONS.includes(cohortForms[cohortName]?.location) || cohortForms[cohortName]?.location === '') && (
+                        <Input
+                          id={`location-custom-${index}`}
+                          value={cohortForms[cohortName]?.location || ''}
+                          onChange={(e) => updateCohortForm(cohortName, 'location', e.target.value)}
+                          placeholder="Digite o local personalizado"
+                          className="focus-visible:ring-primary animate-in fade-in slide-in-from-top-1"
+                        />
+                      )}
+                    </div>
+                  </div>
 
                 <div className="space-y-2">
                   <Label htmlFor={`status-${index}`}>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Upload, SlidersHorizontal } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { EnrollmentList } from "@/components/enrollments/EnrollmentList";
 import { Enrollment } from "@/components/enrollments/types";
 import { EnrollmentModal, EnrollmentData } from "@/components/EnrollmentModal";
@@ -234,34 +235,37 @@ const CohortDetail = () => {
 
   return (
     <>
-      {/* Header */}
+      {/* Responsive Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4 gap-3">
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <SidebarTrigger />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/cohorts')}
-              className="mr-2"
+              className="h-8 w-8 sm:h-9 sm:w-9"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             {isLoading ? (
-              <Skeleton className="h-12 w-64" />
+              <Skeleton className="h-10 w-40 sm:w-64" />
             ) : cohort ? (
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg lg:text-2xl font-bold text-foreground truncate">
                   {cohort.name}
                 </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block truncate">
                   {format(new Date(cohort.start_date), "dd 'a' ", { locale: ptBR })}
                   {cohort.end_date && format(new Date(cohort.end_date), "dd/MM", { locale: ptBR })} • {cohort.location}
                 </p>
               </div>
             ) : null}
           </div>
-          <div className="flex gap-3 items-center">
+
+          {/* Desktop Controls (lg+) */}
+          <div className="hidden lg:flex gap-3 items-center flex-shrink-0">
             <div className="flex items-center gap-2 mr-2">
               <Switch
                 id="show-cancelled-detail"
@@ -272,15 +276,14 @@ const CohortDetail = () => {
                 Mostrar Cancelados
               </Label>
             </div>
-            <ExportButton type="cohort-detail" cohortId={cohortId} label="Exportar Alunos" />
+            <ExportButton type="cohort-detail" cohortId={cohortId} label="Exportar" />
             <Button
               variant="outline"
               onClick={() => setCsvModalOpen(true)}
               disabled={!cohort}
-              className="border-secondary hover:bg-secondary/10"
             >
               <Upload className="mr-2 h-4 w-4" />
-              Importar CSV
+              Importar
             </Button>
             <Button
               className="bg-primary hover:bg-primary/90 shadow-sm"
@@ -292,18 +295,63 @@ const CohortDetail = () => {
             </Button>
             <UserMenu />
           </div>
+
+          {/* Mobile/Tablet Controls */}
+          <div className="flex items-center gap-2 lg:hidden flex-shrink-0">
+            <Button
+              size="sm"
+              className="bg-primary hover:bg-primary/90 h-9 px-3 gap-1.5"
+              onClick={() => setModalOpen(true)}
+              disabled={!cohort}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nova</span>
+            </Button>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-auto rounded-t-2xl">
+                <SheetHeader className="text-left mb-6">
+                  <SheetTitle>Opções da Turma</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show-cancelled-mobile"
+                      checked={showCancelled}
+                      onCheckedChange={setShowCancelled}
+                    />
+                    <Label htmlFor="show-cancelled-mobile" className="text-sm cursor-pointer">
+                      Mostrar Cancelados
+                    </Label>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <Button onClick={() => setCsvModalOpen(true)} variant="outline" className="w-full justify-start h-11 gap-2" disabled={!cohort}>
+                    <Upload className="h-4 w-4" />
+                    Importar CSV
+                  </Button>
+                  <ExportButton type="cohort-detail" cohortId={cohortId} label="Exportar Alunos" className="w-full justify-start h-11" />
+                </div>
+              </SheetContent>
+            </Sheet>
+            <UserMenu />
+          </div>
         </div>
       </header>
 
       {/* Stats Card */}
-      <section className="px-8 py-6">
+      <section className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
         {isLoading ? (
           <Skeleton className="h-48 w-full" />
         ) : cohort ? (
-          <Card className="p-6 border border-border bg-card">
-            <div className="flex items-center justify-between gap-12">
+          <Card className="p-4 sm:p-6 border border-border bg-card">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12">
               {/* Chart */}
-              <div className="relative w-40 h-40">
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -331,8 +379,8 @@ const CohortDetail = () => {
                 </div>
               </div>
 
-              {/* Stats Grid - 5 colunas */}
-              <div className="flex-1 grid grid-cols-5 gap-6">
+              {/* Stats Grid - responsive */}
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6 w-full">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Total Inscritos</p>
                   <p className="text-3xl font-bold text-foreground">{enrolled}</p>
@@ -363,7 +411,7 @@ const CohortDetail = () => {
               </div>
 
               {/* Vagas Disponíveis ou Fila de Espera */}
-              <div className="space-y-1 pl-6 border-l border-border">
+              <div className="space-y-1 lg:pl-6 lg:border-l border-border w-full lg:w-auto">
                 <p className="text-sm text-muted-foreground">
                   {isOverbooked ? 'Fila de Espera' : 'Vagas Disponíveis'}
                 </p>
@@ -380,7 +428,7 @@ const CohortDetail = () => {
       </section>
 
       {/* Origin Segmentation */}
-      <section className="px-8 pb-6">
+      <section className="px-4 sm:px-6 lg:px-8 pb-4 lg:pb-6">
         <OriginSegmentationCard
           enrollments={enrollmentsData || []}
           isLoading={isLoading}
@@ -388,7 +436,7 @@ const CohortDetail = () => {
       </section>
 
       {/* Enrollments List */}
-      <section className="px-8 pb-24">
+      <section className="px-4 sm:px-6 lg:px-8 pb-24">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-foreground">
             Alunos Inscritos ({enrollments.length})
