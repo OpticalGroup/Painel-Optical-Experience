@@ -14,25 +14,36 @@ export default function DebugPermissions() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Get user directly from Supabase, bypassing useAuth
-        const init = async () => {
-            try {
-                console.log('[DebugPermissions] Getting user directly from Supabase...');
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error) throw error;
-                console.log('[DebugPermissions] Got user:', user?.id);
-                setUser(user);
-                if (user) {
-                    await checkCurrentStatus(user.id);
+        // Use onAuthStateChange which is proven to work
+        console.log('[DebugPermissions] Setting up auth listener...');
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log('[DebugPermissions] Auth event:', event, !!session);
+
+                if (session?.user) {
+                    setUser(session.user);
+                    setInitializing(false);
+                    await checkCurrentStatus(session.user.id);
+                } else if (event === 'SIGNED_OUT') {
+                    setUser(null);
+                    setInitializing(false);
                 }
-            } catch (err: any) {
-                console.error('[DebugPermissions] Init error:', err);
-                setError('Erro ao obter usuário: ' + err.message);
-            } finally {
+            }
+        );
+
+        // Safety timeout
+        const timeout = setTimeout(() => {
+            if (initializing) {
+                console.log('[DebugPermissions] Safety timeout reached');
                 setInitializing(false);
             }
+        }, 5000);
+
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(timeout);
         };
-        init();
     }, []);
 
     const checkCurrentStatus = async (userId: string) => {

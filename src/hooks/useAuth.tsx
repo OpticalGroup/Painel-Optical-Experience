@@ -30,37 +30,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let isFetchingRole = false;
 
-    const fetchUserRole = async (userId: string) => {
-      if (isFetchingRole) return;
-      isFetchingRole = true;
-      
-      try {
-        console.log('[Auth] Fetching role for user:', userId);
+      const fetchUserRole = async (userId: string) => {
+        if (isFetchingRole) return;
+        isFetchingRole = true;
         
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId);
+        try {
+          console.log('[Auth] Fetching role - START for:', userId);
+          const startTime = Date.now();
+          
+          // Use a race to avoid hanging forever if the network request stalls
+          const rolePromise = supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        if (error) {
-          console.error('[Auth] Supabase error fetching role:', JSON.stringify(error, null, 2));
-          throw error;
-        }
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request Timeout')), 4000)
+          );
 
-        if (mounted) {
-          const roleData = data && data.length > 0 ? data[0].role : null;
-          console.log('[Auth] Fetched role data:', roleData);
-          setUserRole(roleData as UserRole);
+          const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
+          
+          console.log(`[Auth] Fetching role - END (${Date.now() - startTime}ms)`);
+
+          if (error) {
+            console.error('[Auth] Supabase error fetching role:', error);
+            throw error;
+          }
+
+          if (mounted) {
+            const roleData = data?.role || null;
+            console.log('[Auth] Role resolved to:', roleData);
+            setUserRole(roleData as UserRole);
+          }
+        } catch (error: any) {
+          console.error('[Auth] Fatal error in fetchUserRole:', error.message || error);
+          if (mounted) {
+            setUserRole(null);
+          }
+        } finally {
+          isFetchingRole = false;
         }
-      } catch (error: any) {
-        console.warn('[Auth] Error in fetchUserRole:', error.message || JSON.stringify(error));
-        if (mounted) {
-          setUserRole(null);
-        }
-      } finally {
-        isFetchingRole = false;
-      }
-    };
+      };
 
     // Use onAuthStateChange as the primary source of truth.
     // It will fire INITIAL_SESSION automatically on mount.
