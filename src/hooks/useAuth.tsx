@@ -27,64 +27,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
     useEffect(() => {
-      // Set up auth state listener FIRST
+      let mounted = true;
+
+      const fetchUserRole = async (userId: string) => {
+        try {
+          console.log('Fetching role for user:', userId);
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Supabase error fetching role:', error);
+            throw error;
+          }
+          
+          if (mounted) {
+            console.log('Fetched role:', data?.role);
+            setUserRole(data?.role ?? null);
+          }
+        } catch (error: any) {
+          console.error('Error fetching user role:', error.message || error);
+          if (mounted) setUserRole(null);
+        }
+      };
+
+      const initializeAuth = async () => {
+        try {
+          setLoading(true);
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (mounted) {
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              await fetchUserRole(session.user.id);
+            } else {
+              setUserRole(null);
+            }
+          }
+        } catch (error) {
+          console.error('Auth initialization error:', error);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      };
+
+      initializeAuth();
+
+      // Add a safety timeout to prevent getting stuck in loading state
+      const safetyTimeout = setTimeout(() => {
+        if (mounted && loading) {
+          console.warn('Auth initialization timed out, forcing loading to false');
+          setLoading(false);
+        }
+      }, 10000); // 10 seconds safety margin
+
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
+          if (!mounted) return;
+
+          console.log('Auth state changed:', event);
           setSession(session);
           setUser(session?.user ?? null);
           
-          // Fetch user role when session changes
           if (session?.user) {
-            setLoading(true);
-            await fetchUserRole(session.user.id);
+            // Only fetch if session changed or was not checked yet
+            // To avoid flickering, we only set loading if we don't have a role yet
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+              setLoading(true);
+              await fetchUserRole(session.user.id);
+              setLoading(false);
+            }
           } else {
             setUserRole(null);
+            if (event === 'SIGNED_OUT') {
+              setLoading(false);
+            }
           }
-          
-          setLoading(false);
         }
       );
 
-      // THEN check for existing session
-      const checkSession = async () => {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        }
-        
-        setLoading(false);
+      return () => {
+        mounted = false;
+        subscription.unsubscribe();
       };
-
-      checkSession();
-
-      return () => subscription.unsubscribe();
     }, []);
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      console.log('Fetching role for user:', userId);
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Supabase error fetching role:', error);
-        throw error;
-      }
-      
-      console.log('Fetched role:', data?.role);
-      setUserRole(data?.role ?? null);
-    } catch (error: any) {
-      console.error('Error fetching user role:', error.message || error);
-      setUserRole(null);
-    }
-  };
+    // Moved outside of useEffect to keep logic clean, but used inside
+    // Alternatively keep it inside as I did above.
 
   const signIn = async (email: string, password: string) => {
     try {
