@@ -4,24 +4,30 @@ import { supabase } from "@/integrations/supabase/client";
 export interface OriginHierarchyData {
     funis: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
     macroOrigens: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
+    microOrigens: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
+    variacaoMicro: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
+    variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
 }
 
 export function useOriginHierarchy() {
     return useQuery({
         queryKey: ["origin-hierarchy"],
         queryFn: async (): Promise<OriginHierarchyData> => {
-            // Try to fetch from enrollments with origin hierarchy fields
-            // If tables don't exist yet, we'll use the source field as fallback
             const { data: enrollments, error } = await supabase
                 .from("enrollments")
                 .select(`
                     id,
-                    source,
                     financial_status,
                     payment_amount,
-                    product_name
-                `)
-                .eq("product_name", "Optical Experience");
+                    funnel_id,
+                    macro_origin_id,
+                    micro_origin_id,
+                    micro_variation_id,
+                    funnels(name),
+                    macro_origins(name),
+                    micro_origins(name),
+                    micro_variations(name)
+                `);
 
             if (error) {
                 console.error("Error fetching origin hierarchy data:", error);
@@ -38,72 +44,44 @@ export function useOriginHierarchy() {
                 };
             }
 
-            // Helper to aggregate by a field
+            // Helper to aggregate by a field (either direct or from joined table)
             const aggregateByField = (
-                getValue: (e: typeof enrollments[0]) => string
+                getName: (e: any) => string | undefined
             ): Array<{ name: string; count: number; paidCount: number; revenue: number }> => {
                 const map = new Map<string, { count: number; paidCount: number; revenue: number }>();
 
                 enrollments.forEach((e) => {
-                    const value = getValue(e) || "Não informado";
-                    const current = map.get(value) || { count: 0, paidCount: 0, revenue: 0 };
+                    const name = getName(e) || "Não Informado";
+                    const current = map.get(name) || { count: 0, paidCount: 0, revenue: 0 };
                     const isPaid = e.financial_status === "paid";
+                    const amount = Number(e.payment_amount) || 0;
 
-                    map.set(value, {
+                    map.set(name, {
                         count: current.count + 1,
                         paidCount: current.paidCount + (isPaid ? 1 : 0),
-                        revenue: current.revenue + (isPaid ? (Number(e.payment_amount) || 2000) : 0),
+                        revenue: current.revenue + (isPaid ? amount : 0),
                     });
                 });
 
                 return Array.from(map.entries())
                     .map(([name, data]) => ({ name, ...data }))
-                    .filter(item => item.name !== "Não informado" || item.count > 0)
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 10); // Top 10
+                    .sort((a, b) => b.count - a.count);
             };
 
-            // For now, we'll derive hierarchy from existing fields
-            // This can be updated once the hierarchy tables are in place
-
-            // Funil: Derive from product_name or a default
-            const funis = aggregateByField((e) => {
-                const product = e.product_name;
-                if (!product) return "Optical Experience";
-                if (product.toLowerCase().includes("mentorado")) return "Mentorado";
-                if (product.toLowerCase().includes("premium")) return "Premium";
-                return product;
-            });
-
-            // Macro Origins: Group sources into categories
-            const macroOrigens = aggregateByField((e) => {
-                const source = e.source || "";
-                if (source.includes("Instagram") || source.includes("Facebook")) return "Redes Sociais";
-                if (source.includes("Tráfego Pago")) return "Tráfego Pago";
-                if (source.includes("Indicação") || source.includes("Programa")) return "Indicação";
-                if (source.includes("API") || source.includes("WEB")) return "Digital";
-                if (source.includes("Aluno")) return "Base de Clientes";
-                return "Orgânico";
-            });
-
-            // Micro Origins: Use the actual source
-            const microOrigens = aggregateByField((e) => e.source || "Não Rastreada");
-
-            // Variação Micro: For now, we can use a placeholder or derive from source details
-            // This would typically come from a dedicated field
-            const variacaoMicro: Array<{ name: string; count: number; paidCount: number; revenue: number }> = [];
-
-            // Variação Nano: Rarely used, leave empty for now
+            const funis = aggregateByField((e) => e.funnels?.name);
+            const macroOrigens = aggregateByField((e) => e.macro_origins?.name);
+            const microOrigens = aggregateByField((e) => e.micro_origins?.name);
+            const variacaoMicro = aggregateByField((e) => e.micro_variations?.name);
             const variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }> = [];
 
             return {
                 funis,
-                macroOrigens: macroOrigens,
+                macroOrigens,
                 microOrigens,
                 variacaoMicro,
                 variacaoNano,
             };
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 5,
     });
 }

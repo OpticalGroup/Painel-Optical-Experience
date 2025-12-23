@@ -868,6 +868,14 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             targetCohortId = cohortId;
           }
 
+          // DEBUG: Log para verificar integridade do ID da turma
+          console.log(`[Import Debug] Row ${i + 1}: Student="${dataToImport[i].student_name}", Resolved CohortID="${targetCohortId}"`);
+
+          if (!targetCohortId) {
+            console.error(`[Import Error] Missing Cohort ID for row ${i + 1}`);
+            throw new Error("Erro Crítico: ID da turma não identificado para esta linha.");
+          }
+
           // ====== RESOLUÇÃO DA HIERARQUIA DE ORIGEM ======
           let resolvedFunnelId: string | undefined;
           let resolvedMacroId: string | undefined;

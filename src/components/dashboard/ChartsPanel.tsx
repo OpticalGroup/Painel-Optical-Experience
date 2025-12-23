@@ -167,12 +167,13 @@ function getMetricValue(item: any, metric: MetricType, type: 'turma' | 'vendedor
 // CUSTOM TOOLTIP
 // ============================================
 
-function CustomSunburstTooltip({ active, payload, metric }: { active?: boolean; payload?: any[]; metric?: MetricType }) {
-    if (!active || !payload || !payload.length) return null;
+function CustomSunburstTooltip({ active, payload, metric, activeSegment }: { active?: boolean; payload?: any[]; metric?: MetricType; activeSegment?: any }) {
+    if (!active || (!activeSegment && (!payload || !payload.length))) return null;
 
-    // Find the item with the highest value or the one with a payload
-    // Recharts multi-pie tooltips can be tricky, we want the specific segment hovered
-    const data = payload[0].payload;
+    // Use the explicitly tracked hovered segment if available, otherwise fallback to payload
+    const data = activeSegment || (payload && payload.length ? payload[0].payload : null);
+    if (!data) return null;
+
     const metricLabel = metric === 'receita' ? 'receita' : metric === 'pagos' ? 'pagos' : 'matrículas';
 
     return (
@@ -291,6 +292,8 @@ export function ChartsPanel({
     [allRingConfigs]);
     
     const enabledCount = activeRings.length;
+
+    const [hoveredSegment, setHoveredSegment] = useState<any>(null);
 
     // Transform data for rings with specific radii and colors
     const ringsData = useMemo(() => {
@@ -573,6 +576,10 @@ export function ChartsPanel({
                                                     animationBegin={ringIndex * 150}
                                                     animationDuration={800}
                                                     animationEasing="ease-out"
+                                                    onMouseEnter={(_, index) => {
+                                                        setHoveredSegment(ring.segments[index]);
+                                                    }}
+                                                    onMouseLeave={() => setHoveredSegment(null)}
                                                 >
                                                     {ring.segments.map((segment) => (
                                                         <Cell
@@ -589,7 +596,7 @@ export function ChartsPanel({
                                                 </Pie>
                                             ))}
 
-                                            <Tooltip content={<CustomSunburstTooltip metric={selectedMetric} />} />
+                                            <Tooltip content={<CustomSunburstTooltip metric={selectedMetric} activeSegment={hoveredSegment} />} />
                                         </RechartsPie>
                                     </ResponsiveContainer>
                                 </motion.div>
