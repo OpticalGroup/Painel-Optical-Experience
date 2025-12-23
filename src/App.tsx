@@ -26,6 +26,7 @@ const ImportHistory = lazy(() => import("./pages/ImportHistory"));
 const Branding = lazy(() => import("./pages/Branding"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const DebugPermissions = lazy(() => import("./pages/DebugPermissions"));
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const AppContent = () => {
           <Route path="/documentation" element={<Documentation />} />
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/debug-permissions" element={<DebugPermissions />} />
         </Route>
 
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
