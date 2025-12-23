@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, AlertCircle, CheckCircle2, FileText, Trash2, HelpCircle } from "lucide-react";
+import { Upload, Download, AlertCircle, CheckCircle2, FileText, Trash2, HelpCircle, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
@@ -513,7 +513,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         const funnelName = row.funnel_name.trim();
         const funnelExists = funnels.some(f => f.name.toLowerCase() === funnelName.toLowerCase());
         const alreadyInList = itemsToCreate.some(i => i.type === 'funnel' && i.name.toLowerCase() === funnelName.toLowerCase());
-        
+
         if (!funnelExists && !alreadyInList) {
           itemsToCreate.push({ type: 'funnel', name: funnelName });
         }
@@ -521,13 +521,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         // 2. Verificar Macro (depende do Funil)
         if (row.macro_origin) {
           const macroName = row.macro_origin.trim();
-          const macroExists = macroOrigins.some(m => 
-            m.name.toLowerCase() === macroName.toLowerCase() && 
+          const macroExists = macroOrigins.some(m =>
+            m.name.toLowerCase() === macroName.toLowerCase() &&
             funnels.find(f => f.id === m.funnel_id)?.name.toLowerCase() === funnelName.toLowerCase()
           );
-          const alreadyInList = itemsToCreate.some(i => 
-            i.type === 'macro' && 
-            i.name.toLowerCase() === macroName.toLowerCase() && 
+          const alreadyInList = itemsToCreate.some(i =>
+            i.type === 'macro' &&
+            i.name.toLowerCase() === macroName.toLowerCase() &&
             i.parentName?.toLowerCase() === funnelName.toLowerCase()
           );
 
@@ -538,13 +538,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
           // 3. Verificar Micro (depende da Macro)
           if (row.micro_origin) {
             const microName = row.micro_origin.trim();
-            const microExists = microOrigins.some(m => 
+            const microExists = microOrigins.some(m =>
               m.name.toLowerCase() === microName.toLowerCase() &&
               macroOrigins.find(ma => ma.id === m.macro_origin_id)?.name.toLowerCase() === macroName.toLowerCase()
             );
-            const alreadyInList = itemsToCreate.some(i => 
-              i.type === 'micro' && 
-              i.name.toLowerCase() === microName.toLowerCase() && 
+            const alreadyInList = itemsToCreate.some(i =>
+              i.type === 'micro' &&
+              i.name.toLowerCase() === microName.toLowerCase() &&
               i.parentName?.toLowerCase() === macroName.toLowerCase()
             );
 
@@ -555,13 +555,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             // 4. Verificar Variação (depende da Micro)
             if (row.micro_variation) {
               const varName = row.micro_variation.trim();
-              const varExists = microVariations.some(v => 
+              const varExists = microVariations.some(v =>
                 v.name.toLowerCase() === varName.toLowerCase() &&
                 microOrigins.find(mi => mi.id === v.micro_origin_id)?.name.toLowerCase() === microName.toLowerCase()
               );
-              const alreadyInList = itemsToCreate.some(i => 
-                i.type === 'microVar' && 
-                i.name.toLowerCase() === varName.toLowerCase() && 
+              const alreadyInList = itemsToCreate.some(i =>
+                i.type === 'microVar' &&
+                i.name.toLowerCase() === varName.toLowerCase() &&
                 i.parentName?.toLowerCase() === microName.toLowerCase()
               );
 
@@ -681,23 +681,15 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     }
   };
 
-  const handleHierarchyCreated = async (createdMappings: Record<string, string>) => {
+  const handleHierarchyCreated = async () => {
     try {
-      // Atualizar mapeamento de hierarquia
-      setHierarchyMapping(prev => ({ ...prev, ...createdMappings }));
-
       setShowHierarchyCreationModal(false);
 
       // Continuar fluxo - verificar vendedores
       await checkSellers(previewData);
-
-      toast({
-        title: "Hierarquia criada!",
-        description: `${Object.keys(createdMappings).length} item(ns) de hierarquia adicionado(s).`,
-      });
     } catch (error: any) {
       toast({
-        title: "Erro ao criar hierarquia",
+        title: "Erro ao continuar após hierarquia",
         description: error.message,
         variant: "destructive",
       });
@@ -1430,27 +1422,27 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                             </div>
                           </>
                         )}
-                          {duplicateCount > 0 && (
-                            <>
-                              <div className="border-l border-border" />
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                                <div>
-                                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">{duplicateCount} Email(s) Duplicado(s)</p>
-                                  <p className="text-xs text-muted-foreground">Já existe(m) na turma</p>
-                                </div>
+                        {duplicateCount > 0 && (
+                          <>
+                            <div className="border-l border-border" />
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                              <div>
+                                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">{duplicateCount} Email(s) Duplicado(s)</p>
+                                <p className="text-xs text-muted-foreground">Já existe(m) na turma</p>
                               </div>
-                            </>
-                          )}
-                          <div className="border-l border-border" />
-                          <div className="flex items-center gap-2">
-                            <Layers className="h-5 w-5 text-purple-500" />
-                            <div>
-                              <p className="text-sm font-semibold text-purple-500">Hierarquia de Origem</p>
-                              <p className="text-xs text-muted-foreground">5 níveis configurados</p>
                             </div>
+                          </>
+                        )}
+                        <div className="border-l border-border" />
+                        <div className="flex items-center gap-2">
+                          <Layers className="h-5 w-5 text-purple-500" />
+                          <div>
+                            <p className="text-sm font-semibold text-purple-500">Hierarquia de Origem</p>
+                            <p className="text-xs text-muted-foreground">5 níveis configurados</p>
                           </div>
                         </div>
+                      </div>
 
 
                       {duplicateCount > 0 && (
@@ -1520,14 +1512,14 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                               </Tooltip>
                             </div>
                           </th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">Telefone</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Vendedor *</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Funil</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Macro</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Micro</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Variação</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Origem (L)</th>
-                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[100px]">Valor</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">Telefone</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Vendedor *</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Funil</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Macro</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Micro</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Variação</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Origem (L)</th>
+                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[100px]">Valor</th>
 
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[110px]">Pagamento</th>
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[110px]">Contrato</th>
@@ -1661,74 +1653,74 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                                 />
                               </td>
 
-                                {/* Vendedor */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.sales_rep || ""}
-                                    onChange={(e) => updatePreviewRow(index, "sales_rep", e.target.value)}
-                                    placeholder="Nome do vendedor"
-                                    className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${!row.sales_rep
-                                      ? "border-destructive bg-destructive/5 focus:ring-destructive"
-                                      : "border-border bg-background focus:ring-primary"
-                                      }`}
-                                  />
-                                </td>
+                              {/* Vendedor */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.sales_rep || ""}
+                                  onChange={(e) => updatePreviewRow(index, "sales_rep", e.target.value)}
+                                  placeholder="Nome do vendedor"
+                                  className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${!row.sales_rep
+                                    ? "border-destructive bg-destructive/5 focus:ring-destructive"
+                                    : "border-border bg-background focus:ring-primary"
+                                    }`}
+                                />
+                              </td>
 
-                                {/* Funil */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.funnel_name || ""}
-                                    onChange={(e) => updatePreviewRow(index, "funnel_name", e.target.value)}
-                                    placeholder="Funil"
-                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                  />
-                                </td>
+                              {/* Funil */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.funnel_name || ""}
+                                  onChange={(e) => updatePreviewRow(index, "funnel_name", e.target.value)}
+                                  placeholder="Funil"
+                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </td>
 
-                                {/* Macro */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.macro_origin || ""}
-                                    onChange={(e) => updatePreviewRow(index, "macro_origin", e.target.value)}
-                                    placeholder="Macro"
-                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                  />
-                                </td>
+                              {/* Macro */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.macro_origin || ""}
+                                  onChange={(e) => updatePreviewRow(index, "macro_origin", e.target.value)}
+                                  placeholder="Macro"
+                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </td>
 
-                                {/* Micro */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.micro_origin || ""}
-                                    onChange={(e) => updatePreviewRow(index, "micro_origin", e.target.value)}
-                                    placeholder="Micro"
-                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                  />
-                                </td>
+                              {/* Micro */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.micro_origin || ""}
+                                  onChange={(e) => updatePreviewRow(index, "micro_origin", e.target.value)}
+                                  placeholder="Micro"
+                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </td>
 
-                                {/* Variação */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.micro_variation || ""}
-                                    onChange={(e) => updatePreviewRow(index, "micro_variation", e.target.value)}
-                                    placeholder="Variação"
-                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                                  />
-                                </td>
+                              {/* Variação */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.micro_variation || ""}
+                                  onChange={(e) => updatePreviewRow(index, "micro_variation", e.target.value)}
+                                  placeholder="Variação"
+                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </td>
 
-                                {/* Origem (L) */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={row.source || ""}
-                                    onChange={(e) => updatePreviewRow(index, "source", e.target.value)}
-                                    placeholder="instagram, google..."
-                                    className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary opacity-70"
-                                  />
-                                </td>
+                              {/* Origem (L) */}
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={row.source || ""}
+                                  onChange={(e) => updatePreviewRow(index, "source", e.target.value)}
+                                  placeholder="instagram, google..."
+                                  className="w-full px-2 py-1 text-xs border border-border bg-background rounded focus:outline-none focus:ring-1 focus:ring-primary opacity-70"
+                                />
+                              </td>
 
 
                               {/* Valor */}
