@@ -15,7 +15,12 @@ export const useEnrollmentsQuery = (cohortId: string | undefined, showCancelled:
 
       let query = supabase
         .from('enrollments')
-        .select('*')
+        .select(`
+          *,
+          contacts (*),
+          products (*),
+          sellers (*)
+        `)
         .eq('cohort_id', cohortId)
         .order('position_in_cohort', { ascending: true });
 

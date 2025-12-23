@@ -50,56 +50,149 @@ export type Database = {
         }
         Relationships: []
       }
-      cohorts: {
-        Row: {
-          capacity: number
-          course_id: string
-          created_at: string
-          end_date: string | null
-          id: string
-          location: string
-          name: string
-          start_date: string
-          status: Database["public"]["Enums"]["cohort_status"]
-          updated_at: string
-          year: number
+        cohorts: {
+          Row: {
+            capacity: number
+            course_id: string
+            created_at: string
+            end_date: string | null
+            id: string
+            location: string
+            name: string
+            start_date: string
+            status: Database["public"]["Enums"]["cohort_status"]
+            updated_at: string
+            year: number
+          }
+          Insert: {
+            capacity?: number
+            course_id: string
+            created_at?: string
+            end_date?: string | null
+            id?: string
+            location: string
+            name: string
+            start_date: string
+            status?: Database["public"]["Enums"]["cohort_status"]
+            updated_at?: string
+            year: number
+          }
+          Update: {
+            capacity?: number
+            course_id?: string
+            created_at?: string
+            end_date?: string | null
+            id?: string
+            location?: string
+            name?: string
+            start_date?: string
+            status?: Database["public"]["Enums"]["cohort_status"]
+            updated_at?: string
+            year?: number
+          }
+          Relationships: [
+            {
+              foreignKeyName: "cohorts_course_id_fkey"
+              columns: ["course_id"]
+              isOneToOne: false
+              referencedRelation: "courses"
+              referencedColumns: ["id"]
+            },
+          ]
         }
-        Insert: {
-          capacity?: number
-          course_id: string
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          location: string
-          name: string
-          start_date: string
-          status?: Database["public"]["Enums"]["cohort_status"]
-          updated_at?: string
-          year: number
+        contacts: {
+          Row: {
+            id: string
+            name: string
+            email: string | null
+            phone: string | null
+            ltv: number
+            total_purchases: number
+            kommo_contact_id: string | null
+            created_at: string
+            updated_at: string
+          }
+          Insert: {
+            id?: string
+            name: string
+            email?: string | null
+            phone?: string | null
+            ltv?: number
+            total_purchases?: number
+            kommo_contact_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Update: {
+            id?: string
+            name?: string
+            email?: string | null
+            phone?: string | null
+            ltv?: number
+            total_purchases?: number
+            kommo_contact_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Relationships: []
         }
-        Update: {
-          capacity?: number
-          course_id?: string
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          location?: string
-          name?: string
-          start_date?: string
-          status?: Database["public"]["Enums"]["cohort_status"]
-          updated_at?: string
-          year?: number
+        products: {
+          Row: {
+            id: string
+            name: string
+            price: number | null
+            status: string
+            nucleo_id: string | null
+            created_at: string
+            updated_at: string
+          }
+          Insert: {
+            id?: string
+            name: string
+            price?: number | null
+            status?: string
+            nucleo_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Update: {
+            id?: string
+            name?: string
+            price?: number | null
+            status?: string
+            nucleo_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Relationships: []
         }
-        Relationships: [
-          {
-            foreignKeyName: "cohorts_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+        sellers: {
+          Row: {
+            id: string
+            name: string
+            active: boolean
+            nucleo_id: string | null
+            created_at: string
+            updated_at: string
+          }
+          Insert: {
+            id?: string
+            name: string
+            active?: boolean
+            nucleo_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Update: {
+            id?: string
+            name?: string
+            active?: boolean
+            nucleo_id?: string | null
+            created_at?: string
+            updated_at?: string
+          }
+          Relationships: []
+        }
       courses: {
         Row: {
           created_at: string
@@ -226,128 +319,158 @@ export type Database = {
         }
         Relationships: []
       }
-      enrollments: {
-        Row: {
-          address: string | null
-          city: string | null
-          clicksign_document_id: string | null
-          cohort_id: string
-          contract_status: Database["public"]["Enums"]["enrollment_contract_status"]
-          cpf: string
-          created_at: string
-          created_by: string | null
-          email: string
-          external_metadata: Json | null
-          financial_status: Database["public"]["Enums"]["enrollment_financial_status"]
-          id: string
-          kommo_lead_id: string | null
-          lead_date: string | null
-          observations: string | null
-          payment_amount: number | null
-          payment_details: string
-          payment_proof_url: string | null
-          phone: string | null
-          position_in_cohort: number | null
-          product_name: string | null
-          purchase_date: string | null
-          sales_rep: string
-          source: Database["public"]["Enums"]["enrollment_source"]
-          state: string | null
-          student_name: string
-          submitted_at: string | null
-          typeform_response_id: string | null
-          updated_at: string
-          utm_campaign: string | null
-          utm_content: string | null
-          utm_medium: string | null
-          utm_source: string | null
-          utm_term: string | null
-          zipcode: string | null
+        enrollments: {
+          Row: {
+            address: string | null
+            city: string | null
+            clicksign_document_id: string | null
+            cohort_id: string
+            contact_id: string | null
+            contract_status: Database["public"]["Enums"]["enrollment_contract_status"]
+            cpf: string
+            created_at: string
+            created_by: string | null
+            email: string
+            external_metadata: Json | null
+            financial_status: Database["public"]["Enums"]["enrollment_financial_status"]
+            id: string
+            kommo_lead_id: string | null
+            lead_date: string | null
+            observations: string | null
+            payment_amount: number | null
+            payment_details: string
+            payment_proof_url: string | null
+            phone: string | null
+            position_in_cohort: number | null
+            product_id: string | null
+            product_name: string | null
+            purchase_date: string | null
+            seller_id: string | null
+            sales_rep: string
+            source: Database["public"]["Enums"]["enrollment_source"]
+            state: string | null
+            student_name: string
+            submitted_at: string | null
+            typeform_response_id: string | null
+            updated_at: string
+            utm_campaign: string | null
+            utm_content: string | null
+            utm_medium: string | null
+            utm_source: string | null
+            utm_term: string | null
+            zipcode: string | null
+          }
+          Insert: {
+            address?: string | null
+            city?: string | null
+            clicksign_document_id?: string | null
+            cohort_id: string
+            contact_id?: string | null
+            contract_status?: Database["public"]["Enums"]["enrollment_contract_status"]
+            cpf: string
+            created_at?: string
+            created_by?: string | null
+            email: string
+            external_metadata?: Json | null
+            financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
+            id?: string
+            kommo_lead_id?: string | null
+            lead_date?: string | null
+            observations?: string | null
+            payment_amount?: number | null
+            payment_details: string
+            payment_proof_url?: string | null
+            phone?: string | null
+            position_in_cohort?: number | null
+            product_id?: string | null
+            product_name?: string | null
+            purchase_date?: string | null
+            seller_id?: string | null
+            sales_rep: string
+            source?: Database["public"]["Enums"]["enrollment_source"]
+            state?: string | null
+            student_name: string
+            submitted_at?: string | null
+            typeform_response_id?: string | null
+            updated_at?: string
+            utm_campaign?: string | null
+            utm_content?: string | null
+            utm_medium?: string | null
+            utm_source?: string | null
+            utm_term?: string | null
+            zipcode?: string | null
+          }
+          Update: {
+            address?: string | null
+            city?: string | null
+            clicksign_document_id?: string | null
+            cohort_id?: string
+            contact_id?: string | null
+            contract_status?: Database["public"]["Enums"]["enrollment_contract_status"]
+            cpf?: string
+            created_at?: string
+            created_by?: string | null
+            email?: string
+            external_metadata?: Json | null
+            financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
+            id?: string
+            kommo_lead_id?: string | null
+            lead_date?: string | null
+            observations?: string | null
+            payment_amount?: number | null
+            payment_details?: string
+            payment_proof_url?: string | null
+            phone?: string | null
+            position_in_cohort?: number | null
+            product_id?: string | null
+            product_name?: string | null
+            purchase_date?: string | null
+            seller_id?: string | null
+            sales_rep?: string
+            source?: Database["public"]["Enums"]["enrollment_source"]
+            state?: string | null
+            student_name?: string
+            submitted_at?: string | null
+            typeform_response_id?: string | null
+            updated_at?: string
+            utm_campaign?: string | null
+            utm_content?: string | null
+            utm_medium?: string | null
+            utm_source?: string | null
+            utm_term?: string | null
+            zipcode?: string | null
+          }
+          Relationships: [
+            {
+              foreignKeyName: "enrollments_cohort_id_fkey"
+              columns: ["cohort_id"]
+              isOneToOne: false
+              referencedRelation: "cohorts"
+              referencedColumns: ["id"]
+            },
+            {
+              foreignKeyName: "enrollments_contact_id_fkey"
+              columns: ["contact_id"]
+              isOneToOne: false
+              referencedRelation: "contacts"
+              referencedColumns: ["id"]
+            },
+            {
+              foreignKeyName: "enrollments_product_id_fkey"
+              columns: ["product_id"]
+              isOneToOne: false
+              referencedRelation: "products"
+              referencedColumns: ["id"]
+            },
+            {
+              foreignKeyName: "enrollments_seller_id_fkey"
+              columns: ["seller_id"]
+              isOneToOne: false
+              referencedRelation: "sellers"
+              referencedColumns: ["id"]
+            },
+          ]
         }
-        Insert: {
-          address?: string | null
-          city?: string | null
-          clicksign_document_id?: string | null
-          cohort_id: string
-          contract_status?: Database["public"]["Enums"]["enrollment_contract_status"]
-          cpf: string
-          created_at?: string
-          created_by?: string | null
-          email: string
-          external_metadata?: Json | null
-          financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
-          id?: string
-          kommo_lead_id?: string | null
-          lead_date?: string | null
-          observations?: string | null
-          payment_amount?: number | null
-          payment_details: string
-          payment_proof_url?: string | null
-          phone?: string | null
-          position_in_cohort?: number | null
-          product_name?: string | null
-          purchase_date?: string | null
-          sales_rep: string
-          source?: Database["public"]["Enums"]["enrollment_source"]
-          state?: string | null
-          student_name: string
-          submitted_at?: string | null
-          typeform_response_id?: string | null
-          updated_at?: string
-          utm_campaign?: string | null
-          utm_content?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          utm_term?: string | null
-          zipcode?: string | null
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          clicksign_document_id?: string | null
-          cohort_id?: string
-          contract_status?: Database["public"]["Enums"]["enrollment_contract_status"]
-          cpf?: string
-          created_at?: string
-          created_by?: string | null
-          email?: string
-          external_metadata?: Json | null
-          financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
-          id?: string
-          kommo_lead_id?: string | null
-          lead_date?: string | null
-          observations?: string | null
-          payment_amount?: number | null
-          payment_details?: string
-          payment_proof_url?: string | null
-          phone?: string | null
-          position_in_cohort?: number | null
-          product_name?: string | null
-          purchase_date?: string | null
-          sales_rep?: string
-          source?: Database["public"]["Enums"]["enrollment_source"]
-          state?: string | null
-          student_name?: string
-          submitted_at?: string | null
-          typeform_response_id?: string | null
-          updated_at?: string
-          utm_campaign?: string | null
-          utm_content?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          utm_term?: string | null
-          zipcode?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "enrollments_cohort_id_fkey"
-            columns: ["cohort_id"]
-            isOneToOne: false
-            referencedRelation: "cohorts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       integration_logs: {
         Row: {
           created_at: string
