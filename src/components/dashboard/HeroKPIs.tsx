@@ -104,7 +104,7 @@ export function HeroKPIs({
     totalCapacity,
     cohortsCount,
     conversionRate,
-    revenueTrend = { value: "15%", isPositive: true },
+    revenueTrend,
     conversionTrend,
     isLoading = false
 }: HeroKPIsProps) {
