@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, HelpCircle } from "lucide-react";
+import { Plus, HelpCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EnrollmentModal } from "@/components/EnrollmentModal";
+import { CsvImportModal } from "@/components/CsvImportModal";
 import { TransferCohortModal } from "@/components/TransferCohortModal";
 import { EnrollmentFilters } from "@/components/enrollments/EnrollmentFilters";
 import { EnrollmentList } from "@/components/enrollments/EnrollmentList";
@@ -17,12 +18,13 @@ const Enrollments = () => {
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [page, setPage] = useState(1);
   const [showCancelled, setShowCancelled] = useState(false);
-  const pageSize = 10;
-
-  const [editingEnrollment, setEditingEnrollment] = useState<Enrollment | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  // Transfer Modal State
+    const pageSize = 10;
+  
+    const [editingEnrollment, setEditingEnrollment] = useState<Enrollment | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [csvImportModalOpen, setCsvImportModalOpen] = useState(false);
+  
+    // Transfer Modal State
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferEnrollmentIds, setTransferEnrollmentIds] = useState<string[]>([]);
   const [transferStudentName, setTransferStudentName] = useState<string | undefined>(undefined);
@@ -201,10 +203,17 @@ const Enrollments = () => {
                 setEditingEnrollment(null);
                 setModalOpen(true);
               }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Matrícula
-              </Button>
-            </div>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Matrícula
+                </Button>
+                <Button
+                  onClick={() => setCsvImportModalOpen(true)}
+                  variant="outline"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Importar CSV
+                </Button>
+              </div>
           </div>
 
           <EnrollmentFilters
@@ -259,6 +268,12 @@ const Enrollments = () => {
           queryClient.invalidateQueries({ queryKey: ["all-enrollments"] });
         }}
         editingEnrollment={editingEnrollment || undefined}
+      />
+
+      <CsvImportModal
+        open={csvImportModalOpen}
+        onOpenChange={setCsvImportModalOpen}
+        multiCohort={true}
       />
 
       <TransferCohortModal
