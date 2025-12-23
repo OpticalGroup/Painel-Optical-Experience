@@ -23,7 +23,8 @@ export function useOriginHierarchy() {
                     financial_status,
                     payment_amount,
                     product_name
-                `);
+                `)
+                .eq("product_name", "Optical Experience");
 
             if (error) {
                 console.error("Error fetching origin hierarchy data:", error);

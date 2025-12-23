@@ -24,10 +24,11 @@ export function usePurchaseWindow() {
             // Fetch enrollments with both lead_date and purchase_date
             const { data: enrollments, error } = await supabase
                 .from("enrollments")
-                .select("id, lead_date, purchase_date, sales_rep, source, financial_status")
+                .select("id, lead_date, purchase_date, sales_rep, source, financial_status, product_name")
                 .not("lead_date", "is", null)
                 .not("purchase_date", "is", null)
-                .eq("financial_status", "paid");
+                .eq("financial_status", "paid")
+                .eq("product_name", "Optical Experience");
 
             if (error) {
                 console.error("Error fetching purchase window data:", error);

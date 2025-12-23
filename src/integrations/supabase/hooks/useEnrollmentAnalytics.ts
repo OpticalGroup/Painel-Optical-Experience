@@ -50,27 +50,29 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
     queryKey: ["enrollment-analytics", filters],
     queryFn: async () => {
       // Buscar enrollments com filtros opcionais de data
-      let query = supabase
-        .from("enrollments")
-        .select(`
-          id,
-          sales_rep,
-          source,
-          financial_status,
-          payment_amount,
-          lead_date,
-          purchase_date,
-          created_at,
-          cohort_id,
-          utm_source,
-          utm_medium,
-          utm_campaign,
-          external_metadata,
-          cohorts (
+        let query = supabase
+          .from("enrollments")
+          .select(`
             id,
-            name
-          )
-        `);
+            sales_rep,
+            source,
+            financial_status,
+            payment_amount,
+            lead_date,
+            purchase_date,
+            created_at,
+            cohort_id,
+            utm_source,
+            utm_medium,
+            utm_campaign,
+            external_metadata,
+            product_name,
+            cohorts (
+              id,
+              name
+            )
+          `)
+          .eq("product_name", "Optical Experience");
 
       // Aplicar filtros de data se fornecidos
       if (filters?.from) {
@@ -231,7 +233,9 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       // Calcular resumo geral
       const summary = {
         totalEnrolled: dataToAnalyze.length,
-        totalRevenue: dataToAnalyze.reduce((sum, e) => sum + (Number(e.payment_amount) || 0), 0),
+        totalRevenue: dataToAnalyze
+          .filter(e => e.financial_status === 'paid')
+          .reduce((sum, e) => sum + (Number(e.payment_amount) || 0), 0),
         totalPaid: dataToAnalyze.filter(e => e.financial_status === 'paid').length,
       };
 

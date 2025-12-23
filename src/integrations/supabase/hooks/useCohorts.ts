@@ -29,6 +29,7 @@ export const useCohortsQuery = () => {
       const { data: cohorts, error } = await supabase
         .from('cohorts')
         .select('*, courses(name)')
+        .eq('product_id', 'f78831df-4c55-45b4-a50e-6be0dd02ba3e')
         .order('start_date', { ascending: true });
 
       if (error) throw error;

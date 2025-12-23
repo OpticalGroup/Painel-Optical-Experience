@@ -16,7 +16,8 @@ export function useUtmData() {
             // Fetch enrollments with UTM data
             const { data: enrollments, error } = await supabase
                 .from("enrollments")
-                .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, financial_status, payment_amount");
+                .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, financial_status, payment_amount, product_name")
+                .eq("product_name", "Optical Experience");
 
             if (error) {
                 console.error("Error fetching UTM data:", error);
