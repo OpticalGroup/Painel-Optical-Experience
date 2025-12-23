@@ -86,10 +86,12 @@ interface ParsedRow {
   utm_campaign?: string;
   utm_term?: string;
   utm_content?: string;
-  utm_page?: string;
-  submitted_at?: string; // Timestamp de submissão
-  external_lead_id?: string; // ID do lead externo (CRM)
-  // Campos da nova hierarquia de origem
+    utm_page?: string;
+    submitted_at?: string; // Timestamp de submissão
+    kommo_contact_id?: string; // ID do contato no Kommo
+    kommo_lead_id?: string; // ID do lead no Kommo
+    external_lead_id?: string; // ID do lead externo (CRM)
+    // Campos da nova hierarquia de origem
   funnel_name?: string; // Nome do funil de venda
   macro_origin?: string; // Origem macro
   micro_origin?: string; // Origem micro
@@ -372,8 +374,10 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         utm_content: row.utm_content?.trim() || undefined,
         utm_page: row.utm_page?.trim() || undefined,
 
-        // Campos de integração
-        external_lead_id: row.external_lead_id?.trim() || undefined,
+          // Campos de integração
+          kommo_contact_id: row.kommo_contact_id?.trim() || undefined,
+          kommo_lead_id: row.kommo_lead_id?.trim() || undefined,
+          external_lead_id: row.external_lead_id?.trim() || undefined,
 
         // Campos da hierarquia de origem
         funnel_name: row.funnel_name?.trim() || undefined,
@@ -1036,11 +1040,19 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             enrollmentData.utm_page = dataToImport[i].utm_page;
           }
 
-          if (dataToImport[i].submitted_at) {
-            enrollmentData.submitted_at = dataToImport[i].submitted_at;
-          }
+            if (dataToImport[i].submitted_at) {
+              enrollmentData.submitted_at = dataToImport[i].submitted_at;
+            }
 
-          // Pular duplicatas se já marcadas
+            if (dataToImport[i].kommo_contact_id) {
+              enrollmentData.kommo_contact_id = dataToImport[i].kommo_contact_id;
+            }
+
+            if (dataToImport[i].kommo_lead_id) {
+              enrollmentData.kommo_lead_id = dataToImport[i].kommo_lead_id;
+            }
+
+            // Pular duplicatas se já marcadas
           if (dataToImport[i].isDuplicate) {
             errors.push(`Linha ${i + 2}${cohortInfo}: Email duplicado (ignorado)`);
             setProgress(Math.round(((i + 1) / dataToImport.length) * 100));

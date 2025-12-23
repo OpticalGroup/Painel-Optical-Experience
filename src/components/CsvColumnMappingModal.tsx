@@ -73,10 +73,12 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
   { key: 'utm_content', label: 'UTM Content', required: false, description: 'Variação/versão do anúncio ou conteúdo' },
   { key: 'utm_page', label: 'UTM Página', required: false, description: 'URL da página de captura do lead' },
 
-  // Campos opcionais - Integração e datas
-  { key: 'external_lead_id', label: 'ID Externo (CRM)', required: false, description: 'ID do lead em sistema externo (Kommo, HubSpot, etc)' },
-  { key: 'submitted_at', label: 'Data de Inscrição no Forms', required: false, description: 'Data de submissão do formulário de inscrição' },
-];
+    // Campos opcionais - Integração e datas
+    { key: 'kommo_contact_id', label: 'ID do Contato (Kommo)', required: false, description: 'ID único do contato no Kommo CRM' },
+    { key: 'kommo_lead_id', label: 'ID do Lead (Kommo)', required: false, description: 'ID único do lead/negócio no Kommo CRM' },
+    { key: 'external_lead_id', label: 'ID Externo (CRM)', required: false, description: 'ID do lead em sistema externo (Kommo, HubSpot, etc)' },
+    { key: 'submitted_at', label: 'Data de Inscrição no Forms', required: false, description: 'Data de submissão do formulário de inscrição' },
+  ];
 
 export const CsvColumnMappingModal = ({
   open,
@@ -150,9 +152,11 @@ export const CsvColumnMappingModal = ({
       'utm_term': ['utm_term', 'utmterm', 'term'],
       'utm_page': ['utm_página', 'utmpagina', 'página', 'pagina', 'page', 'utmpágina'],
 
-      // Integração
-      'external_lead_id': ['id lead', 'id kommo', 'id lead kommo', 'lead id', 'crm id'],
-    };
+        // Integração
+        'kommo_contact_id': ['id contato', 'kommo contact', 'id contato kommo', 'contact id', 'kommo_contact_id'],
+        'kommo_lead_id': ['id lead', 'id kommo', 'id lead kommo', 'lead id', 'kommo_lead_id', 'crm id'],
+        'external_lead_id': ['external id', 'id externo'],
+      };
 
     // Função de similaridade melhorada
     const calculateSimilarity = (header: string, fieldKey: string): number => {

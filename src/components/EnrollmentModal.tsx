@@ -85,10 +85,11 @@ const formSchema = z.object({
   state: z.string().optional().or(z.literal("")),
   zipcode: z.string().optional().or(z.literal("")),
   purchaseDate: z.string().optional().or(z.literal("")),
-  observations: z.string().optional().or(z.literal("")),
-  paymentProofUrl: z.string().optional().or(z.literal("")),
-  kommoLeadId: z.string().optional().or(z.literal("")),
-  typeformResponseId: z.string().optional().or(z.literal("")),
+    observations: z.string().optional().or(z.literal("")),
+    paymentProofUrl: z.string().optional().or(z.literal("")),
+    kommoContactId: z.string().optional().or(z.literal("")),
+    kommoLeadId: z.string().optional().or(z.literal("")),
+    typeformResponseId: z.string().optional().or(z.literal("")),
   leadDate: z.string().optional().or(z.literal("")),
   nationality: z.string().optional().default("Brasil"),
   utmSource: z.string().optional(),
@@ -116,6 +117,7 @@ export interface EnrollmentData {
   purchaseDate?: string;
   observations?: string;
   paymentProofUrl?: string;
+  kommoContactId?: string;
   kommoLeadId?: string;
   typeformResponseId?: string;
   leadDate?: string;
@@ -179,6 +181,7 @@ export const EnrollmentModal = ({
       purchaseDate: "",
       observations: "",
       paymentProofUrl: "",
+      kommoContactId: "",
       kommoLeadId: "",
       typeformResponseId: "",
       leadDate: "",
@@ -212,6 +215,7 @@ export const EnrollmentModal = ({
         purchaseDate: editingEnrollment.purchase_date || "",
         observations: editingEnrollment.observations || "",
         paymentProofUrl: editingEnrollment.payment_proof_url || "",
+        kommoContactId: editingEnrollment.kommo_contact_id || "",
         kommoLeadId: editingEnrollment.kommo_lead_id || "",
         typeformResponseId: editingEnrollment.typeform_response_id || "",
         leadDate: editingEnrollment.lead_date || "",
@@ -288,6 +292,7 @@ export const EnrollmentModal = ({
       purchase_date: normalizedPurchaseDate || null,
       observations: data.observations || null,
       payment_proof_url: data.paymentProofUrl || null,
+      kommo_contact_id: data.kommoContactId || null,
       kommo_lead_id: data.kommoLeadId || null,
       typeform_response_id: data.typeformResponseId || null,
       lead_date: normalizedLeadDate || null,
@@ -748,20 +753,35 @@ export const EnrollmentModal = ({
                   </div>
                 )}
 
-                {/* FASE 6: Campos de ID de Integração */}
-                <FormField
-                  control={form.control}
-                  name="kommoLeadId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-muted-foreground">ID do Lead (Kommo)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Opcional" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  {/* FASE 6: Campos de ID de Integração */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="kommoContactId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">ID do Contato (Kommo)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Opcional" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="kommoLeadId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">ID do Lead (Kommo)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Opcional" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">

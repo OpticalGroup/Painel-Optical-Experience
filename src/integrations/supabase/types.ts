@@ -333,9 +333,10 @@ export type Database = {
             email: string
             external_metadata: Json | null
             financial_status: Database["public"]["Enums"]["enrollment_financial_status"]
-            id: string
-            kommo_lead_id: string | null
-            lead_date: string | null
+              id: string
+              kommo_contact_id: string | null
+              kommo_lead_id: string | null
+              lead_date: string | null
             observations: string | null
             payment_amount: number | null
             payment_details: string
@@ -373,9 +374,10 @@ export type Database = {
             email: string
             external_metadata?: Json | null
             financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
-            id?: string
-            kommo_lead_id?: string | null
-            lead_date?: string | null
+              id?: string
+              kommo_contact_id?: string | null
+              kommo_lead_id?: string | null
+              lead_date?: string | null
             observations?: string | null
             payment_amount?: number | null
             payment_details: string
@@ -413,9 +415,10 @@ export type Database = {
             email?: string
             external_metadata?: Json | null
             financial_status?: Database["public"]["Enums"]["enrollment_financial_status"]
-            id?: string
-            kommo_lead_id?: string | null
-            lead_date?: string | null
+              id?: string
+              kommo_contact_id?: string | null
+              kommo_lead_id?: string | null
+              lead_date?: string | null
             observations?: string | null
             payment_amount?: number | null
             payment_details?: string
