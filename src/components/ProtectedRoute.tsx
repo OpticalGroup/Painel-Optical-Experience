@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -15,12 +15,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     if (!loading && !user) {
       navigate('/auth');
     }
-
-    // Redirect to access-pending if user has no role
-    if (!loading && user && userRole === null) {
-      navigate('/access-pending');
-    }
-  }, [user, userRole, loading, navigate]);
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -34,10 +29,9 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return null;
   }
 
-  // Redirect if no role (belt and suspenders approach)
+  // Redirect to access-pending if user has no role
   if (userRole === null) {
-    navigate('/access-pending');
-    return null;
+    return <Navigate to="/access-pending" replace />;
   }
 
   // Check role if required

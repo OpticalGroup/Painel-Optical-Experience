@@ -26,53 +26,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    useEffect(() => {
+      // Set up auth state listener FIRST
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Fetch user role when session changes
+          if (session?.user) {
+            setLoading(true);
+            await fetchUserRole(session.user.id);
+          } else {
+            setUserRole(null);
+          }
+          
+          setLoading(false);
+        }
+      );
+
+      // THEN check for existing session
+      const checkSession = async () => {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch user role when session changes
         if (session?.user) {
-          setTimeout(() => {
-            fetchUserRole(session.user.id);
-          }, 0);
-        } else {
-          setUserRole(null);
+          await fetchUserRole(session.user.id);
         }
         
         setLoading(false);
-      }
-    );
+      };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-      }
-      
-      setLoading(false);
-    });
+      checkSession();
 
-    return () => subscription.unsubscribe();
-  }, []);
+      return () => subscription.unsubscribe();
+    }, []);
 
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log('Fetching role for user:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching role:', error);
+        throw error;
+      }
+      
+      console.log('Fetched role:', data?.role);
       setUserRole(data?.role ?? null);
-    } catch (error) {
-      console.error('Error fetching user role:', error);
+    } catch (error: any) {
+      console.error('Error fetching user role:', error.message || error);
       setUserRole(null);
     }
   };
