@@ -47,11 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) {
           let role = data?.role ?? null;
 
-          // Fallback: If it's the known admin email and no role found, grant admin
-          if (!role && userEmail === 'gabrielftude@gmail.com') {
-            console.log('Fallback: Granting admin role to known admin');
-            role = 'admin';
-          }
+            // Fallback: If it's a known admin email and no role found, grant admin
+            if (!role && (userEmail === 'gabrielftude@gmail.com' || userEmail === 'tude.mkt@gmail.com')) {
+              console.log('Fallback: Granting admin role to known admin');
+              role = 'admin';
+            }
 
           console.log('Fetched role:', role);
           setUserRole(role);
