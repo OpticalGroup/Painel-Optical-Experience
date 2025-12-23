@@ -93,17 +93,17 @@ export const normalizeEnrollmentSource = (value: string): string => {
 /**
  * Normalize cohort name to standard format
  * Examples:
- * - "Setembro" -> "Turma Setembro 2025" (using current year + 1 if month passed)
- * - "Janeiro" -> "Turma Janeiro 2026"
- * - "Turma Outubro 2025" -> "Turma Outubro 2025" (already formatted)
+ * - "Setembro", "2025" -> "Turma de Setembro de 2025"
+ * - "Setembro" -> "Turma de Setembro de 2025" (using current year + 1 if month passed)
+ * - "Janeiro" -> "Turma de Janeiro de 2026"
  */
-export const normalizeCohortName = (value: string, referenceDate?: Date): string => {
+export const normalizeCohortName = (value: string, year?: string, referenceDate?: Date): string => {
   if (!value) return value;
   
   const trimmed = value.trim();
   
-  // If already in correct format, return as-is
-  if (trimmed.match(/^Turma\s+[A-Za-zç]+\s+\d{4}$/i)) {
+  // If already in correct format "Turma de [Mês] de [Ano]", return as-is
+  if (trimmed.match(/^Turma\s+de\s+[A-Za-zç]+\s+de\s+\d{4}$/i)) {
     return trimmed;
   }
   
@@ -132,18 +132,32 @@ export const normalizeCohortName = (value: string, referenceDate?: Date): string
   // Check if value is a month name
   for (const [monthName, monthNumber] of Object.entries(monthMap)) {
     if (lowerValue === monthName || lowerValue.includes(monthName)) {
-      // Determine year: if month has passed, use next year
-      const targetYear = monthNumber < currentMonth ? currentYear + 1 : currentYear;
+      // Determine year: if provided use it, otherwise calculate
+      let targetYear = year ? parseInt(year.replace(/\D/g, '')) : null;
+      
+      if (!targetYear || isNaN(targetYear)) {
+        targetYear = monthNumber < currentMonth ? currentYear + 1 : currentYear;
+      }
       
       // Capitalize month name
       const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
       
-      return `Turma ${capitalizedMonth} ${targetYear}`;
+      return `Turma de ${capitalizedMonth} de ${targetYear}`;
+    }
+  }
+  
+  // If not a recognized pattern, but year is provided, combine them
+  if (year && !trimmed.includes(year)) {
+    const cleanYear = year.replace(/\D/g, '');
+    if (cleanYear) {
+      return trimmed.startsWith('Turma ') 
+        ? `${trimmed} de ${cleanYear}` 
+        : `Turma de ${trimmed} de ${cleanYear}`;
     }
   }
   
   // If not a recognized pattern, return original with "Turma" prefix
-  return trimmed.startsWith('Turma ') ? trimmed : `Turma ${trimmed}`;
+  return trimmed.startsWith('Turma ') ? trimmed : `Turma de ${trimmed}`;
 };
 
 /**

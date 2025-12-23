@@ -26,8 +26,9 @@ interface FieldDefinition {
 
 const SYSTEM_FIELDS: FieldDefinition[] = [
   // Campos obrigatórios - Dados básicos do lead
-  { key: 'cohort_identifier', label: 'Nome da Turma', required: true, description: 'Nome da turma para vincular o aluno (ex: "Turma Janeiro 2025" ou apenas "Janeiro")' },
-  { key: 'student_name', label: 'Nome Completo', required: true, description: 'Nome completo do aluno' },
+    { key: 'cohort_identifier', label: 'Nome da Turma', required: true, description: 'Nome da turma para vincular o aluno (ex: "Turma Janeiro 2025" ou apenas "Janeiro")' },
+    { key: 'cohort_year', label: 'Ano da Turma', required: false, description: 'Ano da turma (opcional, será combinado com o nome se fornecido)' },
+    { key: 'student_name', label: 'Nome Completo', required: true, description: 'Nome completo do aluno' },
   { key: 'email', label: 'Email', required: true, description: 'Email válido (único por turma)' },
   { key: 'cpf', label: 'CPF', required: true, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (será normalizado)' },
   { key: 'sales_rep', label: 'Vendedor', required: true, description: 'Nome do vendedor responsável' },
@@ -98,6 +99,7 @@ export const CsvColumnMappingModal = ({
   const FIELD_SYNONYMS: Record<string, string[]> = {
     // Identificadores
     'cohort_identifier': ['turma', 'cohort', 'classe', 'grupo', 'turma inscrita', 'inscrita'],
+    'cohort_year': ['ano', 'year', 'ano da turma', 'safra'],
 
     // Dados pessoais
     'student_name': ['nome', 'aluno', 'estudante', 'student', 'name', 'nomecompleto', 'nome completo'],

@@ -53,6 +53,7 @@ type ImportStep = "upload" | "mapping" | "cohort-check" | "preview" | "importing
 
 interface ParsedRow {
   cohort_identifier?: string; // Nome da turma para vincular
+  cohort_year?: string; // Ano da turma
   student_name: string;
   email: string;
   cpf: string;
@@ -326,7 +327,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
       // Normalizar nome da turma
       const normalizedCohort = multiCohort
-        ? normalizeCohortName(row.cohort_identifier || '')
+        ? normalizeCohortName(row.cohort_identifier || '', row.cohort_year)
         : (cohortName || '');
 
       // Parse datas
