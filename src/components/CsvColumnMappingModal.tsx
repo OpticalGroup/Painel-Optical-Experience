@@ -95,95 +95,110 @@ export const CsvColumnMappingModal = ({
   // Estado para mapeamento de colunas
   const [columnMapping, setColumnMapping] = useState<Record<string, string | undefined>>({});
 
-  // Mapa de sinônimos para melhor detecção
-  const FIELD_SYNONYMS: Record<string, string[]> = {
-    // Identificadores
-    'cohort_identifier': ['turma', 'cohort', 'classe', 'grupo', 'turma inscrita', 'inscrita'],
-    'cohort_year': ['ano', 'year', 'ano da turma', 'safra'],
+    // Mapa de sinônimos para melhor detecção
+    const FIELD_SYNONYMS: Record<string, string[]> = {
+      // Identificadores
+      'cohort_identifier': ['turma', 'cohort', 'classe', 'grupo', 'turma inscrita', 'inscrita', 'turma inscrita :'],
+      'cohort_year': ['ano', 'year', 'ano da turma', 'safra'],
 
-    // Dados pessoais
-    'student_name': ['nome', 'aluno', 'estudante', 'student', 'name', 'nomecompleto', 'nome completo'],
-    'email': ['email', 'e-mail', 'mail', 'correio', 'email lead', 'email comprador'],
-    'cpf': ['cpf', 'documento', 'doc'],
-    'phone': ['telefone', 'fone', 'celular', 'tel', 'phone', 'contato', 'telefone formatado'],
+      // Dados pessoais
+      'student_name': ['nome', 'aluno', 'estudante', 'student', 'name', 'nomecompleto', 'nome completo'],
+      'email': ['email', 'e-mail', 'mail', 'correio', 'email lead', 'email comprador'],
+      'cpf': ['cpf', 'documento', 'doc'],
+      'phone': ['telefone', 'fone', 'celular', 'tel', 'phone', 'contato', 'telefone formatado'],
 
-    // Vendas
-    'sales_rep': ['vendedor', 'representante', 'comercial', 'sales', 'rep'],
-    'co_sales_rep': ['co-responsável', 'co responsavel', 'coresponsavel', 'segundo vendedor'],
+      // Vendas
+      'sales_rep': ['vendedor', 'representante', 'comercial', 'sales', 'rep'],
+      'co_sales_rep': ['co-responsável', 'co responsavel', 'coresponsavel', 'segundo vendedor'],
 
-    // Hierarquia de Origens
-    'source': ['origem', 'fonte', 'source', 'canal'],
-    'funnel_name': ['funil', 'funnel', 'vendas', 'funil de venda'],
-    'macro_origin': ['macro', 'origem macro', 'origemmacro'],
-    'micro_origin': ['micro', 'origem micro', 'origemmicro'],
-    'micro_variation': ['variacao', 'variacoes', 'variation', 'variações', 'variaçõesdeorigemmicro', 'variações de origem micro'],
-    'origin_action_date': ['data da ação', 'acao da origem', 'data da acao da origem'],
+      // Hierarquia de Origens
+      'source': ['origem', 'fonte', 'source', 'canal'],
+      'funnel_name': ['funil', 'funnel', 'vendas', 'funil de venda'],
+      'macro_origin': ['macro', 'origem macro', 'origemmacro'],
+      'micro_origin': ['micro', 'origem micro', 'origemmicro'],
+      'micro_variation': ['variacao', 'variacoes', 'variation', 'variações', 'variaçõesdeorigemmicro', 'variações de origem micro'],
+      'origin_action_date': ['data da ação', 'acao da origem', 'data da acao da origem'],
 
-    // Financeiro
-    'financial_status': ['pagamento', 'financeiro', 'pago', 'payment', 'financial', 'status do pagamento', 'status pagamento'],
-    'contract_status': ['contrato', 'contract', 'assinado', 'signed'],
-    'payment_details': ['detalhes', 'condicao', 'forma de pagamento', 'details', 'payment'],
-    'payment_amount': ['valor', 'preco', 'amount', 'price', 'ticket', 'valor total', 'valor total da venda'],
-    'payment_proof_url': ['comprovante', 'proof', 'url', 'link', 'anexe', 'anexo', 'anexe o comprovante'],
+      // Financeiro
+      'financial_status': ['pagamento', 'financeiro', 'pago', 'payment', 'financial', 'status do pagamento', 'status pagamento'],
+      'contract_status': ['contrato', 'contract', 'assinado', 'signed'],
+      'payment_details': ['detalhes', 'condicao', 'forma de pagamento', 'details', 'pagamento detalhes'],
+      'payment_amount': ['valor', 'preco', 'amount', 'price', 'ticket', 'valor total', 'valor total da venda'],
+      'payment_proof_url': ['comprovante', 'proof', 'url', 'link', 'anexe', 'anexo', 'anexe o comprovante'],
 
-    // Datas
-    'purchase_date': ['compra', 'venda', 'purchase', 'data compra', 'datacompra', 'data da compra'],
-    'lead_date': ['lead', 'chegada', 'entrada', 'data de chegada', 'chegada do lead', 'data de chegada do lead no funil'],
-    'submitted_at': ['forms', 'inscrição', 'inscricao', 'formulário', 'data de inscrição', 'data de inscrição no forms'],
+      // Datas
+      'purchase_date': ['compra', 'venda', 'purchase', 'data compra', 'datacompra', 'data da compra'],
+      'lead_date': ['lead', 'chegada', 'entrada', 'data de chegada', 'chegada do lead', 'data de chegada do lead no funil'],
+      'submitted_at': ['forms', 'inscrição', 'inscricao', 'formulário', 'data de inscrição', 'data de inscrição no forms'],
 
-    // Endereço
-    'address': ['endereco', 'rua', 'address', 'logradouro'],
-    'city': ['cidade', 'city', 'municipio'],
-    'state': ['estado', 'uf', 'state'],
-    'zipcode': ['cep', 'zip', 'codigo', 'postal'],
-    'country': ['pais', 'country', 'nacionalidade'],
+      // Endereço
+      'address': ['endereco', 'rua', 'address', 'logradouro'],
+      'city': ['cidade', 'city', 'municipio'],
+      'state': ['estado', 'uf', 'state'],
+      'zipcode': ['cep', 'zip', 'codigo', 'postal'],
+      'country': ['pais', 'country', 'nacionalidade'],
 
-    // Produto
-    'product_name': ['produto', 'product', 'item'],
-    'observations': ['observacoes', 'obs', 'notas', 'observations', 'notes', 'observações'],
+      // Produto
+      'product_name': ['produto', 'product', 'item'],
+      'observations': ['observacoes', 'obs', 'notas', 'observations', 'notes', 'observações'],
 
-    // UTMs
-    'utm_source': ['utm_source', 'utmsource', 'source'],
-    'utm_medium': ['utm_medium', 'utmmedium', 'medium', 'meio'],
-    'utm_campaign': ['utm_campaign', 'utmcampaign', 'campaign', 'campanha'],
-    'utm_content': ['utm_content', 'utmcontent', 'content'],
-    'utm_term': ['utm_term', 'utmterm', 'term'],
-    'utm_page': ['utm_página', 'utmpagina', 'página', 'pagina', 'page', 'utmpágina'],
+      // UTMs
+      'utm_source': ['utm_source', 'utmsource', 'source'],
+      'utm_medium': ['utm_medium', 'utmmedium', 'medium', 'meio'],
+      'utm_campaign': ['utm_campaign', 'utmcampaign', 'campaign', 'campanha'],
+      'utm_content': ['utm_content', 'utmcontent', 'content'],
+      'utm_term': ['utm_term', 'utmterm', 'term'],
+      'utm_page': ['utm_página', 'utmpagina', 'página', 'pagina', 'page', 'utmpágina'],
 
-    // Integração
-    'external_lead_id': ['id lead', 'id kommo', 'id lead kommo', 'lead id', 'crm id'],
-  };
+      // Integração
+      'external_lead_id': ['id lead', 'id kommo', 'id lead kommo', 'lead id', 'crm id'],
+    };
 
-  // Função de similaridade melhorada
-  const calculateSimilarity = (header: string, fieldKey: string): number => {
-    const normalizedHeader = header.toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-      .replace(/[^a-z0-9]/g, '');
+    // Função de similaridade melhorada
+    const calculateSimilarity = (header: string, fieldKey: string): number => {
+      const h = header.toLowerCase().trim();
+      const normalizedHeader = h
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^a-z0-9]/g, '');
 
-    const synonyms = FIELD_SYNONYMS[fieldKey] || [];
+      const synonyms = FIELD_SYNONYMS[fieldKey] || [];
 
-    // Pontuação base
-    let score = 0;
+      // 1. Match exato (case insensitive) com o header original
+      if (h === fieldKey.toLowerCase()) return 100;
+      
+      // 2. Match com sinônimos exatos
+      for (const synonym of synonyms) {
+        if (h === synonym.toLowerCase()) return 100;
+        
+        const normalizedSynonym = synonym.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (normalizedHeader === normalizedSynonym) return 95;
+      }
 
-    // Match exato com a chave do campo
-    const normalizedFieldKey = fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (normalizedHeader === normalizedFieldKey) return 100;
-    if (normalizedHeader.includes(normalizedFieldKey)) score += 50;
-    if (normalizedFieldKey.includes(normalizedHeader)) score += 40;
+      // Pontuação base
+      let score = 0;
 
-    // Match com sinônimos
-    for (const synonym of synonyms) {
-      const normalizedSynonym = synonym.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (normalizedHeader === normalizedSynonym) return 90;
-      if (normalizedHeader.includes(normalizedSynonym)) score += 30;
-      if (normalizedSynonym.includes(normalizedHeader) && normalizedHeader.length > 3) score += 20;
-    }
+      // Match parcial
+      const normalizedFieldKey = fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (normalizedHeader.includes(normalizedFieldKey)) score += 50;
+      if (normalizedFieldKey.includes(normalizedHeader) && normalizedHeader.length > 3) score += 40;
 
-    return score;
-  };
+      // Match parcial com sinônimos
+      for (const synonym of synonyms) {
+        const normalizedSynonym = synonym.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (normalizedHeader.includes(normalizedSynonym)) score += 30;
+        if (normalizedSynonym.includes(normalizedHeader) && normalizedHeader.length > 3) score += 20;
+      }
 
-  // Auto-detectar mapeamentos com algoritmo melhorado
-  const autoDetectMappings = () => {
+      // Penalidade para "Forma de Pagamento" matching "Turma"
+      if (fieldKey === 'cohort_identifier' && normalizedHeader.includes('pagamento')) {
+        score -= 60;
+      }
+
+      return Math.max(0, score);
+    };
+  
+    // Auto-detectar mapeamentos com algoritmo melhorado
+    const autoDetectMappings = () => {
     const newMapping: Record<string, string | undefined> = {};
 
     systemFields.forEach(field => {

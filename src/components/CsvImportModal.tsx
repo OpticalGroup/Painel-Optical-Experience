@@ -19,6 +19,7 @@ import { Constants } from "@/integrations/supabase/types";
 import { useQueryClient } from '@tanstack/react-query';
 import { normalizeCPF } from "@/lib/cpf";
 import { validateRow, RowValidation } from "@/lib/validators";
+import Papa from "papaparse";
 import {
   useFunnels,
   useMacroOrigins,
@@ -272,22 +273,6 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
     return mapping[normalized] || value; // Retorna o valor original se não encontrar mapeamento, para ser pego no checkOrigins
   };
 
-  // Parse CSV bruto (sem mapeamento)
-  const parseRawCSV = (text: string): { headers: string[]; rows: string[][] } => {
-    const lines = text.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim());
-    const rows: string[][] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      if (values.length > 0) {
-        rows.push(values);
-      }
-    }
-
-    return { headers, rows };
-  };
-
   // Função para revalidar todas as linhas
   const revalidateAllRows = (rows: ParsedRow[]): ParsedRow[] => {
     return rows.map((row, index) => ({
@@ -308,7 +293,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         if (csvColumn) {
           const columnIndex = csvRawData.headers.indexOf(csvColumn);
           if (columnIndex !== -1) {
-            row[systemField] = rowValues[columnIndex] || '';
+            row[systemField] = rowValues[columnIndex]?.trim() || '';
           }
         }
       });
@@ -326,8 +311,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       const normalizedAddress = normalizeAddress(row.address || '');
 
       // Normalizar nome da turma
+      // Se tiver cohort_identifier e cohort_year, combiná-los
+      let cohortNameInput = row.cohort_identifier || '';
+      
+      // Se o usuário mapeou "Turma Inscrita :" e ela contém o mês, 
+      // e mapeou "Ano", normalizeCohortName fará o agrupamento
       const normalizedCohort = multiCohort
-        ? normalizeCohortName(row.cohort_identifier || '', row.cohort_year)
+        ? normalizeCohortName(cohortNameInput, row.cohort_year)
         : (cohortName || '');
 
       // Parse datas
@@ -401,33 +391,46 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.type === 'text/csv') {
+    if (selectedFile && (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv'))) {
       setFile(selectedFile);
       setResults(null);
 
-      // Parse CSV e ir para tela de mapeamento
-      try {
-        const text = await selectedFile.text();
-        const rawData = parseRawCSV(text);
+      Papa.parse(selectedFile, {
+        complete: (results) => {
+          if (results.data && results.data.length > 0) {
+            // Filtrar linhas vazias e garantir que são strings
+            const data = results.data as string[][];
+            const headers = data[0].map(h => h.trim());
+            const rows = data.slice(1).filter(row => row.some(cell => cell && cell.trim()));
 
-        if (rawData.rows.length === 0) {
-          throw new Error("Nenhuma linha válida encontrada no arquivo CSV");
-        }
+            if (rows.length === 0) {
+              toast({
+                title: "Erro",
+                description: "Nenhuma linha de dados encontrada no CSV.",
+                variant: "destructive",
+              });
+              return;
+            }
 
-        setCsvRawData(rawData);
-        setShowMappingModal(true);
-
-        toast({
-          title: "Arquivo carregado!",
-          description: `${rawData.rows.length} linha(s) encontrada(s). Configure o mapeamento das colunas.`,
-        });
-      } catch (error: any) {
-        toast({
-          title: "Erro ao ler arquivo",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+            setCsvRawData({ headers, rows });
+            setShowMappingModal(true);
+            
+            toast({
+              title: "Arquivo carregado!",
+              description: `${rows.length} linha(s) encontrada(s). Configure o mapeamento das colunas.`,
+            });
+          }
+        },
+        error: (error) => {
+          toast({
+            title: "Erro ao ler arquivo",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+        header: false,
+        skipEmptyLines: true,
+      });
     } else {
       toast({
         title: "Arquivo inválido",
