@@ -17,7 +17,7 @@ interface CohortWithStats extends Cohort {
     is_overbooked: boolean;
     total_revenue: number;
   };
-  course?: {
+  product?: {
     name: string;
   };
 }
@@ -28,8 +28,7 @@ export const useCohortsQuery = () => {
     queryFn: async () => {
       const { data: cohorts, error } = await supabase
         .from('cohorts')
-        .select('*, courses(name)')
-        .eq('product_id', 'f78831df-4c55-45b4-a50e-6be0dd02ba3e')
+        .select('*, products(name)')
         .order('start_date', { ascending: true });
 
       if (error) throw error;
@@ -42,7 +41,7 @@ export const useCohortsQuery = () => {
 
           return {
             ...cohort,
-            course: cohort.courses as any,
+            product: (cohort as any).products,
             stats: stats?.[0] || {
               enrolled_count: 0,
               paid_count: 0,
@@ -69,7 +68,7 @@ export const useCohortQuery = (cohortId: string | undefined) => {
 
       const { data: cohort, error } = await supabase
         .from('cohorts')
-        .select('*, courses(name)')
+        .select('*, products(name)')
         .eq('id', cohortId)
         .single();
 
@@ -80,7 +79,7 @@ export const useCohortQuery = (cohortId: string | undefined) => {
 
       return {
         ...cohort,
-        course: cohort.courses as any,
+        product: (cohort as any).products,
         stats: stats?.[0] || {
           enrolled_count: 0,
           paid_count: 0,
