@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateProduct, useUpdateProduct } from "@/integrations/supabase/hooks/useProducts";
-import { useNucleosQuery } from "@/integrations/supabase/hooks/useNucleos";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -22,9 +20,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     const [name, setName] = useState("");
     const [ticketMedio, setTicketMedio] = useState<string>("");
     const [active, setActive] = useState<boolean>(true);
-    const [nucleoId, setNucleoId] = useState<string>("");
 
-    const { data: nucleos } = useNucleosQuery();
     const createProduct = useCreateProduct();
     const updateProduct = useUpdateProduct();
     const { toast } = useToast();
@@ -34,12 +30,10 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
             setName(product.name);
             setTicketMedio(product.ticket_medio?.toString() || "");
             setActive(product.active);
-            setNucleoId(product.nucleo_id || "");
         } else {
             setName("");
             setTicketMedio("");
             setActive(true);
-            setNucleoId("");
         }
     }, [product, open]);
 
@@ -55,7 +49,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     name,
                     ticket_medio: ticketMedioValue,
                     active,
-                    nucleo_id: nucleoId || null
                 });
                 toast({ title: "Produto atualizado com sucesso!" });
             } else {
@@ -63,7 +56,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     name,
                     ticket_medio: ticketMedioValue ?? undefined,
                     active,
-                    nucleo_id: nucleoId || null
                 });
                 toast({ title: "Produto criado com sucesso!" });
             }
@@ -108,24 +100,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                             onChange={(e) => setTicketMedio(e.target.value)}
                             placeholder="Ex: 2000.00"
                         />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="nucleo">Núcleo</Label>
-                        <Select
-                            value={nucleoId}
-                            onValueChange={setNucleoId}
-                        >
-                            <SelectTrigger id="nucleo">
-                                <SelectValue placeholder="Selecione um núcleo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {nucleos?.map((nucleo) => (
-                                    <SelectItem key={nucleo.id} value={nucleo.id}>
-                                        {nucleo.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                     </div>
                     <div className="flex items-center space-x-2">
                         <Switch

@@ -143,7 +143,6 @@ export type Database = {
             ticket_medio: number | null
             active: boolean
             description: string | null
-            nucleo_id: string | null
             created_at: string
           }
           Insert: {
@@ -152,7 +151,6 @@ export type Database = {
             ticket_medio?: number | null
             active?: boolean
             description?: string | null
-            nucleo_id?: string | null
             created_at?: string
           }
           Update: {
@@ -161,7 +159,6 @@ export type Database = {
             ticket_medio?: number | null
             active?: boolean
             description?: string | null
-            nucleo_id?: string | null
             created_at?: string
           }
           Relationships: []
