@@ -402,7 +402,7 @@ const Index = () => {
                 reservedCount: c.stats?.reserved_count || 0,
                 paidCount: c.stats?.paid_count || 0,
                 signedCount: c.stats?.signed_count || 0,
-                revenue: (c.stats?.paid_count || 0) * (c.price || 2000), // Estimativa se não tiver preço
+                revenue: c.stats?.total_revenue ?? ((c.stats?.paid_count || 0) * (c.price || 2000)), // Usa real do banco ou estimativa
                 hasChildren: true,
               }))}
               vendedores={analytics?.salesReps?.map(rep => ({
@@ -432,42 +432,42 @@ const Index = () => {
             transition={{ delay: 0.2 }}
             className="xl:col-span-5"
           >
-              <ChartsPanel
-                nextCohort={nextCohort ? {
-                  id: nextCohort.id,
-                  name: nextCohort.name,
-                  location: nextCohort.location,
-                  startDate: nextCohort.start_date,
-                  endDate: nextCohort.end_date,
-                  capacity: nextCohort.capacity,
-                  enrolledCount: nextCohort.stats?.enrolled_count || 0,
-                  reservedCount: nextCohort.stats?.reserved_count || 0,
-                  paidCount: nextCohort.stats?.paid_count || 0,
-                  signedCount: nextCohort.stats?.signed_count || 0,
-                  isOverbooked: nextCohort.stats?.is_overbooked,
-                } : null}
-                trendData={trendData}
-                onNewEnrollment={() => setModalOpen(true)}
-                onViewCohort={(id) => navigate(`/cohorts/${id}`)}
-                isLoading={isLoading}
-                cohorts={filteredCohorts.map(c => ({
-                  id: c.id,
-                  name: c.name,
-                  enrolledCount: c.stats?.enrolled_count || 0,
-                  paidCount: c.stats?.paid_count || 0,
-                  revenue: c.stats?.total_revenue || (c.stats?.paid_count || 0) * (c.price || 2000),
-                  reservedCount: c.stats?.reserved_count || 0,
-                }))}
-                vendedores={analytics?.salesReps?.map(rep => ({
-                  id: rep.name,
-                  name: rep.name,
-                  totalSales: rep.totalSales,
-                  totalRevenue: rep.totalRevenue,
-                })) || []}
-                originHierarchy={originHierarchy}
-                utmData={utmData}
-                purchaseWindowData={purchaseWindowData}
-              />
+            <ChartsPanel
+              nextCohort={nextCohort ? {
+                id: nextCohort.id,
+                name: nextCohort.name,
+                location: nextCohort.location,
+                startDate: nextCohort.start_date,
+                endDate: nextCohort.end_date,
+                capacity: nextCohort.capacity,
+                enrolledCount: nextCohort.stats?.enrolled_count || 0,
+                reservedCount: nextCohort.stats?.reserved_count || 0,
+                paidCount: nextCohort.stats?.paid_count || 0,
+                signedCount: nextCohort.stats?.signed_count || 0,
+                isOverbooked: nextCohort.stats?.is_overbooked,
+              } : null}
+              trendData={trendData}
+              onNewEnrollment={() => setModalOpen(true)}
+              onViewCohort={(id) => navigate(`/cohorts/${id}`)}
+              isLoading={isLoading}
+              cohorts={filteredCohorts.map(c => ({
+                id: c.id,
+                name: c.name,
+                enrolledCount: c.stats?.enrolled_count || 0,
+                paidCount: c.stats?.paid_count || 0,
+                revenue: c.stats?.total_revenue || (c.stats?.paid_count || 0) * (c.price || 2000),
+                reservedCount: c.stats?.reserved_count || 0,
+              }))}
+              vendedores={analytics?.salesReps?.map(rep => ({
+                id: rep.name,
+                name: rep.name,
+                totalSales: rep.totalSales,
+                totalRevenue: rep.totalRevenue,
+              })) || []}
+              originHierarchy={originHierarchy}
+              utmData={utmData}
+              purchaseWindowData={purchaseWindowData}
+            />
           </motion.div>
         </div>
       </section>
