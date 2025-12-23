@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const fetchUserRole = async (userId: string, userEmail?: string) => {
+    const fetchUserRole = async (userId: string) => {
       try {
         console.log('Fetching role for user:', userId);
 
@@ -45,24 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (mounted) {
-          let role = data?.role ?? null;
-
-            // Fallback: If it's a known admin email and no role found, grant admin
-            if (!role && (userEmail === 'gabrielftude@gmail.com' || userEmail === 'tude.mkt@gmail.com')) {
-              console.log('Fallback: Granting admin role to known admin');
-              role = 'admin';
-            }
-
+          const role = data?.role ?? null;
           console.log('Fetched role:', role);
           setUserRole(role);
         }
       } catch (error: any) {
         console.warn('Auth initialization error:', error.message || error);
-        // Fallback: Check here too in case of DB error
-        if (mounted && userEmail === 'gabrielftude@gmail.com') {
-          console.log('Fallback: Granting admin role to known admin (error recovery)');
-          setUserRole('admin');
-        } else if (mounted) {
+        if (mounted) {
           setUserRole(null);
         }
       }
@@ -78,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(session?.user ?? null);
 
           if (session?.user) {
-            await fetchUserRole(session.user.id, session.user.email);
+            await fetchUserRole(session.user.id);
           } else {
             setUserRole(null);
           }
