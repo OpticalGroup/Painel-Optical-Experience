@@ -129,18 +129,48 @@ export const CohortCreationModal = ({
         capacity: 22,
         status: 'open',
       };
+
+      // Automação para Optical Experience na sugestão inicial
+      const suggestedProduct = uniqueProducts.find(p => p.id === suggestedProductId);
+      if (suggestedProduct?.name.toLowerCase().includes("optical experience") && suggestedStartDate) {
+        const startDate = new Date(suggestedStartDate + 'T12:00:00');
+        // Se a data sugerida não for terça-feira, ajustar para a próxima terça-feira
+        const dayOfWeek = startDate.getDay();
+        if (dayOfWeek !== 2) {
+          const daysUntilTuesday = (2 - dayOfWeek + 7) % 7;
+          startDate.setDate(startDate.getDate() + (daysUntilTuesday === 0 ? 7 : daysUntilTuesday));
+          forms[cohortName].startDate = startDate.toISOString().split('T')[0];
+        }
+        
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 3);
+        forms[cohortName].endDate = endDate.toISOString().split('T')[0];
+      }
     });
     setCohortForms(forms);
   }, [missingCohorts]);
 
   const updateCohortForm = (cohortName: string, field: keyof CohortFormData, value: string | number) => {
-    setCohortForms(prev => ({
-      ...prev,
-      [cohortName]: {
-        ...prev[cohortName],
-        [field]: value,
-      },
-    }));
+    setCohortForms(prev => {
+      const currentForm = prev[cohortName];
+      const updatedForm = { ...currentForm, [field]: value };
+
+      // Automação para Optical Experience
+      const product = uniqueProducts.find(p => p.id === updatedForm.courseId);
+      if (product?.name.toLowerCase().includes("optical experience")) {
+        if ((field === 'startDate' || field === 'courseId') && updatedForm.startDate) {
+          const startDate = new Date(updatedForm.startDate + 'T12:00:00');
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 3);
+          updatedForm.endDate = endDate.toISOString().split('T')[0];
+        }
+      }
+
+      return {
+        ...prev,
+        [cohortName]: updatedForm,
+      };
+    });
   };
 
   const validateForms = (): boolean => {

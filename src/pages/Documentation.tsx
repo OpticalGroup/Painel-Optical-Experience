@@ -6,14 +6,14 @@ export const Documentation = () => {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 Manual de Instruções
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
                 Guia completo de uso da aplicação
               </p>
             </div>
@@ -21,7 +21,7 @@ export const Documentation = () => {
         </div>
       </header>
 
-      <div className="px-8 py-6 max-w-4xl mx-auto space-y-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Visão Geral */}
         <Card className="p-6">
           <h1 className="text-2xl font-bold mb-4">Visão Geral</h1>

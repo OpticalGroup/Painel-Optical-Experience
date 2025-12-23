@@ -46,10 +46,27 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
       t.name === product.name
     ))
   );
-  const createCohort = useCreateCohort();
-  const updateCohort = useUpdateCohort();
+    const createCohort = useCreateCohort();
+    const updateCohort = useUpdateCohort();
 
-  // Update form when cohort changes
+    // Automação para Optical Experience
+    useEffect(() => {
+      if (!productId || !startDate || !products) return;
+      
+      const selectedProduct = products.find(p => p.id === productId);
+      if (selectedProduct?.name.toLowerCase().includes("optical experience")) {
+        // Se a data de início for alterada, calculamos 4 dias (terça a sexta = +3 dias)
+        const newEndDate = new Date(startDate);
+        newEndDate.setDate(startDate.getDate() + 3);
+        
+        // Atualiza a data de término automaticamente
+        if (!endDate || endDate.toDateString() !== newEndDate.toDateString()) {
+          setEndDate(newEndDate);
+        }
+      }
+    }, [productId, startDate, products, endDate]);
+
+    // Update form when cohort changes
   useEffect(() => {
     if (cohort) {
       setName(cohort.name);

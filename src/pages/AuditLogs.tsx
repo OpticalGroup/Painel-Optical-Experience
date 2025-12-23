@@ -117,12 +117,23 @@ const AuditLogs = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
-        <SidebarTrigger />
-        <h1 className="text-xl font-semibold">Logs de Auditoria</h1>
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <SidebarTrigger />
+            <div>
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
+                Logs de Auditoria
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
+                Acompanhe todas as ações realizadas no sistema
+              </p>
+            </div>
+          </div>
+        </div>
       </header>
 
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Filtros de Auditoria</CardTitle>

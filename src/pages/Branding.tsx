@@ -126,14 +126,14 @@ const Branding = () => {
     <>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 Marca e Identidade Visual
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
                 Personalize a aparência do sistema com sua marca
               </p>
             </div>
@@ -143,7 +143,7 @@ const Branding = () => {
       </header>
 
       {/* Content */}
-      <div className="p-8 max-w-5xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 sm:space-y-8">
         {isLoading ? (
           <div className="space-y-6">
             <Skeleton className="h-64 w-full" />

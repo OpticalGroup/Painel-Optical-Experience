@@ -53,7 +53,7 @@ export default function Integrations() {
     if (systemNormalized === 'n8n') {
       return 'https://optical-cohort-sparkle-main.vercel.app/api/webhook/enrollment';
     }
-    
+
     // Para outros sistemas, usar Supabase Edge Functions
     const projectId = 'tboxsndhlnomvwnqveat';
     return `https://${projectId}.supabase.co/functions/v1/${system}-webhook`;
@@ -142,18 +142,18 @@ export default function Integrations() {
     <>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Integrações</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">Integrações</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
                 Configure conexões com CRMs, ferramentas de assinatura e formulários
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Badge variant="outline" className="hidden sm:flex items-center gap-2">
               <Activity className="h-4 w-4" />
               {settings?.filter(s => s.enabled).length || 0} de {settings?.length || 0} ativas
             </Badge>
@@ -163,7 +163,7 @@ export default function Integrations() {
       </header>
 
       {/* Content */}
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
 
         <Tabs defaultValue="systems" className="space-y-6">
           <TabsList>

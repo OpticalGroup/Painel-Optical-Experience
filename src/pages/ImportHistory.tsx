@@ -14,14 +14,14 @@ const ImportHistory = () => {
     <>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 Histórico de Importações
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
                 Visualize o status e detalhes das importações de alunos
               </p>
             </div>
@@ -31,7 +31,7 @@ const ImportHistory = () => {
       </header>
 
       {/* Content */}
-      <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>Registros de Importação</CardTitle>
