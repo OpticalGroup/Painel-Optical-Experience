@@ -3,34 +3,34 @@ import { supabase } from '../client';
 import { Tables, TablesInsert, TablesUpdate } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
-type SalesRep = Tables<'sellers'>;
-type SalesRepInsert = TablesInsert<'sellers'>;
-type SalesRepUpdate = TablesUpdate<'sellers'>;
+type Nucleo = Tables<'nucleos'>;
+type NucleoInsert = TablesInsert<'nucleos'>;
+type NucleoUpdate = TablesUpdate<'nucleos'>;
 
-export const useSalesRepsQuery = () => {
+export const useNucleosQuery = () => {
   return useQuery({
-    queryKey: ['sales-reps'],
+    queryKey: ['nucleos'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sellers')
+        .from('nucleos')
         .select('*')
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data as SalesRep[];
+      return data as Nucleo[];
     },
   });
 };
 
-export const useCreateSalesRep = () => {
+export const useCreateNucleo = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (salesRep: SalesRepInsert) => {
+    mutationFn: async (nucleo: NucleoInsert) => {
       const { data, error } = await supabase
-        .from('sellers')
-        .insert(salesRep)
+        .from('nucleos')
+        .insert(nucleo)
         .select()
         .single();
 
@@ -38,15 +38,15 @@ export const useCreateSalesRep = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales-reps'] });
+      queryClient.invalidateQueries({ queryKey: ['nucleos'] });
       toast({
-        title: 'Vendedor criado!',
-        description: 'O vendedor foi adicionado com sucesso.',
+        title: 'Núcleo criado!',
+        description: 'O núcleo foi adicionado com sucesso.',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao criar vendedor',
+        title: 'Erro ao criar núcleo',
         description: error.message,
         variant: 'destructive',
       });
@@ -54,14 +54,14 @@ export const useCreateSalesRep = () => {
   });
 };
 
-export const useUpdateSalesRep = () => {
+export const useUpdateNucleo = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: SalesRepUpdate & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: NucleoUpdate & { id: string }) => {
       const { data, error } = await supabase
-        .from('sellers')
+        .from('nucleos')
         .update(updates)
         .eq('id', id)
         .select()
@@ -71,15 +71,15 @@ export const useUpdateSalesRep = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales-reps'] });
+      queryClient.invalidateQueries({ queryKey: ['nucleos'] });
       toast({
-        title: 'Vendedor atualizado!',
+        title: 'Núcleo atualizado!',
         description: 'As informações foram atualizadas com sucesso.',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao atualizar vendedor',
+        title: 'Erro ao atualizar núcleo',
         description: error.message,
         variant: 'destructive',
       });
@@ -87,29 +87,29 @@ export const useUpdateSalesRep = () => {
   });
 };
 
-export const useDeleteSalesRep = () => {
+export const useDeleteNucleo = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (salesRepId: string) => {
+    mutationFn: async (nucleoId: string) => {
       const { error } = await supabase
-        .from('sellers')
+        .from('nucleos')
         .delete()
-        .eq('id', salesRepId);
+        .eq('id', nucleoId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales-reps'] });
+      queryClient.invalidateQueries({ queryKey: ['nucleos'] });
       toast({
-        title: 'Vendedor removido!',
-        description: 'O vendedor foi removido com sucesso.',
+        title: 'Núcleo removido!',
+        description: 'O núcleo foi removido com sucesso.',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao remover vendedor',
+        title: 'Erro ao remover núcleo',
         description: error.message,
         variant: 'destructive',
       });

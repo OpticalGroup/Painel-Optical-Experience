@@ -3,6 +3,8 @@ import { supabase } from '../client';
 import { Tables } from '../types';
 
 type Product = Tables<'products'>;
+type ProductInsert = TablesInsert<'products'>;
+type ProductUpdate = TablesUpdate<'products'>;
 
 export const useProductsQuery = () => {
     return useQuery({
@@ -23,7 +25,7 @@ export const useCreateProduct = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (product: { name: string; price?: number; status?: string; nucleo_id?: string }) => {
+        mutationFn: async (product: ProductInsert) => {
             const { data, error } = await supabase
                 .from('products')
                 .insert(product)
@@ -43,7 +45,7 @@ export const useUpdateProduct = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ id, ...product }: { id: string; name?: string; price?: number; status?: string; nucleo_id?: string }) => {
+        mutationFn: async ({ id, ...product }: ProductUpdate & { id: string }) => {
             const { data, error } = await supabase
                 .from('products')
                 .update(product)

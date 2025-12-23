@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
-import { useCoursesQuery } from "@/integrations/supabase/hooks/useCourses";
+import { useProductsQuery } from "@/integrations/supabase/hooks/useProducts";
 import { useCreateCohort, useUpdateCohort } from "@/integrations/supabase/hooks/useCohorts";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -24,7 +24,7 @@ interface CohortFormModalProps {
 
 export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalProps) => {
   const [name, setName] = useState(cohort?.name || "");
-  const [courseId, setCourseId] = useState<string | undefined>(cohort?.course_id);
+  const [productId, setProductId] = useState<string | undefined>(cohort?.course_id);
   const [year, setYear] = useState(cohort?.year?.toString() || new Date().getFullYear().toString());
   const [startDate, setStartDate] = useState<Date | undefined>(
     cohort?.start_date ? new Date(cohort.start_date) : undefined
@@ -38,12 +38,12 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
     cohort?.status || "open"
   );
 
-  const { data: courses, isLoading: coursesLoading } = useCoursesQuery();
+  const { data: products, isLoading: productsLoading } = useProductsQuery();
 
-  // Deduplicate courses by name (just in case)
-  const uniqueCourses = courses?.filter((course, index, self) =>
+  // Deduplicate products by name (just in case)
+  const uniqueProducts = products?.filter((product, index, self) =>
     index === self.findIndex((t) => (
-      t.name === course.name
+      t.name === product.name
     ))
   );
   const createCohort = useCreateCohort();
@@ -53,7 +53,7 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
   useEffect(() => {
     if (cohort) {
       setName(cohort.name);
-      setCourseId(cohort.course_id);
+      setProductId(cohort.course_id);
       setYear(cohort.year.toString());
       setStartDate(new Date(cohort.start_date));
       setEndDate(cohort.end_date ? new Date(cohort.end_date) : undefined);
@@ -67,7 +67,7 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
 
   const resetForm = () => {
     setName("");
-    setCourseId(undefined);
+    setProductId(undefined);
     setYear(new Date().getFullYear().toString());
     setStartDate(undefined);
     setEndDate(undefined);
@@ -79,13 +79,13 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!courseId || !startDate || !name || !location) {
+    if (!productId || !startDate || !name || !location) {
       return;
     }
 
     const cohortData = {
       name,
-      course_id: courseId,
+      course_id: productId,
       year: parseInt(year),
       start_date: format(startDate, "yyyy-MM-dd"),
       end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
@@ -132,20 +132,20 @@ export const CohortFormModal = ({ open, onOpenChange, cohort }: CohortFormModalP
             />
           </div>
 
-          {/* Course */}
+          {/* Product */}
           <div className="space-y-2">
-            <Label htmlFor="course">Curso *</Label>
-            <Select value={courseId || undefined} onValueChange={setCourseId} required>
+            <Label htmlFor="product">Produto *</Label>
+            <Select value={productId || undefined} onValueChange={setProductId} required>
               <SelectTrigger className="focus:border-[#D6CDC8]">
-                <SelectValue placeholder="Selecione o curso" />
+                <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
               <SelectContent className="bg-card z-50">
-                {coursesLoading ? (
+                {productsLoading ? (
                   <SelectItem value="__loading__" disabled>Carregando...</SelectItem>
                 ) : (
-                  uniqueCourses?.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.name}
+                  uniqueProducts?.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
                     </SelectItem>
                   ))
                 )}

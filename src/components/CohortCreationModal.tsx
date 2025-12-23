@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Plus } from "lucide-react";
-import { useCoursesQuery } from "@/integrations/supabase/hooks/useCourses";
+import { useProductsQuery } from "@/integrations/supabase/hooks/useProducts";
 
 interface CohortCreationModalProps {
   open: boolean;
@@ -18,7 +18,7 @@ interface CohortCreationModalProps {
 
 interface CohortFormData {
   name: string;
-  courseId: string;
+  productId: string;
   year: number;
   startDate: string;
   endDate: string;
@@ -34,12 +34,12 @@ export const CohortCreationModal = ({
   onCohortsCreated,
   onSkip,
 }: CohortCreationModalProps) => {
-  const { data: courses } = useCoursesQuery();
+  const { data: products } = useProductsQuery();
 
-  // Deduplicate courses by name
-  const uniqueCourses = courses?.filter((course, index, self) =>
+  // Deduplicate products by name
+  const uniqueProducts = products?.filter((product, index, self) =>
     index === self.findIndex((t) => (
-      t.name === course.name
+      t.name === product.name
     ))
   ) || [];
   const [cohortForms, setCohortForms] = useState<Record<string, CohortFormData>>({});
@@ -49,7 +49,7 @@ export const CohortCreationModal = ({
     missingCohorts.forEach(cohortName => {
       forms[cohortName] = {
         name: cohortName,
-        courseId: '', // Será validado antes do submit
+        productId: '', // Será validado antes do submit
         year: new Date().getFullYear(),
         startDate: '',
         endDate: '',
@@ -73,7 +73,7 @@ export const CohortCreationModal = ({
 
   const validateForms = (): boolean => {
     return Object.values(cohortForms).every(
-      form => form.courseId && form.startDate && form.location && form.capacity > 0
+      form => form.productId && form.startDate && form.location && form.capacity > 0
     );
   };
 
@@ -114,110 +114,110 @@ export const CohortCreationModal = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`course-${index}`}>
-                    Curso *
+                  <Label htmlFor={`product-${index}`}>
+                    Produto *
                   </Label>
                   <Select
-                    value={cohortForms[cohortName]?.courseId || undefined}
-                    onValueChange={(value) => updateCohortForm(cohortName, 'courseId', value)}
+                    value={cohortForms[cohortName]?.productId || undefined}
+                    onValueChange={(value) => updateCohortForm(cohortName, 'productId', value)}
                   >
                     <SelectTrigger className="focus:ring-primary">
-                      <SelectValue placeholder="Selecione o curso" />
+                      <SelectValue placeholder="Selecione o produto" />
                     </SelectTrigger>
                     <SelectContent className="bg-card z-50">
-                      {uniqueCourses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.name}
+                      {uniqueProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`year-${index}`}>
-                      Ano *
-                    </Label>
-                    <Input
-                      id={`year-${index}`}
-                      type="number"
-                      value={cohortForms[cohortName]?.year || new Date().getFullYear()}
-                      onChange={(e) => updateCohortForm(cohortName, 'year', parseInt(e.target.value))}
-                      className="focus-visible:ring-primary"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`year-${index}`}>
+                    Ano *
+                  </Label>
+                  <Input
+                    id={`year-${index}`}
+                    type="number"
+                    value={cohortForms[cohortName]?.year || new Date().getFullYear()}
+                    onChange={(e) => updateCohortForm(cohortName, 'year', parseInt(e.target.value))}
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`startDate-${index}`}>
-                      Data de Início *
-                    </Label>
-                    <Input
-                      id={`startDate-${index}`}
-                      type="date"
-                      value={cohortForms[cohortName]?.startDate || ''}
-                      onChange={(e) => updateCohortForm(cohortName, 'startDate', e.target.value)}
-                      className="focus-visible:ring-primary"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`startDate-${index}`}>
+                    Data de Início *
+                  </Label>
+                  <Input
+                    id={`startDate-${index}`}
+                    type="date"
+                    value={cohortForms[cohortName]?.startDate || ''}
+                    onChange={(e) => updateCohortForm(cohortName, 'startDate', e.target.value)}
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`endDate-${index}`}>
-                      Data de Término
-                    </Label>
-                    <Input
-                      id={`endDate-${index}`}
-                      type="date"
-                      value={cohortForms[cohortName]?.endDate || ''}
-                      onChange={(e) => updateCohortForm(cohortName, 'endDate', e.target.value)}
-                      className="focus-visible:ring-primary"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`endDate-${index}`}>
+                    Data de Término
+                  </Label>
+                  <Input
+                    id={`endDate-${index}`}
+                    type="date"
+                    value={cohortForms[cohortName]?.endDate || ''}
+                    onChange={(e) => updateCohortForm(cohortName, 'endDate', e.target.value)}
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`location-${index}`}>
-                      Local *
-                    </Label>
-                    <Input
-                      id={`location-${index}`}
-                      value={cohortForms[cohortName]?.location || ''}
-                      onChange={(e) => updateCohortForm(cohortName, 'location', e.target.value)}
-                      placeholder="Ex: São Paulo - SP"
-                      className="focus-visible:ring-primary"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`location-${index}`}>
+                    Local *
+                  </Label>
+                  <Input
+                    id={`location-${index}`}
+                    value={cohortForms[cohortName]?.location || ''}
+                    onChange={(e) => updateCohortForm(cohortName, 'location', e.target.value)}
+                    placeholder="Ex: São Paulo - SP"
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`status-${index}`}>
-                      Status
-                    </Label>
-                    <Select
-                      value={cohortForms[cohortName]?.status || 'open'}
-                      onValueChange={(value: any) => updateCohortForm(cohortName, 'status', value)}
-                    >
-                      <SelectTrigger className="focus:ring-primary">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card z-50">
-                        <SelectItem value="open">Aberta</SelectItem>
-                        <SelectItem value="full">Lotada</SelectItem>
-                        <SelectItem value="completed">Concluída</SelectItem>
-                        <SelectItem value="cancelled">Cancelada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`status-${index}`}>
+                    Status
+                  </Label>
+                  <Select
+                    value={cohortForms[cohortName]?.status || 'open'}
+                    onValueChange={(value: any) => updateCohortForm(cohortName, 'status', value)}
+                  >
+                    <SelectTrigger className="focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card z-50">
+                      <SelectItem value="open">Aberta</SelectItem>
+                      <SelectItem value="full">Lotada</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="cancelled">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor={`capacity-${index}`}>
-                      Capacidade
-                    </Label>
-                    <Input
-                      id={`capacity-${index}`}
-                      type="number"
-                      value={cohortForms[cohortName]?.capacity || 22}
-                      onChange={(e) => updateCohortForm(cohortName, 'capacity', parseInt(e.target.value))}
-                      className="focus-visible:ring-primary"
-                    />
-                  </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor={`capacity-${index}`}>
+                    Capacidade
+                  </Label>
+                  <Input
+                    id={`capacity-${index}`}
+                    type="number"
+                    value={cohortForms[cohortName]?.capacity || 22}
+                    onChange={(e) => updateCohortForm(cohortName, 'capacity', parseInt(e.target.value))}
+                    className="focus-visible:ring-primary"
+                  />
+                </div>
               </div>
             </div>
           ))}

@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateProduct, useUpdateProduct } from "@/integrations/supabase/hooks/useProducts";
+import { useNucleosQuery } from "@/integrations/supabase/hooks/useNucleos";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -18,9 +20,11 @@ interface ProductDialogProps {
 
 export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProps) => {
     const [name, setName] = useState("");
-    const [price, setPrice] = useState<string>("");
-    const [status, setStatus] = useState<string>("active");
+    const [ticketMedio, setTicketMedio] = useState<string>("");
+    const [active, setActive] = useState<boolean>(true);
+    const [nucleoId, setNucleoId] = useState<string>("");
 
+    const { data: nucleos } = useNucleosQuery();
     const createProduct = useCreateProduct();
     const updateProduct = useUpdateProduct();
     const { toast } = useToast();
@@ -28,34 +32,38 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     useEffect(() => {
         if (product) {
             setName(product.name);
-            setPrice(product.price?.toString() || "");
-            setStatus(product.status || "active");
+            setTicketMedio(product.ticket_medio?.toString() || "");
+            setActive(product.active);
+            setNucleoId(product.nucleo_id || "");
         } else {
             setName("");
-            setPrice("");
-            setStatus("active");
+            setTicketMedio("");
+            setActive(true);
+            setNucleoId("");
         }
     }, [product, open]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const priceValue = price ? parseFloat(price) : null;
+        const ticketMedioValue = ticketMedio ? parseFloat(ticketMedio) : null;
 
         try {
             if (product) {
                 await updateProduct.mutateAsync({
                     id: product.id,
                     name,
-                    price: priceValue,
-                    status
+                    ticket_medio: ticketMedioValue,
+                    active,
+                    nucleo_id: nucleoId || null
                 });
                 toast({ title: "Produto atualizado com sucesso!" });
             } else {
                 await createProduct.mutateAsync({
                     name,
-                    price: priceValue ?? undefined,
-                    status
+                    ticket_medio: ticketMedioValue ?? undefined,
+                    active,
+                    nucleo_id: nucleoId || null
                 });
                 toast({ title: "Produto criado com sucesso!" });
             }
@@ -90,29 +98,42 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="price">Preço (R$)</Label>
+                        <Label htmlFor="ticket_medio">Ticket Médio (R$)</Label>
                         <Input
-                            id="price"
+                            id="ticket_medio"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
+                            value={ticketMedio}
+                            onChange={(e) => setTicketMedio(e.target.value)}
                             placeholder="Ex: 2000.00"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="status">Status</Label>
-                        <Select value={status} onValueChange={setStatus}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione o status" />
+                        <Label htmlFor="nucleo">Núcleo</Label>
+                        <Select
+                            value={nucleoId}
+                            onValueChange={setNucleoId}
+                        >
+                            <SelectTrigger id="nucleo">
+                                <SelectValue placeholder="Selecione um núcleo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="active">Ativo</SelectItem>
-                                <SelectItem value="inactive">Inativo</SelectItem>
-                                <SelectItem value="draft">Rascunho</SelectItem>
+                                {nucleos?.map((nucleo) => (
+                                    <SelectItem key={nucleo.id} value={nucleo.id}>
+                                        {nucleo.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="active"
+                            checked={active}
+                            onCheckedChange={setActive}
+                        />
+                        <Label htmlFor="active" className="cursor-pointer">Ativo</Label>
                     </div>
                     <div className="flex justify-end gap-2 pt-4">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

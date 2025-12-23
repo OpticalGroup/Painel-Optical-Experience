@@ -41,11 +41,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useSalesRepsQuery, useCreateSalesRep, useUpdateSalesRep, useDeleteSalesRep } from "@/integrations/supabase/hooks/useSalesReps";
 import { useCustomSourcesQuery, useCreateCustomSource, useUpdateCustomSource, useDeleteCustomSource } from "@/integrations/supabase/hooks/useCustomSources";
+import { useNucleosQuery } from "@/integrations/supabase/hooks/useNucleos";
+import { NucleosTab } from "@/components/settings/NucleosTab";
 import { z } from "zod";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import { Constants } from "@/integrations/supabase/types";
 
-type SalesRep = Tables<'sales_representatives'>;
+type SalesRep = Tables<'sellers'>;
 type CustomSource = Tables<'custom_enrollment_sources'>;
 
 // Validation schemas
@@ -54,6 +57,7 @@ const salesRepSchema = z.object({
   email: z.string().trim().email("Email inválido").max(255, "Email muito longo").optional().or(z.literal("")),
   phone: z.string().trim().max(20, "Telefone muito longo").optional().or(z.literal("")),
   active: z.boolean(),
+  nucleo_id: z.string().optional().or(z.literal("")),
 });
 
 const customSourceSchema = z.object({
@@ -75,20 +79,21 @@ const Settings = () => {
   const [selectedSalesRep, setSelectedSalesRep] = useState<SalesRep | null>(null);
   const [salesRepDeleteDialogOpen, setSalesRepDeleteDialogOpen] = useState(false);
   const [salesRepToDelete, setSalesRepToDelete] = useState<string | null>(null);
-  const [salesRepFormData, setSalesRepFormData] = useState({ name: "", email: "", phone: "", active: true });
-  const [salesRepFormErrors, setSalesRepFormErrors] = useState<Record<string, string>>({});
+    const [salesRepFormData, setSalesRepFormData] = useState({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+    const [salesRepFormErrors, setSalesRepFormErrors] = useState<Record<string, string>>({});
 
-  // Custom Sources state
-  const [sourceModalOpen, setSourceModalOpen] = useState(false);
-  const [selectedSource, setSelectedSource] = useState<CustomSource | null>(null);
-  const [sourceDeleteDialogOpen, setSourceDeleteDialogOpen] = useState(false);
-  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
-  const [sourceFormData, setSourceFormData] = useState({ name: "", description: "", active: true });
-  const [sourceFormErrors, setSourceFormErrors] = useState<Record<string, string>>({});
+    // Custom Sources state
+    const [sourceModalOpen, setSourceModalOpen] = useState(false);
+    const [selectedSource, setSelectedSource] = useState<CustomSource | null>(null);
+    const [sourceDeleteDialogOpen, setSourceDeleteDialogOpen] = useState(false);
+    const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
+    const [sourceFormData, setSourceFormData] = useState({ name: "", description: "", active: true });
+    const [sourceFormErrors, setSourceFormErrors] = useState<Record<string, string>>({});
 
-  // Queries and mutations
-  const { data: salesReps, isLoading: salesRepsLoading } = useSalesRepsQuery();
-  const { data: customSources, isLoading: sourcesLoading } = useCustomSourcesQuery();
+    // Queries and mutations
+    const { data: salesReps, isLoading: salesRepsLoading } = useSalesRepsQuery();
+    const { data: customSources, isLoading: sourcesLoading } = useCustomSourcesQuery();
+    const { data: nucleos } = useNucleosQuery();
   const createSalesRep = useCreateSalesRep();
   const updateSalesRep = useUpdateSalesRep();
   const deleteSalesRep = useDeleteSalesRep();
@@ -97,45 +102,46 @@ const Settings = () => {
   const deleteSource = useDeleteCustomSource();
 
   // Sales Rep handlers
-  const handleSalesRepEdit = (salesRep: SalesRep) => {
-    setSelectedSalesRep(salesRep);
-    setSalesRepFormData({
-      name: salesRep.name,
-      email: salesRep.email || "",
-      phone: salesRep.phone || "",
-      active: salesRep.active,
-    });
-    setSalesRepModalOpen(true);
-  };
+    const handleSalesRepEdit = (salesRep: SalesRep) => {
+      setSelectedSalesRep(salesRep);
+      setSalesRepFormData({
+        name: salesRep.name,
+        email: salesRep.email || "",
+        phone: salesRep.phone || "",
+        active: salesRep.active,
+        nucleo_id: salesRep.nucleo_id || "",
+      });
+      setSalesRepModalOpen(true);
+    };
 
-  const handleSalesRepSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSalesRepFormErrors({});
+    const handleSalesRepSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setSalesRepFormErrors({});
 
-    try {
-      const validatedData = salesRepSchema.parse(salesRepFormData);
+      try {
+        const validatedData = salesRepSchema.parse(salesRepFormData);
 
-      if (selectedSalesRep) {
-        await updateSalesRep.mutateAsync({
-          id: selectedSalesRep.id,
-          name: validatedData.name,
-          active: validatedData.active,
-          email: validatedData.email || null,
-          phone: validatedData.phone || null,
-        });
-      } else {
-        await createSalesRep.mutateAsync({
-          name: validatedData.name,
-          active: validatedData.active,
-          email: validatedData.email || null,
-          phone: validatedData.phone || null,
-        });
-      }
+        const payload = {
+            name: validatedData.name,
+            active: validatedData.active,
+            email: validatedData.email || null,
+            phone: validatedData.phone || null,
+            nucleo_id: validatedData.nucleo_id || null,
+        };
 
-      setSalesRepModalOpen(false);
-      setSelectedSalesRep(null);
-      setSalesRepFormData({ name: "", email: "", phone: "", active: true });
-    } catch (error) {
+        if (selectedSalesRep) {
+          await updateSalesRep.mutateAsync({
+            id: selectedSalesRep.id,
+            ...payload
+          });
+        } else {
+          await createSalesRep.mutateAsync(payload);
+        }
+
+        setSalesRepModalOpen(false);
+        setSelectedSalesRep(null);
+        setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+      } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
@@ -240,128 +246,141 @@ const Settings = () => {
       </header>
 
       {/* Content */}
-      <section className="px-8 py-8">
-        <Tabs defaultValue="cohorts" className="w-full">
-          <TabsList className="bg-secondary/50 grid w-full max-w-5xl grid-cols-6">
-            <TabsTrigger value="cohorts" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              Turmas
-            </TabsTrigger>
-            <TabsTrigger value="sales-reps" className="gap-2">
-              <Users className="h-4 w-4" />
-              Vendedores
-            </TabsTrigger>
-            <TabsTrigger value="products" className="gap-2">
-              <Tag className="h-4 w-4" />
-              Produtos
-            </TabsTrigger>
-            <TabsTrigger value="sources" className="gap-2">
-              <Tag className="h-4 w-4" />
-              Origens
-            </TabsTrigger>
-            <TabsTrigger value="cancellation" className="gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Cancelamento
-            </TabsTrigger>
-            <TabsTrigger value="utm" className="gap-2">
-              <Link className="h-4 w-4" />
-              Rastreamento
-            </TabsTrigger>
-          </TabsList>
+        <section className="px-8 py-8">
+          <Tabs defaultValue="cohorts" className="w-full">
+            <TabsList className="bg-secondary/50 grid w-full max-w-5xl grid-cols-7">
+              <TabsTrigger value="cohorts" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Turmas
+              </TabsTrigger>
+              <TabsTrigger value="sales-reps" className="gap-2">
+                <Users className="h-4 w-4" />
+                Vendedores
+              </TabsTrigger>
+              <TabsTrigger value="products" className="gap-2">
+                <Tag className="h-4 w-4" />
+                Produtos
+              </TabsTrigger>
+              <TabsTrigger value="nucleos" className="gap-2">
+                <Tag className="h-4 w-4" />
+                Núcleos
+              </TabsTrigger>
+              <TabsTrigger value="sources" className="gap-2">
+                <Tag className="h-4 w-4" />
+                Origens
+              </TabsTrigger>
+              <TabsTrigger value="cancellation" className="gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Cancelamento
+              </TabsTrigger>
+              <TabsTrigger value="utm" className="gap-2">
+                <Link className="h-4 w-4" />
+                Rastreamento
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Cohorts Tab */}
-          <TabsContent value="cohorts" className="mt-6">
-            <CohortsAdmin />
-          </TabsContent>
+            {/* Cohorts Tab */}
+            <TabsContent value="cohorts" className="mt-6">
+              <CohortsAdmin />
+            </TabsContent>
 
-          {/* Sales Reps Tab */}
-          <TabsContent value="sales-reps" className="mt-6">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-lg font-semibold">Vendedores</h2>
-                <p className="text-sm text-muted-foreground">
-                  Gerencie a equipe de vendas
-                </p>
+            {/* Sales Reps Tab */}
+            <TabsContent value="sales-reps" className="mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Vendedores</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie a equipe de vendas
+                  </p>
+                </div>
+                <Button onClick={() => {
+                  setSelectedSalesRep(null);
+                  setSalesRepFormData({ name: "", email: "", phone: "", active: true, nucleo_id: "" });
+                  setSalesRepModalOpen(true);
+                }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Vendedor
+                </Button>
               </div>
-              <Button onClick={() => {
-                setSelectedSalesRep(null);
-                setSalesRepFormData({ name: "", email: "", phone: "", active: true });
-                setSalesRepModalOpen(true);
-              }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Vendedor
-              </Button>
-            </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {salesRepsLoading ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Núcleo</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ) : salesReps?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        Nenhum vendedor cadastrado.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    salesReps?.map((rep) => (
-                      <TableRow key={rep.id}>
-                        <TableCell className="font-medium">{rep.name}</TableCell>
-                        <TableCell>{rep.email || "-"}</TableCell>
-                        <TableCell>{rep.phone || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={rep.active ? "default" : "secondary"}>
-                            {rep.active ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleSalesRepEdit(rep)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => {
-                                setSalesRepToDelete(rep.id);
-                                setSalesRepDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {salesRepsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
+                    ) : salesReps?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          Nenhum vendedor cadastrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      salesReps?.map((rep) => (
+                        <TableRow key={rep.id}>
+                          <TableCell className="font-medium">{rep.name}</TableCell>
+                          <TableCell>{rep.email || "-"}</TableCell>
+                          <TableCell>{rep.phone || "-"}</TableCell>
+                          <TableCell>
+                            {nucleos?.find(n => n.id === rep.nucleo_id)?.name || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={rep.active ? "default" : "secondary"}>
+                              {rep.active ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleSalesRepEdit(rep)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setSalesRepToDelete(rep.id);
+                                  setSalesRepDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
 
-          {/* Products Tab */}
-          <TabsContent value="products" className="mt-6">
-            <ProductsTab />
-          </TabsContent>
+            {/* Products Tab */}
+            <TabsContent value="products" className="mt-6">
+              <ProductsTab />
+            </TabsContent>
+
+            {/* Nucleos Tab */}
+            <TabsContent value="nucleos" className="mt-6">
+              <NucleosTab />
+            </TabsContent>
 
           {/* Custom Sources Tab - Now using Hierarchy Manager */}
           <TabsContent value="sources" className="mt-6">
@@ -422,21 +441,40 @@ const Settings = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={salesRepFormData.phone}
-                onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
-                className="focus:border-[#D6CDC8]"
-                maxLength={20}
-              />
-              {salesRepFormErrors.phone && (
-                <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  value={salesRepFormData.phone}
+                  onChange={(e) => setSalesRepFormData({ ...salesRepFormData, phone: e.target.value })}
+                  className="focus:border-[#D6CDC8]"
+                  maxLength={20}
+                />
+                {salesRepFormErrors.phone && (
+                  <p className="text-sm text-destructive">{salesRepFormErrors.phone}</p>
+                )}
+              </div>
 
-            <div className="flex items-center space-x-2">
+              <div className="space-y-2">
+                <Label htmlFor="nucleo">Núcleo</Label>
+                <Select
+                  value={salesRepFormData.nucleo_id}
+                  onValueChange={(value) => setSalesRepFormData({ ...salesRepFormData, nucleo_id: value })}
+                >
+                  <SelectTrigger id="nucleo">
+                    <SelectValue placeholder="Selecione um núcleo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nucleos?.map((nucleo) => (
+                      <SelectItem key={nucleo.id} value={nucleo.id}>
+                        {nucleo.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
               <Switch
                 id="active"
                 checked={salesRepFormData.active}

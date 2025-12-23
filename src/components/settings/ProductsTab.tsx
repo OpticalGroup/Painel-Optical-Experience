@@ -81,7 +81,7 @@ export const ProductsTab = () => {
             <div className="border rounded-lg">
                 <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
                     <div className="col-span-4">Nome</div>
-                    <div className="col-span-3">Preço</div>
+                    <div className="col-span-3">Ticket Médio</div>
                     <div className="col-span-3">Status</div>
                     <div className="col-span-2 text-right">Ações</div>
                 </div>
@@ -91,14 +91,14 @@ export const ProductsTab = () => {
                         <div key={product.id} className="grid grid-cols-12 gap-4 p-4 items-center text-sm">
                             <div className="col-span-4 font-medium">{product.name}</div>
                             <div className="col-span-3 text-muted-foreground">
-                                {formatPrice(product.price)}
+                                {formatPrice(product.ticket_medio)}
                             </div>
                             <div className="col-span-3">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.status === 'active'
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${product.active
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                                     }`}>
-                                    {product.status === 'active' ? 'Ativo' : product.status || 'Inativo'}
+                                    {product.active ? 'Ativo' : 'Inativo'}
                                 </span>
                             </div>
                             <div className="col-span-2 flex justify-end gap-2">

@@ -140,29 +140,29 @@ export type Database = {
           Row: {
             id: string
             name: string
-            price: number | null
-            status: string
+            ticket_medio: number | null
+            active: boolean
+            description: string | null
             nucleo_id: string | null
             created_at: string
-            updated_at: string
           }
           Insert: {
             id?: string
             name: string
-            price?: number | null
-            status?: string
+            ticket_medio?: number | null
+            active?: boolean
+            description?: string | null
             nucleo_id?: string | null
             created_at?: string
-            updated_at?: string
           }
           Update: {
             id?: string
             name?: string
-            price?: number | null
-            status?: string
+            ticket_medio?: number | null
+            active?: boolean
+            description?: string | null
             nucleo_id?: string | null
             created_at?: string
-            updated_at?: string
           }
           Relationships: []
         }
@@ -171,25 +171,28 @@ export type Database = {
             id: string
             name: string
             active: boolean
+            email: string | null
+            phone: string | null
             nucleo_id: string | null
             created_at: string
-            updated_at: string
           }
           Insert: {
             id?: string
             name: string
             active?: boolean
+            email?: string | null
+            phone?: string | null
             nucleo_id?: string | null
             created_at?: string
-            updated_at?: string
           }
           Update: {
             id?: string
             name?: string
             active?: boolean
+            email?: string | null
+            phone?: string | null
             nucleo_id?: string | null
             created_at?: string
-            updated_at?: string
           }
           Relationships: []
         }
