@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useOrganizationSettings } from "@/integrations/supabase/hooks/useOrganizationSettings";
+import { cn } from "../lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -98,35 +99,38 @@ export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border transition-all duration-300 ease-in-out">
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-sidebar/80 backdrop-blur-xl transition-all duration-300 ease-in-out">
       <SidebarContent className="pt-8">
-        <div className="px-6 pb-6">
+        <div className={cn("transition-all duration-300", open ? "px-6 pb-6" : "px-2 pb-6 flex justify-center")}>
           {orgSettings?.logo_url ? (
             <div className="flex items-center justify-center">
               <img
                 src={orgSettings.logo_url}
                 alt={orgSettings.organization_name || "Logo"}
-                className={open ? "h-12 w-auto object-contain" : "h-8 w-auto object-contain"}
+                className={open ? "h-12 w-auto object-contain" : "h-8 w-8 object-contain rounded-lg"}
               />
             </div>
           ) : (
             <div className="flex items-center gap-3">
               {/* Bio-System Logo with Glow */}
               <div
-                className="w-10 h-10 rounded-xl bg-gradient-bio flex items-center justify-center glow-cyan"
+                className={cn(
+                  "rounded-xl bg-gradient-bio flex items-center justify-center glow-cyan shrink-0 transition-all duration-300",
+                  open ? "w-10 h-10" : "w-8 h-8"
+                )}
                 style={{
                   background: 'linear-gradient(135deg, hsl(172 66% 50%) 0%, hsl(199 89% 48%) 100%)',
                   boxShadow: '0 0 25px hsl(172 66% 50% / 0.4)'
                 }}
               >
-                <span className="text-lg font-bold text-white">O</span>
+                <span className={cn("font-bold text-white transition-all", open ? "text-lg" : "text-sm")}>O</span>
               </div>
               {open && (
-                <div>
-                  <h1 className="font-semibold text-foreground text-sm tracking-tight">
+                <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                  <h1 className="font-bold text-foreground text-sm tracking-tight leading-none mb-1">
                     {orgSettings?.organization_name || "Optical Experience"}
                   </h1>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  <p className="text-[10px] text-primary font-semibold uppercase tracking-widest leading-none opacity-80">
                     Bio-System
                   </p>
                 </div>
@@ -136,7 +140,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-overline px-4 mb-2">Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {/* Main menu items */}
@@ -146,11 +150,11 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="transition-colors hover:bg-secondary/50"
-                      activeClassName="bg-primary/10 text-primary font-medium border-l-2 border-primary"
+                      className="flex items-center gap-3 px-4 py-2 transition-all duration-200 hover:bg-sidebar-accent/50 group"
+                      activeClassName="sidebar-item-active"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
+                      {open && <span className="text-sm font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -166,27 +170,29 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
-                        className={`transition-colors hover:bg-secondary/50 ${isSettingsActive ? 'bg-primary/10 text-primary font-medium border-l-2 border-primary' : ''
-                          }`}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2 transition-all duration-200 hover:bg-sidebar-accent/50 group",
+                          isSettingsActive && "sidebar-item-active"
+                        )}
                       >
-                        <Settings className="h-4 w-4" />
-                        {open && <span>Configurações</span>}
+                        <Settings className="h-4 w-4 transition-transform group-hover:rotate-45" />
+                        {open && <span className="text-sm font-medium">Configurações</span>}
                         {open && (
-                          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                          <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180" />
                         )}
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
+                    <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
+                      <SidebarMenuSub className="ml-4 mt-1 border-l border-border/50">
                         {settingsMenuItems.map((item) => (
                           <SidebarMenuSubItem key={item.title}>
                             <SidebarMenuSubButton asChild>
                               <NavLink
                                 to={item.url}
-                                className="transition-colors hover:bg-secondary/50 pl-8"
-                                activeClassName="bg-primary/5 text-primary font-medium"
+                                className="flex items-center gap-3 px-4 py-2 transition-all duration-200 hover:bg-sidebar-accent/50 group rounded-md"
+                                activeClassName="bg-primary/10 text-primary font-semibold"
                               >
-                                <item.icon className="h-3.5 w-3.5" />
+                                <item.icon className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100" />
                                 {open && <span className="text-sm">{item.title}</span>}
                               </NavLink>
                             </SidebarMenuSubButton>
@@ -202,26 +208,27 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+      <SidebarFooter className="border-t border-border/50 bg-sidebar-background/50 backdrop-blur-md">
+        <div className={cn("flex items-center gap-3 py-4 transition-all duration-300", open ? "px-6" : "px-2 justify-center")}>
+          <UserMenu />
           {open && (
-            <div className="text-xs text-muted-foreground">
-              Usuário conectado
+            <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+              <span className="text-xs font-semibold text-foreground truncate">Usuário</span>
+              <span className="text-[10px] text-muted-foreground truncate">Conectado</span>
             </div>
           )}
-          <UserMenu />
         </div>
 
         {/* Collapse Toggle Button */}
         <button
           onClick={toggleSidebar}
-          className="flex items-center justify-center w-full py-2 border-t border-border text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200"
+          className="flex items-center justify-center w-full py-3 border-t border-border/30 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300 group"
           title={open ? "Minimizar menu" : "Expandir menu"}
         >
           {open ? (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           )}
         </button>
       </SidebarFooter>
