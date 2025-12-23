@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // To avoid flickering, we only set loading if we don't have a role yet
           if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
             setLoading(true);
-            await fetchUserRole(session.user.id, session.user.email);
+            await fetchUserRole(session.user.id);
             setLoading(false);
           }
         } else {
