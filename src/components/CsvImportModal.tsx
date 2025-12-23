@@ -953,7 +953,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             cohort_id: targetCohortId,
             student_name: dataToImport[i].student_name,
             email: dataToImport[i].email,
-            cpf: dataToImport[i].cpf,
+            cpf: dataToImport[i].cpf || null,
             sales_rep: dataToImport[i].sales_rep,
             source: dataToImport[i].source || dataToImport[i].macro_origin || 'Não Rastreada',
             financial_status: dataToImport[i].financial_status || 'pending',
@@ -1473,19 +1473,19 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                               </Tooltip>
                             </div>
                           </th>
-                          <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">
-                            <div className="flex items-center gap-1">
-                              CPF *
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="text-xs">Formato: 000.000.000-00 ou 11 dígitos</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </th>
+                            <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">
+                              <div className="flex items-center gap-1">
+                                CPF
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Formato: 000.000.000-00 ou 11 dígitos (opcional)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </th>
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[130px]">Telefone</th>
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Vendedor *</th>
                           <th className="px-2 py-2 text-left font-semibold text-xs min-w-[120px]">Origem</th>
@@ -1607,10 +1607,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
                                   value={row.cpf || ""}
                                   onChange={(e) => updatePreviewRow(index, "cpf", e.target.value)}
                                   placeholder="000.000.000-00"
-                                  className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 ${!row.cpf
-                                    ? "border-destructive bg-destructive/5 focus:ring-destructive"
-                                    : "border-border bg-background focus:ring-primary"
-                                    }`}
+                                    className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 border-border bg-background focus:ring-primary`}
                                 />
                               </td>
 

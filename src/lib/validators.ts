@@ -50,9 +50,9 @@ export const validateEmail = (email: string): ValidationResult => {
 export const validateCPF = (cpf: string): ValidationResult => {
   if (!cpf || !cpf.trim()) {
     return {
-      valid: false,
-      level: 'error',
-      message: 'CPF é obrigatório',
+      valid: true,
+      level: 'info',
+      message: 'CPF não informado (opcional)',
       field: 'cpf',
     };
   }

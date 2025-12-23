@@ -74,7 +74,7 @@ const formSchema = z.object({
   cohortId: z.string().min(1, "Turma é obrigatória"),
   studentName: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
-  cpf: z.string().min(11, "CPF inválido"),
+  cpf: z.string().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   salesRep: z.string().min(1, "Vendedor é obrigatório"),
   source: z.string().min(1, "Origem é obrigatória"),
@@ -269,12 +269,12 @@ export const EnrollmentModal = ({
     const isFull = (selectedCohort?.stats?.available_spots || 0) <= 0;
     const status = isFull ? 'waiting_list' : 'active';
 
-    const enrollmentData = {
-      cohort_id: data.cohortId,
-      student_name: data.studentName,
-      email: data.email.toLowerCase(),
-      cpf: normalizedCPF,
-      phone: data.phone || null,
+      const enrollmentData = {
+        cohort_id: data.cohortId,
+        student_name: data.studentName,
+        email: data.email.toLowerCase(),
+        cpf: normalizedCPF || null,
+        phone: data.phone || null,
       sales_rep: data.salesRep,
       source: data.source as any,
       payment_amount: data.paymentAmount ? parseFloat(data.paymentAmount) : null,
@@ -417,19 +417,19 @@ export const EnrollmentModal = ({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="cpf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CPF *</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="cpf"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CPF</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   <FormField
                     control={form.control}
                     name="phone"

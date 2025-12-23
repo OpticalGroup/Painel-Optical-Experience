@@ -30,7 +30,7 @@ const SYSTEM_FIELDS: FieldDefinition[] = [
     { key: 'cohort_year', label: 'Ano da Turma', required: false, description: 'Ano da turma (opcional, será combinado com o nome se fornecido)' },
     { key: 'student_name', label: 'Nome Completo', required: true, description: 'Nome completo do aluno' },
   { key: 'email', label: 'Email', required: true, description: 'Email válido (único por turma)' },
-  { key: 'cpf', label: 'CPF', required: true, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (será normalizado)' },
+  { key: 'cpf', label: 'CPF', required: false, description: 'CPF no formato XXX.XXX.XXX-XX ou 11 dígitos (opcional, será normalizado)' },
   { key: 'sales_rep', label: 'Vendedor', required: true, description: 'Nome do vendedor responsável' },
 
   // Hierarquia de Origem (campos opcionais que substituem 'source')
