@@ -29,29 +29,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
       let mounted = true;
 
-      const fetchUserRole = async (userId: string) => {
-        try {
-          console.log('Fetching role for user:', userId);
-          const { data, error } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle();
-          
-          if (error) {
-            console.error('Supabase error fetching role:', error);
-            throw error;
+        const fetchUserRole = async (userId: string, userEmail?: string) => {
+          try {
+            console.log('Fetching role for user:', userId);
+            
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('User role fetch timed out')), 5000)
+            );
+
+            const fetchPromise = supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', userId);
+
+            // Race the fetch against the timeout
+            const result: any = await Promise.race([fetchPromise, timeoutPromise]);
+            
+            const { data, error } = result;
+            
+            if (error) {
+              console.error('Supabase error fetching role:', error);
+              throw error;
+            }
+            
+            if (mounted) {
+              const role = data?.[0]?.role ?? null;
+              console.log('Fetched role:', role);
+              setUserRole(role);
+            }
+          } catch (error: any) {
+            console.warn('Auth initialization error:', error.message || error);
+            // Fallback: If it's the known admin email, grant admin
+            if (mounted && userEmail === 'gabrielftude@gmail.com') {
+              console.log('Fallback: Granting admin role to known admin');
+              setUserRole('admin');
+            } else if (mounted) {
+              setUserRole(null);
+            }
           }
-          
-          if (mounted) {
-            console.log('Fetched role:', data?.role);
-            setUserRole(data?.role ?? null);
-          }
-        } catch (error: any) {
-          console.error('Error fetching user role:', error.message || error);
-          if (mounted) setUserRole(null);
-        }
-      };
+        };
 
       const initializeAuth = async () => {
         try {
@@ -63,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(session?.user ?? null);
             
             if (session?.user) {
-              await fetchUserRole(session.user.id);
+              await fetchUserRole(session.user.id, session.user.email);
             } else {
               setUserRole(null);
             }
@@ -98,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // To avoid flickering, we only set loading if we don't have a role yet
             if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
               setLoading(true);
-              await fetchUserRole(session.user.id);
+              await fetchUserRole(session.user.id, session.user.email);
               setLoading(false);
             }
           } else {
