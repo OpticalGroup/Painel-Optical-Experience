@@ -26,106 +26,113 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-    useEffect(() => {
-      let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-          const fetchUserRole = async (userId: string, userEmail?: string) => {
-            try {
-              console.log('Fetching role for user:', userId);
-              
-              const { data, error } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', userId)
-                .maybeSingle();
-  
-              if (error) {
-                console.error('Supabase error fetching role:', error);
-                throw error;
-              }
-              
-              if (mounted) {
-                const role = data?.role ?? null;
-                console.log('Fetched role:', role);
-                setUserRole(role);
-              }
-            } catch (error: any) {
-              console.warn('Auth initialization error:', error.message || error);
-              // Fallback: If it's the known admin email, grant admin
-              if (mounted && userEmail === 'gabrielftude@gmail.com') {
-                console.log('Fallback: Granting admin role to known admin');
-                setUserRole('admin');
-              } else if (mounted) {
-                setUserRole(null);
-              }
-            }
-          };
+    const fetchUserRole = async (userId: string, userEmail?: string) => {
+      try {
+        console.log('Fetching role for user:', userId);
 
-      const initializeAuth = async () => {
-        try {
-          setLoading(true);
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
-            
-            if (session?.user) {
-              await fetchUserRole(session.user.id, session.user.email);
-            } else {
-              setUserRole(null);
-            }
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Supabase error fetching role:', error);
+          throw error;
+        }
+
+        if (mounted) {
+          let role = data?.role ?? null;
+
+          // Fallback: If it's the known admin email and no role found, grant admin
+          if (!role && userEmail === 'gabrielftude@gmail.com') {
+            console.log('Fallback: Granting admin role to known admin');
+            role = 'admin';
           }
-        } catch (error) {
-          console.error('Auth initialization error:', error);
-        } finally {
-          if (mounted) setLoading(false);
+
+          console.log('Fetched role:', role);
+          setUserRole(role);
         }
-      };
-
-      initializeAuth();
-
-      // Add a safety timeout to prevent getting stuck in loading state
-      const safetyTimeout = setTimeout(() => {
-        if (mounted && loading) {
-          console.warn('Auth initialization timed out, forcing loading to false');
-          setLoading(false);
+      } catch (error: any) {
+        console.warn('Auth initialization error:', error.message || error);
+        // Fallback: Check here too in case of DB error
+        if (mounted && userEmail === 'gabrielftude@gmail.com') {
+          console.log('Fallback: Granting admin role to known admin (error recovery)');
+          setUserRole('admin');
+        } else if (mounted) {
+          setUserRole(null);
         }
-      }, 10000); // 10 seconds safety margin
+      }
+    };
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (!mounted) return;
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
 
-          console.log('Auth state changed:', event);
+        if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          
+
           if (session?.user) {
-            // Only fetch if session changed or was not checked yet
-            // To avoid flickering, we only set loading if we don't have a role yet
-            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-              setLoading(true);
-              await fetchUserRole(session.user.id, session.user.email);
-              setLoading(false);
-            }
+            await fetchUserRole(session.user.id, session.user.email);
           } else {
             setUserRole(null);
-            if (event === 'SIGNED_OUT') {
-              setLoading(false);
-            }
           }
         }
-      );
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-      return () => {
-        mounted = false;
-        subscription.unsubscribe();
-      };
-    }, []);
+    initializeAuth();
 
-    // Moved outside of useEffect to keep logic clean, but used inside
-    // Alternatively keep it inside as I did above.
+    // Add a safety timeout to prevent getting stuck in loading state
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timed out, forcing loading to false');
+        setLoading(false);
+      }
+    }, 10000); // 10 seconds safety margin
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log('Auth state changed:', event);
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          // Only fetch if session changed or was not checked yet
+          // To avoid flickering, we only set loading if we don't have a role yet
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            setLoading(true);
+            await fetchUserRole(session.user.id, session.user.email);
+            setLoading(false);
+          }
+        } else {
+          setUserRole(null);
+          if (event === 'SIGNED_OUT') {
+            setLoading(false);
+          }
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Moved outside of useEffect to keep logic clean, but used inside
+  // Alternatively keep it inside as I did above.
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -133,9 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
       });
-      
+
       if (error) throw error;
-      
+
       toast.success('Login realizado com sucesso!');
       navigate('/');
       return { error: null };
@@ -148,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -159,9 +166,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       });
-      
+
       if (error) throw error;
-      
+
       toast.success('Conta criada com sucesso! Verifique seu email.');
       return { error: null };
     } catch (error: any) {
@@ -178,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+
       setUser(null);
       setSession(null);
       setUserRole(null);
@@ -194,15 +201,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      userRole, 
-      loading, 
-      signIn, 
-      signUp, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      userRole,
+      loading,
+      signIn,
+      signUp,
       signOut,
-      hasRole 
+      hasRole
     }}>
       {children}
     </AuthContext.Provider>
