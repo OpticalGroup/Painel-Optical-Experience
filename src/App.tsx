@@ -36,6 +36,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/access-pending" element={<AccessPending />} />
+        <Route path="/debug-permissions" element={<DebugPermissions />} />
 
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/" element={<Index />} />
@@ -51,7 +52,7 @@ const AppContent = () => {
           <Route path="/documentation" element={<Documentation />} />
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/debug-permissions" element={<DebugPermissions />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -26,31 +26,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
+    useEffect(() => {
     let mounted = true;
 
     const fetchUserRole = async (userId: string) => {
       try {
-        console.log('Fetching role for user:', userId);
-
-        const { data, error } = await supabase
+        console.log('[Auth] Fetching role for user:', userId);
+        
+        // Add a local timeout for the role fetch itself
+        const rolePromise = supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', userId)
-          .maybeSingle();
+          .eq('user_id', userId);
+          
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Role fetch timeout')), 5000)
+        );
+
+        const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
 
         if (error) {
-          console.error('Supabase error fetching role:', error);
+          console.error('[Auth] Supabase error fetching role:', error);
           throw error;
         }
 
         if (mounted) {
-          const role = data?.role ?? null;
-          console.log('Fetched role:', role);
-          setUserRole(role);
+          const roleData = data && data.length > 0 ? data[0].role : null;
+          console.log('[Auth] Fetched role data:', roleData);
+          setUserRole(roleData as UserRole);
         }
       } catch (error: any) {
-        console.warn('Auth initialization error:', error.message || error);
+        console.warn('[Auth] Error or timeout in fetchUserRole:', error.message || error);
         if (mounted) {
           setUserRole(null);
         }
@@ -59,10 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        console.log('[Auth] Initializing with timeout...');
         setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Race getSession against a timeout to prevent hanging the whole app
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('getSession timeout')), 3000)
+        );
+
+        const sessionResult = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        const session = sessionResult.data?.session;
 
         if (mounted) {
+          console.log('[Auth] Session found via getSession:', !!session);
           setSession(session);
           setUser(session?.user ?? null);
 
@@ -72,44 +88,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUserRole(null);
           }
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
+      } catch (error: any) {
+        console.warn('[Auth] Initialization stall handled:', error.message || error);
+        // If getSession stalls, we still wait for onAuthStateChange to provide the session
       } finally {
-        if (mounted) setLoading(false);
+        // We only set loading to false if we didn't hang or if we finished
+        // But onAuthStateChange will also handle setting loading to false
       }
     };
 
     initializeAuth();
 
-    // Add a safety timeout to prevent getting stuck in loading state
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('Auth initialization timed out, forcing loading to false');
-        setLoading(false);
-      }
-    }, 10000); // 10 seconds safety margin
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
 
-        console.log('Auth state changed:', event);
+        console.log('[Auth] Auth state changed event:', event, !!session);
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Only fetch if session changed or was not checked yet
-          // To avoid flickering, we only set loading if we don't have a role yet
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-            setLoading(true);
-            await fetchUserRole(session.user.id);
-            setLoading(false);
-          }
+          // INITIAL_SESSION, SIGNED_IN, etc.
+          await fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
-          if (event === 'SIGNED_OUT') {
-            setLoading(false);
-          }
+        }
+        
+        if (mounted) {
+          console.log('[Auth] Finalizing loading state');
+          setLoading(false);
         }
       }
     );
