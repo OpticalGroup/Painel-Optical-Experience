@@ -58,6 +58,7 @@ interface ParsedRow {
   cpf: string;
   phone?: string;
   sales_rep: string;
+  co_sales_rep?: string; // Co-responsável pela venda
   source: string;
   financial_status: "paid" | "pending";
   contract_status: "signed" | "pending";
@@ -69,11 +70,12 @@ interface ParsedRow {
   // New fields from FASE 1
   purchase_date?: string; // Data da compra (ISO format)
   lead_date?: string; // Data de chegada do lead
-  nationality?: string;
+  origin_action_date?: string; // Data da ação da origem
   address?: string; // Endereço completo
   city?: string; // Cidade
   state?: string; // Estado/UF
   zipcode?: string; // CEP (normalizado)
+  country?: string; // País de origem
   product_name?: string; // Nome do produto
   payment_proof_url?: string; // URL do comprovante
   observations?: string; // Observações gerais
@@ -84,6 +86,7 @@ interface ParsedRow {
   utm_content?: string;
   utm_page?: string;
   submitted_at?: string; // Timestamp de submissão
+  external_lead_id?: string; // ID do lead externo (CRM)
   // Campos da nova hierarquia de origem
   funnel_name?: string; // Nome do funil de venda
   macro_origin?: string; // Origem macro
@@ -334,7 +337,8 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       // Parse valor monetário
       const amount = parseMoneyValue(row.payment_amount);
 
-      const nationality = row.nationality?.trim();
+      // Parse data da ação da origem
+      const originActionDate = normalizeDate(row.origin_action_date);
 
       const parsedRow: ParsedRow = {
         // Campos obrigatórios normalizados
@@ -344,30 +348,42 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
         cpf: cpfResult.normalized,
         phone: normalizedPhone || undefined,
         sales_rep: sellerMapping[row.sales_rep] || row.sales_rep || '',
+        co_sales_rep: row.co_sales_rep?.trim() || undefined,
         source: normalizeEnrollmentSource(row.source || ''),
         financial_status: parsePaymentStatus(row.financial_status || 'pending'),
         contract_status: parseContractStatus(row.contract_status || 'pending'),
         payment_details: row.payment_details?.trim() || 'Aguardando detalhes',
         payment_amount: amount || undefined,
 
-        // Novos campos opcionais normalizados
+        // Campos de datas
         purchase_date: purchaseDate || undefined,
         lead_date: leadDate || undefined,
-        nationality: nationality || undefined,
+        origin_action_date: originActionDate || undefined,
+        submitted_at: submittedAt || undefined,
+
+        // Campos de endereço
         address: normalizedAddress || undefined,
         city: row.city?.trim() || undefined,
         state: row.state?.trim().toUpperCase() || undefined,
         zipcode: normalizedZipcode || undefined,
+        country: row.country?.trim() || 'Brasil',
+
+        // Campos de produto e observações
         product_name: row.product_name?.trim() || 'Optical Experience',
         payment_proof_url: row.payment_proof_url?.trim() || undefined,
         observations: row.observations?.trim() || undefined,
+
+        // Campos UTM
         utm_source: row.utm_source?.trim() || undefined,
         utm_medium: row.utm_medium?.trim() || undefined,
         utm_campaign: row.utm_campaign?.trim() || undefined,
         utm_term: row.utm_term?.trim() || undefined,
         utm_content: row.utm_content?.trim() || undefined,
         utm_page: row.utm_page?.trim() || undefined,
-        submitted_at: submittedAt || undefined,
+
+        // Campos de integração
+        external_lead_id: row.external_lead_id?.trim() || undefined,
+
         // Campos da hierarquia de origem
         funnel_name: row.funnel_name?.trim() || undefined,
         macro_origin: row.macro_origin?.trim() || undefined,
@@ -534,10 +550,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   };
 
   const checkSellers = async (data: ParsedRow[]) => {
-    // Extrair vendedores únicos
-    const uniqueSellers = Array.from(new Set(
-      data.map(row => row.sales_rep).filter(Boolean)
-    )) as string[];
+    // Extrair vendedores únicos (incluindo co-responsáveis)
+    const allSellers = new Set<string>();
+    data.forEach(row => {
+      if (row.sales_rep) allSellers.add(row.sales_rep);
+      if (row.co_sales_rep) allSellers.add(row.co_sales_rep);
+    });
+    const uniqueSellers = Array.from(allSellers);
 
     // Filtrar aqueles que NÃO existem no banco
     const missing = uniqueSellers.filter(seller => {
