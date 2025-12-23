@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Calendar, Settings, FileText, Shield, ScrollText, BookOpen, History, GraduationCap, Palette, Plug, ChevronDown, BookMarked } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, FileText, Shield, ScrollText, BookOpen, History, GraduationCap, Palette, Plug, ChevronDown, BookMarked, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
@@ -95,8 +95,10 @@ export function AppSidebar() {
   // Only admins can see settings menu
   const canAccessSettings = userRole === 'admin';
 
+  const { toggleSidebar } = useSidebar();
+
   return (
-    <Sidebar className="border-r border-border">
+    <Sidebar collapsible="icon" className="border-r border-border transition-all duration-300 ease-in-out">
       <SidebarContent className="pt-8">
         <div className="px-6 pb-6">
           {orgSettings?.logo_url ? (
@@ -140,7 +142,7 @@ export function AppSidebar() {
               {/* Main menu items */}
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       end
@@ -209,6 +211,19 @@ export function AppSidebar() {
           )}
           <UserMenu />
         </div>
+
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={toggleSidebar}
+          className="flex items-center justify-center w-full py-2 border-t border-border text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200"
+          title={open ? "Minimizar menu" : "Expandir menu"}
+        >
+          {open ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
       </SidebarFooter>
     </Sidebar>
   );

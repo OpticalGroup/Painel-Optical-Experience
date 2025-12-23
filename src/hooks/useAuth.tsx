@@ -26,52 +26,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-    useEffect(() => {
+  useEffect(() => {
     let mounted = true;
     let isFetchingRole = false;
 
-      const fetchUserRole = async (userId: string) => {
-        if (isFetchingRole) return;
-        isFetchingRole = true;
-        
-        try {
-          console.log('[Auth] Fetching role - START for:', userId);
-          const startTime = Date.now();
-          
-          // Use a race to avoid hanging forever if the network request stalls
-          const rolePromise = supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle();
+    const fetchUserRole = async (userId: string): Promise<boolean> => {
+      if (isFetchingRole) return false;
+      isFetchingRole = true;
 
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Request Timeout')), 4000)
-          );
+      try {
+        console.log('[Auth] Fetching role - START for:', userId);
+        const startTime = Date.now();
 
-          const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
-          
-          console.log(`[Auth] Fetching role - END (${Date.now() - startTime}ms)`);
+        // Use a race to avoid hanging forever if the network request stalls
+        const rolePromise = supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-          if (error) {
-            console.error('[Auth] Supabase error fetching role:', error);
-            throw error;
-          }
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request Timeout')), 4000)
+        );
 
-          if (mounted) {
-            const roleData = data?.role || null;
-            console.log('[Auth] Role resolved to:', roleData);
-            setUserRole(roleData as UserRole);
-          }
-        } catch (error: any) {
-          console.error('[Auth] Fatal error in fetchUserRole:', error.message || error);
-          if (mounted) {
-            setUserRole(null);
-          }
-        } finally {
-          isFetchingRole = false;
+        const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
+
+        console.log(`[Auth] Fetching role - END (${Date.now() - startTime}ms)`);
+
+        if (error) {
+          console.error('[Auth] Supabase error fetching role:', error);
+          throw error;
         }
-      };
+
+        if (mounted) {
+          const roleData = data?.role || null;
+          console.log('[Auth] Role resolved to:', roleData);
+          setUserRole(roleData as UserRole);
+        }
+        return true; // Success
+      } catch (error: any) {
+        console.error('[Auth] Error in fetchUserRole:', error.message || error);
+        // On timeout, return false so we can retry; don't change userRole
+        if (error.message === 'Request Timeout') {
+          return false;
+        }
+        // On real error, set null
+        if (mounted) {
+          setUserRole(null);
+        }
+        return true; // Still "resolved" (just to null)
+      } finally {
+        isFetchingRole = false;
+      }
+    };
 
     // Use onAuthStateChange as the primary source of truth.
     // It will fire INITIAL_SESSION automatically on mount.
@@ -83,13 +90,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
+        let roleResolved = false;
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          roleResolved = await fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
+          roleResolved = true;
         }
-        
-        if (mounted) {
+
+        // Only finalize loading if role was definitively resolved
+        if (mounted && roleResolved) {
+          console.log('[Auth] Role resolved, setting loading=false');
           setLoading(false);
         }
       }

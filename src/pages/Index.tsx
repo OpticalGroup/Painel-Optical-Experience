@@ -196,159 +196,170 @@ const Index = () => {
     <>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between px-4 sm:px-6 lg:px-8 py-4 gap-4 xl:gap-0">
-          <div className="flex items-center gap-4 w-full xl:w-auto justify-between xl:justify-start">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                  Visão Geral
-                </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block">
-                  Acompanhamento de métricas e próxima turma
-                </p>
-              </div>
-            </div>
-            {/* Mobile Actions: Help & User (More accessible on mobile top right) */}
-            <div className="flex items-center gap-2 xl:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-primary h-8 w-8"
-                onClick={() => window.open('/documentation', '_blank')}
-                title="Ver Documentação"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-              <UserMenu />
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4 gap-3">
+          {/* Left: Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <SidebarTrigger />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                Visão Geral
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 hidden md:block">
+                Acompanhamento de métricas e próxima turma
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
-            {/* Filters */}
-            <div className="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full sm:w-auto gap-2 justify-start text-left font-normal",
-                      !dateRange.from && !dateRange.to && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    {dateRange.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
-                          {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
-                        </>
-                      ) : (
-                        format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                      )
+          {/* Desktop Controls (lg+) */}
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "gap-2 justify-start text-left font-normal",
+                    !dateRange.from && !dateRange.to && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                        {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                      </>
                     ) : (
-                      <span>Filtrar por período</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <div className="p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const today = new Date();
-                          const lastMonth = new Date(today);
-                          lastMonth.setMonth(today.getMonth() - 1);
-                          setDateRange({ from: lastMonth, to: today });
-                        }}
-                      >
-                        Último mês
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const today = new Date();
-                          const lastThreeMonths = new Date(today);
-                          lastThreeMonths.setMonth(today.getMonth() - 3);
-                          setDateRange({ from: lastThreeMonths, to: today });
-                        }}
-                      >
-                        Últimos 3 meses
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange({ from: undefined, to: undefined })}
-                      >
-                        Limpar
-                      </Button>
-                    </div>
-                    <CalendarComponent
-                      mode="range"
-                      selected={{ from: dateRange.from, to: dateRange.to }}
-                      onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                      numberOfMonths={2}
-                      locale={ptBR}
-                    />
+                      format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                    )
+                  ) : (
+                    <span>Filtrar por período</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <div className="p-3 space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      const today = new Date();
+                      const lastMonth = new Date(today);
+                      lastMonth.setMonth(today.getMonth() - 1);
+                      setDateRange({ from: lastMonth, to: today });
+                    }}>Último mês</Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      const today = new Date();
+                      const lastThreeMonths = new Date(today);
+                      lastThreeMonths.setMonth(today.getMonth() - 3);
+                      setDateRange({ from: lastThreeMonths, to: today });
+                    }}>Últimos 3 meses</Button>
+                    <Button variant="outline" size="sm" onClick={() => setDateRange({ from: undefined, to: undefined })}>Limpar</Button>
                   </div>
-                </PopoverContent>
-              </Popover>
+                  <CalendarComponent
+                    mode="range"
+                    selected={{ from: dateRange.from, to: dateRange.to }}
+                    onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
 
-              <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Todas as Turmas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Turmas</SelectItem>
-                  {cohorts?.map((cohort) => (
-                    <SelectItem key={cohort.id} value={cohort.id}>
-                      {cohort.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Todas as Turmas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Turmas</SelectItem>
+                {cohorts?.map((cohort) => (
+                  <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Actions: Scrollable on mobile if needed, or wrapped */}
-            <div className="flex items-center gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-primary hidden xl:inline-flex"
-                onClick={() => window.open('/documentation', '_blank')}
-                title="Ver Documentação"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </Button>
+            <ExportButton type="dashboard" label="Exportar Dashboard" />
 
-              <ExportButton type="dashboard" label="Exportar Dashboard" />
+            <Button onClick={() => setCsvImportModalOpen(true)} variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Importar
+            </Button>
 
-              <Button
-                onClick={() => setCsvImportModalOpen(true)}
-                variant="outline"
-                className="whitespace-nowrap"
-              >
-                <Upload className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Importar CSV</span>
-                <span className="inline sm:hidden">Importar</span>
-              </Button>
+            <Button onClick={() => setModalOpen(true)} className="bg-primary hover:bg-primary/90 gap-2">
+              <Users className="h-4 w-4" />
+              Nova Matrícula
+            </Button>
 
-              <Button
-                onClick={() => setModalOpen(true)}
-                className="bg-primary hover:bg-primary/90 gap-2 whitespace-nowrap"
-              >
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Nova Matrícula</span>
-                <span className="inline sm:hidden">Matrícula</span>
-              </Button>
+            <UserMenu />
+          </div>
 
-              <div className="hidden xl:block">
-                <UserMenu />
-              </div>
-            </div>
+          {/* Mobile/Tablet Controls */}
+          <div className="flex items-center gap-2 lg:hidden flex-shrink-0">
+            <Button onClick={() => setModalOpen(true)} size="sm" className="bg-primary hover:bg-primary/90 h-9 px-3 gap-1.5">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Matrícula</span>
+            </Button>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl">
+                <SheetHeader className="text-left mb-6">
+                  <SheetTitle>Filtros e Opções</SheetTitle>
+                </SheetHeader>
+
+                <div className="space-y-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Período</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start h-11", !dateRange.from && "text-muted-foreground")}>
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {dateRange.from ? (
+                            dateRange.to ? `${format(dateRange.from, "dd/MM/yy", { locale: ptBR })} - ${format(dateRange.to, "dd/MM/yy", { locale: ptBR })}` : format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                          ) : "Filtrar por período"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="center">
+                        <CalendarComponent mode="range" selected={{ from: dateRange.from, to: dateRange.to }} onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })} numberOfMonths={1} locale={ptBR} />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Turma</label>
+                    <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
+                      <SelectTrigger className="w-full h-11">
+                        <SelectValue placeholder="Todas as Turmas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Turmas</SelectItem>
+                        {cohorts?.map((cohort) => (
+                          <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="h-px bg-border my-4" />
+
+                  <Button onClick={() => setCsvImportModalOpen(true)} variant="outline" className="w-full justify-start h-11 gap-2">
+                    <Upload className="h-4 w-4" />
+                    Importar CSV
+                  </Button>
+
+                  <ExportButton type="dashboard" label="Exportar Dashboard" className="w-full justify-start h-11" />
+
+                  <Button variant="ghost" onClick={() => window.open('/documentation', '_blank')} className="w-full justify-start h-11 gap-2">
+                    <HelpCircle className="h-4 w-4" />
+                    Ver Documentação
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <UserMenu />
           </div>
         </div>
       </header>
