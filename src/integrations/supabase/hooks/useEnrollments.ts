@@ -17,10 +17,7 @@ export const useEnrollmentsQuery = (cohortId: string | undefined, showCancelled:
           .from('enrollments')
           .select(`
             *,
-            student_name:buyer_name,
-            contacts (*),
-            products (*),
-            sellers (*)
+            student_name:buyer_name
           `)
         .eq('cohort_id', cohortId)
         .order('position_in_cohort', { ascending: true });
