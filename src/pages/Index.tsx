@@ -447,7 +447,14 @@ const Index = () => {
                   revenue: src.revenue,
                   conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
                 })) || []}
-              onCohortClick={(id) => navigate(`/cohorts/${id}`)}
+                nucleos={analytics?.nucleos?.map(n => ({
+                  id: n.id,
+                  name: n.name,
+                  totalSales: n.totalSales,
+                  paidSales: n.paidSales,
+                  totalRevenue: n.totalRevenue,
+                })) || []}
+                onCohortClick={(id) => navigate(`/cohorts/${id}`)}
               isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
             />
           </motion.div>

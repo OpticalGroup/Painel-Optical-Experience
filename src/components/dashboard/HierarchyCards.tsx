@@ -38,10 +38,19 @@ interface OrigemData {
     conversionRate?: number;
 }
 
+interface NucleoData {
+    id: string;
+    name: string;
+    totalSales: number;
+    totalRevenue: number;
+    paidSales: number;
+}
+
 interface HierarchyCardsProps {
     cohorts: CohortData[];
     vendedores?: VendedorData[];
     origens?: OrigemData[];
+    nucleos?: NucleoData[];
     onCohortClick?: (id: string) => void;
     isLoading?: boolean;
 }
@@ -58,6 +67,7 @@ export function HierarchyCards({
     cohorts,
     vendedores = [],
     origens = [],
+    nucleos = [],
     onCohortClick,
     isLoading = false,
 }: HierarchyCardsProps) {
@@ -143,6 +153,21 @@ export function HierarchyCards({
             }
         });
     }, [origens, ranking]);
+
+    const sortedNucleos = useMemo(() => {
+        return [...nucleos].sort((a, b) => {
+            switch (ranking) {
+                case 'revenue':
+                    return b.totalRevenue - a.totalRevenue;
+                case 'conversion':
+                    const convA = a.totalSales > 0 ? a.paidSales / a.totalSales : 0;
+                    const convB = b.totalSales > 0 ? b.paidSales / b.totalSales : 0;
+                    return convB - convA;
+                default:
+                    return b.paidSales - a.paidSales;
+            }
+        });
+    }, [nucleos, ranking]);
 
     if (isLoading) {
         return (
@@ -322,21 +347,71 @@ export function HierarchyCards({
                             </motion.div>
                         ))}
 
-                        {viewMode === 'nucleos' && sortedOrigens.map((origem, index) => (
+                        {viewMode === 'nucleos' && sortedNucleos.map((nucleo, index) => (
                             <motion.div
-                                key={origem.id}
+                                key={nucleo.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                             >
-                                <OrigemCard
-                                    origem={origem}
+                                <NucleoCard
+                                    nucleo={nucleo}
                                     rank={index + 1}
                                     isTopRanked={index === 0}
                                 />
                             </motion.div>
                         ))}
                     </AnimatePresence>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Nucleo Card Component
+interface NucleoCardProps {
+    nucleo: NucleoData;
+    rank?: number;
+    isTopRanked?: boolean;
+}
+
+function NucleoCard({ nucleo, rank, isTopRanked = false }: NucleoCardProps) {
+    const conversionRate = nucleo.totalSales > 0 ? (nucleo.paidSales / nucleo.totalSales) * 100 : 0;
+    
+    return (
+        <div
+            className={cn(
+                "w-full p-4 rounded-xl border transition-all duration-200 relative",
+                isTopRanked
+                    ? "border-amber-400/50 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-amber-600/10 shadow-[0_0_20px_rgba(251,191,36,0.2)]"
+                    : "border-white/5 bg-white/[0.02]"
+            )}
+        >
+            {isTopRanked && (
+                <div className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-lg z-10">
+                    <span className="text-xs">🏆</span>
+                    <span className="text-[9px] font-bold text-amber-900 uppercase tracking-wide">Top 1</span>
+                </div>
+            )}
+
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <div className="font-semibold text-foreground">{nucleo.name}</div>
+                        <div className="text-xs text-muted-foreground">{nucleo.paidSales} vendas pagas de {nucleo.totalSales} total</div>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <div className="text-lg font-bold text-emerald-400">{formatBRL(nucleo.totalRevenue)}</div>
+                    <div className={cn(
+                        "text-xs font-semibold",
+                        conversionRate >= 50 ? "text-emerald-400" : conversionRate >= 30 ? "text-amber-400" : "text-red-400"
+                    )}>
+                        {conversionRate.toFixed(0)}% conv.
+                    </div>
                 </div>
             </div>
         </div>
