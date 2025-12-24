@@ -447,16 +447,17 @@ const Index = () => {
                   revenue: src.revenue,
                   conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
                 })) || []}
-                nucleos={analytics?.nucleos?.map(n => ({
-                  id: n.id,
-                  name: n.name,
-                  totalSales: n.totalSales,
-                  paidSales: n.paidSales,
-                  totalRevenue: n.totalRevenue,
-                })) || []}
-                onCohortClick={(id) => navigate(`/cohorts/${id}`)}
-              isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
-            />
+                  nucleos={analytics?.nucleos?.map(n => ({
+                    id: n.id,
+                    name: n.name,
+                    totalSales: n.totalSales,
+                    paidSales: n.paidSales,
+                    totalRevenue: n.totalRevenue,
+                  })) || []}
+                  enrollments={analytics?.enrollments || []}
+                  onCohortClick={(id) => navigate(`/cohorts/${id}`)}
+                isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
+              />
           </motion.div>
 
 

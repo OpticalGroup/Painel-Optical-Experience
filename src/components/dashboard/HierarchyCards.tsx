@@ -51,6 +51,7 @@ interface HierarchyCardsProps {
     vendedores?: VendedorData[];
     origens?: OrigemData[];
     nucleos?: NucleoData[];
+    enrollments?: any[];
     onCohortClick?: (id: string) => void;
     isLoading?: boolean;
 }
@@ -65,9 +66,10 @@ const RANKING_OPTIONS: { value: RankingCriteria; label: string; icon: string }[]
 
 export function HierarchyCards({
     cohorts,
-    vendedores = [],
+    vendedores: initialVendedores = [],
     origens = [],
-    nucleos = [],
+    nucleos: initialNucleos = [],
+    enrollments = [],
     onCohortClick,
     isLoading = false,
 }: HierarchyCardsProps) {
@@ -86,6 +88,70 @@ export function HierarchyCards({
             return cohortDate >= today;
         });
     }, [cohorts, hidePast]);
+
+    const filteredCohortIds = useMemo(() => new Set(filteredCohorts.map(c => c.id)), [filteredCohorts]);
+
+    // Calculate dynamic vendedores and nucleos based on filtered cohorts
+    const vendedores = useMemo(() => {
+        if (!enrollments || enrollments.length === 0) return initialVendedores;
+        
+        const map = new Map<string, VendedorData>();
+        enrollments.forEach(e => {
+            if (!filteredCohortIds.has(e.cohort_id)) return;
+            
+            const rep = e.sales_rep || "Não atribuído";
+            if (!map.has(rep)) {
+                map.set(rep, {
+                    id: rep,
+                    name: rep,
+                    totalSales: 0,
+                    totalRevenue: 0,
+                    conversionRate: 0,
+                    paidSales: 0 // Local helper for calculation
+                } as any);
+            }
+            const stats = map.get(rep)! as any;
+            stats.totalSales++;
+            if (e.financial_status === 'paid') {
+                stats.paidSales++;
+                stats.totalRevenue += Number(e.payment_amount) || 0;
+            }
+        });
+
+        return Array.from(map.values()).map(v => ({
+            ...v,
+            conversionRate: v.totalSales > 0 ? ((v as any).paidSales / v.totalSales) * 100 : 0
+        }));
+    }, [enrollments, filteredCohortIds, initialVendedores]);
+
+    const nucleos = useMemo(() => {
+        if (!enrollments || enrollments.length === 0) return initialNucleos;
+
+        const map = new Map<string, NucleoData>();
+        enrollments.forEach(e => {
+            if (!filteredCohortIds.has(e.cohort_id)) return;
+
+            const nId = e.nucleo_id || "unassigned";
+            const nName = e.nucleo_name || "Sem Núcleo";
+            if (!map.has(nId)) {
+                map.set(nId, {
+                    id: nId,
+                    name: nName,
+                    totalSales: 0,
+                    paidSales: 0,
+                    totalRevenue: 0
+                });
+            }
+            const stats = map.get(nId)!;
+            stats.totalSales++;
+            if (e.financial_status === "paid") {
+                stats.paidSales++;
+                stats.totalRevenue += Number(e.payment_amount) || 0;
+            }
+        });
+
+        return Array.from(map.values());
+    }, [enrollments, filteredCohortIds, initialNucleos]);
 
     // Calculate totals based on filtered cohorts
     const totals = useMemo(() => {
@@ -250,22 +316,20 @@ export function HierarchyCards({
                             {viewMode === 'turmas' ? 'TURMAS' : viewMode === 'vendedores' ? 'VENDEDORES' : 'NÚCLEOS'}
                         </h3>
 
-                        {/* Hide Past Toggle - Only for Turmas */}
-                        {viewMode === 'turmas' && (
-                            <button
-                                onClick={() => setHidePast(!hidePast)}
-                                className={cn(
-                                    "flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-all border",
-                                    hidePast
-                                        ? "bg-primary/20 text-primary border-primary/30"
-                                        : "bg-muted/20 text-muted-foreground border-transparent hover:bg-muted/30"
-                                )}
-                                title={hidePast ? "Mostrando apenas turmas futuras" : "Mostrando todas as turmas"}
-                            >
-                                {hidePast ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                <span className="hidden sm:inline">{hidePast ? "Futuras" : "Todas"}</span>
-                            </button>
-                        )}
+                        {/* Hide Past Toggle - Functional for all views */}
+                        <button
+                            onClick={() => setHidePast(!hidePast)}
+                            className={cn(
+                                "flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-all border",
+                                hidePast
+                                    ? "bg-primary/20 text-primary border-primary/30"
+                                    : "bg-muted/20 text-muted-foreground border-transparent hover:bg-muted/30"
+                            )}
+                            title={hidePast ? "Mostrando apenas dados de turmas futuras" : "Mostrando dados de todas as turmas"}
+                        >
+                            {hidePast ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            <span className="hidden sm:inline">{hidePast ? "Futuras" : "Todas"}</span>
+                        </button>
                     </div>
 
                     {/* Ranking Selector */}
@@ -289,38 +353,36 @@ export function HierarchyCards({
                     </div>
                 </div>
 
-                {/* Summary KPIs Strip */}
-                {viewMode === 'turmas' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="py-4"
-                    >
-                        <div className="grid grid-cols-5 gap-6">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-slate-400 mb-1">{Math.max(0, totals.capacity - totals.enrolled)}</div>
-                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Disponíveis</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-400 mb-1">{totals.enrolled}</div>
-                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Matrículas</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-amber-400 mb-1">{totals.reserved}</div>
-                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Reservados</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-emerald-400 mb-1">{totals.paid}</div>
-                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Pagos</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-violet-400 mb-1">{totals.signed}</div>
-                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Assinados</div>
-                            </div>
+                {/* Summary KPIs Strip - Visible for all views to show context */}
+                <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="py-4"
+                >
+                    <div className="grid grid-cols-5 gap-6">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-slate-400 mb-1">{Math.max(0, totals.capacity - totals.enrolled)}</div>
+                            <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Disponíveis</div>
                         </div>
-                    </motion.div>
-                )}
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-400 mb-1">{totals.enrolled}</div>
+                            <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Matrículas</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-amber-400 mb-1">{totals.reserved}</div>
+                            <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Reservados</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-emerald-400 mb-1">{totals.paid}</div>
+                            <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Pagos</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-violet-400 mb-1">{totals.signed}</div>
+                            <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Assinados</div>
+                        </div>
+                    </div>
+                </motion.div>
 
                 {/* Divider */}
                 <div className="border-t border-white/[0.06] mb-3" />

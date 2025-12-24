@@ -307,15 +307,16 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
           }
         });
 
-        return {
-          summary,
-          salesReps: Array.from(salesRepMap.values()),
-          sources: Array.from(sourceMap.values()),
-          cohortStats: Array.from(cohortStatsMap.values()),
-          nucleos: Array.from(nucleoStatsMap.values()),
-          utmStats,
-          conversions: conversionStats,
-        };
-    },
-  });
-};
+          return {
+            summary,
+            salesReps: Array.from(salesRepMap.values()),
+            sources: Array.from(sourceMap.values()),
+            cohortStats: Array.from(cohortStatsMap.values()),
+            nucleos: Array.from(nucleoStatsMap.values()),
+            utmStats,
+            conversions: conversionStats,
+            enrollments: dataToAnalyze,
+          };
+      },
+    });
+  };
