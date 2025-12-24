@@ -400,7 +400,7 @@ const Index = () => {
           totalEnrolled={totalEnrolled}
           totalPaid={totalPaid}
           totalCapacity={totalCapacity}
-          cohortsCount={cohorts?.length || 0}
+          cohortsCount={cohorts?.filter(c => c.status === 'open').length || 0}
           isLoading={isLoading}
         />
       </motion.section>
@@ -415,23 +415,24 @@ const Index = () => {
             transition={{ delay: 0.1 }}
             className="xl:col-span-7"
           >
-            <HierarchyCards
-              cohorts={filteredCohorts.map(c => {
-                const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
-                return {
-                  id: c.id,
-                  name: c.name,
-                  location: c.location,
-                  startDate: c.start_date,
-                  capacity: c.capacity,
-                  enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
-                  reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
-                  paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
-                  signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
-                  revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
-                  hasChildren: true,
-                };
-              })}
+              <HierarchyCards
+                cohorts={filteredCohorts.map(c => {
+                  const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
+                  return {
+                    id: c.id,
+                    name: c.name,
+                    status: c.status,
+                    location: c.location,
+                    startDate: c.start_date,
+                    capacity: c.capacity,
+                    enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
+                    reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
+                    paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
+                    signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
+                    revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
+                    hasChildren: true,
+                  };
+                })}
               vendedores={analytics?.salesReps?.map(rep => ({
                 id: rep.name,
                 name: rep.name,

@@ -10,6 +10,7 @@ type RankingCriteria = 'nearest' | 'conversion' | 'revenue' | 'enrolled' | 'paid
 interface CohortData {
     id: string;
     name: string;
+    status: string;
     location?: string;
     startDate?: string;
     capacity: number;
@@ -77,13 +78,16 @@ export function HierarchyCards({
     const [ranking, setRanking] = useState<RankingCriteria>('nearest');
     const [hidePast, setHidePast] = useState(true);
 
-    // Filter past cohorts if hidePast is enabled
+    // Filter past/inactive cohorts if hidePast is enabled
     const filteredCohorts = useMemo(() => {
         if (!hidePast) return cohorts;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return cohorts.filter(c => {
-            if (!c.startDate) return true; // Keep if no date
+            // Only show 'open' status cohorts when filtering for 'Future'
+            if (c.status !== 'open') return false;
+            
+            if (!c.startDate) return true; // Keep if no date but status is open
             const cohortDate = new Date(c.startDate);
             return cohortDate >= today;
         });
