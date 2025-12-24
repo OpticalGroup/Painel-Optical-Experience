@@ -9,6 +9,8 @@ import {
     AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip,
     PieChart as RechartsPie, Pie, Cell, BarChart, Bar
 } from "recharts";
+import { UnifiedTrendChart } from "@/components/trends";
+import type { TrendDataPoint as UnifiedTrendDataPoint } from "@/components/trends";
 
 // ============================================
 // TYPES
@@ -92,6 +94,8 @@ interface ChartsPanelProps {
             conversions: number;
         }>;
     };
+    // Unified trend data with all metrics
+    unifiedTrendData?: UnifiedTrendDataPoint[];
 }
 
 type ViewMode = "sunburst" | "purchase-window" | "trend";
@@ -266,6 +270,7 @@ export function ChartsPanel({
     originHierarchy,
     utmData,
     purchaseWindowData,
+    unifiedTrendData = [],
 }: ChartsPanelProps) {
     const [activeView, setActiveView] = useState<ViewMode>("sunburst");
     const [selectedMetric, setSelectedMetric] = useState<MetricType>("matriculas");
@@ -865,115 +870,32 @@ export function ChartsPanel({
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.2 }}
-                        className="flex-1 flex flex-col"
+                        className="flex-1 flex flex-col min-h-0"
                     >
-                        <div className="flex items-center gap-2 mb-4">
-                            <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Tendência de Ocupação
-                            </h3>
-                        </div>
+                        {/* Use unifiedTrendData if available, otherwise fallback to trendData */}
+                        {(() => {
+                            const dataToUse = unifiedTrendData.length > 0
+                                ? unifiedTrendData
+                                : trendData.map(d => ({
+                                    date: d.month,
+                                    occupancyRate: d.value / 100,
+                                    enrollments: 0,
+                                } as UnifiedTrendDataPoint));
 
-                        {trendData.length > 0 ? (
-                            <>
-                                {/* Trend Insights Header */}
-                                {(() => {
-                                    const values = trendData.map(d => d.value);
-                                    const maxValue = Math.max(...values);
-                                    const minValue = Math.min(...values);
-                                    const maxMonth = trendData.find(d => d.value === maxValue)?.month;
-                                    const minMonth = trendData.find(d => d.value === minValue)?.month;
-                                    const currentValue = values[values.length - 1];
-                                    const previousValue = values[values.length - 2] || currentValue;
-                                    const delta = currentValue - previousValue;
-
-                                    return (
-                                        <div className="grid grid-cols-3 gap-2 mb-3">
-                                            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-                                                <div className="text-[9px] text-emerald-400 uppercase tracking-wider">Máximo</div>
-                                                <div className="text-lg font-bold text-emerald-400">{maxValue.toFixed(0)}%</div>
-                                                <div className="text-[10px] text-muted-foreground">{maxMonth}</div>
-                                            </div>
-                                            <div className="p-2 rounded-lg bg-muted/20 border border-white/5 text-center">
-                                                <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Atual</div>
-                                                <div className="text-lg font-bold text-foreground">{currentValue.toFixed(0)}%</div>
-                                                <div className={cn(
-                                                    "text-[10px] font-semibold",
-                                                    delta >= 0 ? "text-emerald-400" : "text-red-400"
-                                                )}>
-                                                    {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}%
-                                                </div>
-                                            </div>
-                                            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-                                                <div className="text-[9px] text-red-400 uppercase tracking-wider">Mínimo</div>
-                                                <div className="text-lg font-bold text-red-400">{minValue.toFixed(0)}%</div>
-                                                <div className="text-[10px] text-muted-foreground">{minMonth}</div>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-
+                            return dataToUse.length > 0 ? (
                                 <div className="flex-1 min-h-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={trendData}>
-                                            <defs>
-                                                <linearGradient id="trendGradientExpanded" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(172 66% 50%)" stopOpacity={0.4} />
-                                                    <stop offset="95%" stopColor="hsl(172 66% 50%)" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <XAxis
-                                                dataKey="month"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
-                                            />
-                                            <YAxis
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
-                                                tickFormatter={(value) => `${value}%`}
-                                            />
-                                            <Tooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (!active || !payload || !payload.length) return null;
-                                                    const currentIndex = trendData.findIndex(d => d.month === label);
-                                                    const currentValue = payload[0].value as number;
-                                                    const previousValue = currentIndex > 0 ? trendData[currentIndex - 1].value : currentValue;
-                                                    const delta = currentValue - previousValue;
-
-                                                    return (
-                                                        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl">
-                                                            <div className="text-xs text-muted-foreground mb-1">{label}</div>
-                                                            <div className="text-lg font-bold text-foreground">{currentValue.toFixed(0)}% ocupação</div>
-                                                            {currentIndex > 0 && (
-                                                                <div className={cn(
-                                                                    "text-xs font-semibold mt-1",
-                                                                    delta >= 0 ? "text-emerald-400" : "text-red-400"
-                                                                )}>
-                                                                    {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}% vs mês anterior
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="value"
-                                                stroke="hsl(172 66% 50%)"
-                                                strokeWidth={2}
-                                                fill="url(#trendGradientExpanded)"
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <UnifiedTrendChart
+                                        data={dataToUse}
+                                        title="Tendências"
+                                        defaultMetrics={['enrollments', 'revenue', 'conversionRate']}
+                                    />
                                 </div>
-                            </>
-                        ) : (
-                            <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-                                Sem dados suficientes para tendência
-                            </div>
-                        )}
+                            ) : (
+                                <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                                    Sem dados suficientes para tendência
+                                </div>
+                            );
+                        })()}
                     </motion.div>
                 )}
             </AnimatePresence>

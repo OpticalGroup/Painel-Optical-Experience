@@ -308,26 +308,35 @@ export function UnifiedTrendChart({
     };
 
     // Get filtered data based on period
+    // Data now uses ISO date format (yyyy-MM-dd) for proper filtering
     const getFilteredData = <T extends { date: string }>(dataArray: T[]): T[] => {
+        const now = new Date();
+
         if (period === 'CUSTOM' && customRange.startDate && customRange.endDate) {
             const startStr = customRange.startDate.toISOString().slice(0, 10);
             const endStr = customRange.endDate.toISOString().slice(0, 10);
             return dataArray.filter((d) => d.date >= startStr && d.date <= endStr);
         }
 
-        const getDays = (): number => {
+        // Calculate cutoff date based on period
+        const getDaysBack = (): number => {
             switch (period) {
                 case '7D': return 7;
                 case '30D': return 30;
                 case '90D': return 90;
                 case '180D': return 180;
                 case '1Y': return 365;
-                case 'ALL': return dataArray.length;
+                case 'ALL': return 9999; // Show all
                 default: return 30;
             }
         };
 
-        return dataArray.slice(-getDays());
+        const daysBack = getDaysBack();
+        const cutoffDate = new Date(now);
+        cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+        const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+
+        return dataArray.filter((d) => d.date >= cutoffStr);
     };
 
     // Prepare chart data
@@ -461,6 +470,14 @@ export function UnifiedTrendChart({
                                 tickLine={false}
                                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                                 interval="preserveStartEnd"
+                                tickFormatter={(value: string) => {
+                                    // Format ISO date (yyyy-MM-dd) to dd/MM
+                                    try {
+                                        return format(new Date(value), 'dd/MM', { locale: ptBR });
+                                    } catch {
+                                        return value;
+                                    }
+                                }}
                             />
 
                             {hasLeftAxis && (

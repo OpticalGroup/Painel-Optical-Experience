@@ -112,6 +112,7 @@ const CohortsOverviewContent = () => {
     const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
     const [selectedCohortName, setSelectedCohortName] = useState<string>("");
     const [modalOpen, setModalOpen] = useState(false);
+    const [filter, setFilter] = useState("all");
     const { toast } = useToast();
     const navigate = useNavigate();
     const { data: cohorts, isLoading } = useCohortsQuery();
@@ -124,14 +125,41 @@ const CohortsOverviewContent = () => {
         navigate(`/cohorts/${cohortId}`);
     };
 
+    const filteredCohorts = cohorts?.filter(cohort => {
+        if (filter === "all") return true;
+        if (filter === "upcoming") {
+            return cohort.status === "open" && new Date(cohort.start_date) > new Date();
+        }
+        if (filter === "completed") return cohort.status === "completed";
+        if (filter === "cancelled") return cohort.status === "cancelled";
+        return true;
+    });
+
     return (
         <>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 lg:mb-6">
-                <div>
-                    <h2 className="text-base lg:text-lg font-semibold">Todas as Turmas</h2>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                        Visão detalhada de todas as turmas
-                    </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div>
+                        <h2 className="text-base lg:text-lg font-semibold">
+                            {filter === "all" ? "Todas as Turmas" : 
+                             filter === "upcoming" ? "Turmas Futuras" :
+                             filter === "completed" ? "Turmas Concluídas" : "Turmas Canceladas"}
+                        </h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                            {filter === "all" ? "Visão detalhada de todas as turmas" :
+                             filter === "upcoming" ? "Turmas com início previsto" :
+                             filter === "completed" ? "Histórico de turmas finalizadas" : "Turmas que foram canceladas"}
+                        </p>
+                    </div>
+
+                    <Tabs value={filter} onValueChange={setFilter} className="w-full sm:w-auto">
+                        <TabsList className="bg-secondary/30 h-8 p-1">
+                            <TabsTrigger value="all" className="text-[10px] sm:text-xs h-6 px-3">Todas</TabsTrigger>
+                            <TabsTrigger value="upcoming" className="text-[10px] sm:text-xs h-6 px-3">Futuras</TabsTrigger>
+                            <TabsTrigger value="completed" className="text-[10px] sm:text-xs h-6 px-3">Concluídas</TabsTrigger>
+                            <TabsTrigger value="cancelled" className="text-[10px] sm:text-xs h-6 px-3">Canceladas</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
                 <Button
                     className="bg-primary hover:bg-primary/90 shadow-sm w-full sm:w-auto"
@@ -155,15 +183,15 @@ const CohortsOverviewContent = () => {
                         <Skeleton key={i} className="h-80 w-full" />
                     ))}
                 </div>
-            ) : !cohorts || cohorts.length === 0 ? (
-                <div className="text-center py-12">
+            ) : !filteredCohorts || filteredCohorts.length === 0 ? (
+                <div className="text-center py-12 bg-secondary/10 rounded-xl border border-dashed border-border">
                     <p className="text-muted-foreground">
-                        Nenhuma turma encontrada. Use a aba "Administração" para criar uma nova turma.
+                        Nenhuma turma encontrada nesta categoria.
                     </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-                    {cohorts.map((cohort) => (
+                    {filteredCohorts.map((cohort) => (
                         <CohortCardEnhanced
                             key={cohort.id}
                             name={cohort.name}

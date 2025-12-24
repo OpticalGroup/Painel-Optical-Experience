@@ -24,7 +24,6 @@ import { ptBR } from "date-fns/locale";
 import { SmartAlert } from "@/components/SmartAlert";
 import { HealthWidget } from "@/components/HealthWidget";
 import { TrendChart } from "@/components/TrendChart";
-import { UnifiedTrendChart } from "@/components/trends";
 import { RankingCard } from "@/components/RankingCard";
 import { ConversionAnalysis } from "@/components/ConversionAnalysis";
 import { UtmAnalytics } from "@/components/dashboard/UtmAnalytics";
@@ -221,50 +220,60 @@ const Index = () => {
     return months;
   }, [cohorts, dateRange]);
 
-  // Dados unificados para o novo TrendChart
+  // Dados unificados para o TrendChart do ChartsPanel (agregados por DIA)
   const unifiedTrendData = useMemo(() => {
-    if (!cohorts || cohorts.length === 0) return [];
+    // Use enrollments from analytics (each has created_at)
+    const enrollments = analytics?.enrollments || [];
+    if (enrollments.length === 0) return [];
 
-    const dataByMonth: Record<string, {
+    const dataByDay: Record<string, {
       enrollments: number;
       paid: number;
       pending: number;
+      signed: number;
       revenue: number;
-      capacity: number;
     }> = {};
 
-    // Agrupar dados por mês
-    cohorts.forEach(c => {
-      const cohortDate = new Date(c.start_date);
-      const monthKey = format(cohortDate, "yyyy-MM", { locale: ptBR });
+    // Agregar dados por DIA (created_at de cada matrícula)
+    enrollments.forEach((e: any) => {
+      if (!e.created_at) return;
+      const dayKey = format(new Date(e.created_at), "yyyy-MM-dd");
 
-      if (!dataByMonth[monthKey]) {
-        dataByMonth[monthKey] = { enrollments: 0, paid: 0, pending: 0, revenue: 0, capacity: 0 };
+      if (!dataByDay[dayKey]) {
+        dataByDay[dayKey] = { enrollments: 0, paid: 0, pending: 0, signed: 0, revenue: 0 };
       }
 
-      dataByMonth[monthKey].enrollments += c.stats?.enrolled_count || 0;
-      dataByMonth[monthKey].paid += c.stats?.paid_count || 0;
-      dataByMonth[monthKey].pending += (c.stats?.enrolled_count || 0) - (c.stats?.paid_count || 0);
-      dataByMonth[monthKey].revenue += c.stats?.total_revenue || 0;
-      dataByMonth[monthKey].capacity += c.capacity || 0;
+      dataByDay[dayKey].enrollments += 1;
+      if (e.financial_status === 'paid') {
+        dataByDay[dayKey].paid += 1;
+        dataByDay[dayKey].revenue += Number(e.payment_amount) || 0;
+      } else {
+        dataByDay[dayKey].pending += 1;
+      }
+      if (e.contract_status === 'signed') {
+        dataByDay[dayKey].signed += 1;
+      }
     });
 
     // Converter para array ordenado
-    return Object.entries(dataByMonth)
+    return Object.entries(dataByDay)
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-12) // Últimos 12 meses
-      .map(([month, data]) => ({
-        date: format(new Date(month + "-01"), "MMM/yy", { locale: ptBR }),
+      .map(([day, data]) => ({
+        date: day, // Keep ISO format for filtering (yyyy-MM-dd)
+        dateLabel: format(new Date(day), "dd/MM", { locale: ptBR }),
         enrollments: data.enrollments,
         paid: data.paid,
         pending: data.pending,
+        signed: data.signed,
         revenue: data.revenue,
-        capacity: data.capacity,
-        conversionRate: data.enrollments > 0 ? data.paid / data.enrollments : 0,
-        occupancyRate: data.capacity > 0 ? data.enrollments / data.capacity : 0,
         ticketMedio: data.paid > 0 ? data.revenue / data.paid : 0,
+        conversionRate: data.enrollments > 0 ? data.paid / data.enrollments : 0,
+        // These metrics need cohort data, so we leave them undefined for now
+        occupancyRate: undefined,
+        capacity: undefined,
+        available: undefined,
       }));
-  }, [cohorts]);
+  }, [analytics?.enrollments]);
 
   // Smart alerts para próxima turma
   const nextCohortAlerts = useMemo(() => {
@@ -672,6 +681,7 @@ const Index = () => {
               originHierarchy={originHierarchy}
               utmData={utmData}
               purchaseWindowData={purchaseWindowData}
+              unifiedTrendData={unifiedTrendData}
             />
           </motion.div>
         </div>
@@ -697,25 +707,6 @@ const Index = () => {
         )
       }
 
-
-      {/* Análise de Tendências - UnifiedTrendChart */}
-      {!isLoading && unifiedTrendData.length > 0 && (
-        <section className="px-8 pb-6">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-foreground">Análise de Tendências</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Evolução de métricas ao longo do tempo</p>
-          </div>
-          <Card className="p-4 border border-border bg-card/50 backdrop-blur-sm">
-            <div className="h-[350px]">
-              <UnifiedTrendChart
-                data={unifiedTrendData}
-                title="Métricas de Matrículas"
-                defaultMetrics={['enrollments', 'revenue', 'conversionRate']}
-              />
-            </div>
-          </Card>
-        </section>
-      )}
 
       {/* Saúde Operacional */}
       {
