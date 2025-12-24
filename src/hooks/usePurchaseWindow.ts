@@ -17,18 +17,35 @@ export interface PurchaseWindowData {
     }>;
 }
 
-export function usePurchaseWindow() {
+export interface DateRange {
+    from?: Date;
+    to?: Date;
+}
+
+export function usePurchaseWindow(dateRange?: DateRange) {
     return useQuery({
-        queryKey: ["purchase-window"],
+        queryKey: ["purchase-window", dateRange?.from, dateRange?.to],
         queryFn: async (): Promise<PurchaseWindowData> => {
             // Fetch enrollments with both lead_date and purchase_date
-            const { data: enrollments, error } = await supabase
+            let query = supabase
                 .from("enrollments")
                 .select("id, lead_date, purchase_date, sales_rep, source, financial_status, product_name")
                 .not("lead_date", "is", null)
                 .not("purchase_date", "is", null)
                 .eq("financial_status", "paid")
                 .eq("product_name", "Optical Experience");
+
+            if (dateRange?.from) {
+                query = query.gte("purchase_date", dateRange.from.toISOString());
+            }
+
+            if (dateRange?.to) {
+                const toDate = new Date(dateRange.to);
+                toDate.setHours(23, 59, 59, 999);
+                query = query.lte("purchase_date", toDate.toISOString());
+            }
+
+            const { data: enrollments, error } = await query;
 
             if (error) {
                 console.error("Error fetching purchase window data:", error);

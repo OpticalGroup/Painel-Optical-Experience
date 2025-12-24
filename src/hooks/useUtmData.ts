@@ -9,15 +9,32 @@ export interface UtmData {
     term: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
 }
 
-export function useUtmData() {
+export interface DateRange {
+    from?: Date;
+    to?: Date;
+}
+
+export function useUtmData(dateRange?: DateRange) {
     return useQuery({
-        queryKey: ["utm-data"],
+        queryKey: ["utm-data", dateRange?.from, dateRange?.to],
         queryFn: async (): Promise<UtmData> => {
             // Fetch enrollments with UTM data
-            const { data: enrollments, error } = await supabase
+            let query = supabase
                 .from("enrollments")
                 .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, financial_status, payment_amount, product_name")
                 .eq("product_name", "Optical Experience");
+
+            if (dateRange?.from) {
+                query = query.gte("created_at", dateRange.from.toISOString());
+            }
+
+            if (dateRange?.to) {
+                const toDate = new Date(dateRange.to);
+                toDate.setHours(23, 59, 59, 999);
+                query = query.lte("created_at", toDate.toISOString());
+            }
+
+            const { data: enrollments, error } = await query;
 
             if (error) {
                 console.error("Error fetching UTM data:", error);

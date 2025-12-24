@@ -9,11 +9,16 @@ export interface OriginHierarchyData {
     variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
 }
 
-export function useOriginHierarchy() {
+export interface DateRange {
+    from?: Date;
+    to?: Date;
+}
+
+export function useOriginHierarchy(dateRange?: DateRange) {
     return useQuery({
-        queryKey: ["origin-hierarchy"],
+        queryKey: ["origin-hierarchy", dateRange?.from, dateRange?.to],
         queryFn: async (): Promise<OriginHierarchyData> => {
-            const { data: enrollments, error } = await supabase
+            let query = supabase
                 .from("enrollments")
                 .select(`
                     id,
@@ -28,6 +33,19 @@ export function useOriginHierarchy() {
                     micro_origins(name),
                     micro_variations(name)
                 `);
+
+            if (dateRange?.from) {
+                query = query.gte("created_at", dateRange.from.toISOString());
+            }
+
+            if (dateRange?.to) {
+                // Adjust TO date to end of day if it's the exact same as FROM or just a specific date
+                const toDate = new Date(dateRange.to);
+                toDate.setHours(23, 59, 59, 999);
+                query = query.lte("created_at", toDate.toISOString());
+            }
+
+            const { data: enrollments, error } = await query;
 
             if (error) {
                 console.error("Error fetching origin hierarchy data:", error);

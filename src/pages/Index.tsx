@@ -52,9 +52,9 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: cohorts, isLoading } = useCohortsQuery();
-  const { data: purchaseWindowData } = usePurchaseWindow();
-  const { data: utmData } = useUtmData();
-  const { data: originHierarchy } = useOriginHierarchy();
+  const { data: purchaseWindowData } = usePurchaseWindow(dateRange);
+  const { data: utmData } = useUtmData(dateRange);
+  const { data: originHierarchy } = useOriginHierarchy(dateRange);
   const { data: analytics, isLoading: isLoadingAnalytics } = useEnrollmentAnalytics({
     ...dateRange,
     cohortId: selectedCohortId,
@@ -109,23 +109,37 @@ const Index = () => {
     return 0;
   }, [analytics]);
 
-  // Gerar dados de tendência baseado em dados reais dos últimos 6 meses
+  // Gerar dados de tendência baseado em dados reais
   const trendData = useMemo(() => {
     if (!cohorts || cohorts.length === 0) return [];
 
     const months = [];
-    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
 
-    // Gerar últimos 6 meses
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = format(date, "MMM", { locale: ptBR });
+    if (dateRange.from && dateRange.to) {
+      startDate = new Date(dateRange.from);
+      endDate = new Date(dateRange.to);
+    } else {
+      // Default: últimos 6 meses
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setMonth(endDate.getMonth() - 5);
+      startDate.setDate(1); // Começo do mês
+    }
+
+    // Iterar mês a mês do startDate até endDate
+    const current = new Date(startDate);
+    current.setDate(1); // Garantir que começa no dia 1 pra não pular meses curtos
+
+    while (current <= endDate || (current.getMonth() === endDate.getMonth() && current.getFullYear() === endDate.getFullYear())) {
+      const monthName = format(current, "MMM/yy", { locale: ptBR });
 
       // Filtrar cohorts deste mês
       const monthCohorts = cohorts.filter(c => {
         const cohortDate = new Date(c.start_date);
-        return cohortDate.getMonth() === date.getMonth() &&
-          cohortDate.getFullYear() === date.getFullYear();
+        return cohortDate.getMonth() === current.getMonth() &&
+          cohortDate.getFullYear() === current.getFullYear();
       });
 
       // Calcular ocupação média do mês
@@ -140,10 +154,13 @@ const Index = () => {
         month: monthName,
         value: avgOccupancy,
       });
+
+      // Avançar para próximo mês
+      current.setMonth(current.getMonth() + 1);
     }
 
     return months;
-  }, [cohorts]);
+  }, [cohorts, dateRange]);
 
   // Smart alerts para próxima turma
   const nextCohortAlerts = useMemo(() => {
