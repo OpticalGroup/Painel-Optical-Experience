@@ -75,21 +75,6 @@ export function HierarchyCards({
     const [ranking, setRanking] = useState<RankingCriteria>('nearest');
     const [hidePast, setHidePast] = useState(true);
 
-    // Calculate totals
-    const totals = useMemo(() => {
-        return cohorts.reduce(
-            (acc, c) => ({
-                capacity: acc.capacity + c.capacity,
-                enrolled: acc.enrolled + c.enrolledCount,
-                reserved: acc.reserved + c.reservedCount,
-                paid: acc.paid + c.paidCount,
-                signed: acc.signed + c.signedCount,
-                revenue: acc.revenue + c.revenue,
-            }),
-            { capacity: 0, enrolled: 0, reserved: 0, paid: 0, signed: 0, revenue: 0 }
-        );
-    }, [cohorts]);
-
     // Filter past cohorts if hidePast is enabled
     const filteredCohorts = useMemo(() => {
         if (!hidePast) return cohorts;
@@ -101,6 +86,21 @@ export function HierarchyCards({
             return cohortDate >= today;
         });
     }, [cohorts, hidePast]);
+
+    // Calculate totals based on filtered cohorts
+    const totals = useMemo(() => {
+        return filteredCohorts.reduce(
+            (acc, c) => ({
+                capacity: acc.capacity + c.capacity,
+                enrolled: acc.enrolled + c.enrolledCount,
+                reserved: acc.reserved + c.reservedCount,
+                paid: acc.paid + c.paidCount,
+                signed: acc.signed + c.signedCount,
+                revenue: acc.revenue + c.revenue,
+            }),
+            { capacity: 0, enrolled: 0, reserved: 0, paid: 0, signed: 0, revenue: 0 }
+        );
+    }, [filteredCohorts]);
 
     // Sort data based on ranking
     const sortedCohorts = useMemo(() => {
