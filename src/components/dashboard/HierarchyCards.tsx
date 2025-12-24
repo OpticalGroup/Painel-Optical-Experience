@@ -4,7 +4,7 @@ import { ChevronRight, GraduationCap, Users, MapPin, TrendingUp, DollarSign, Use
 import { cn, formatBRL } from "@/lib/utils";
 
 // Types
-type ViewMode = 'turmas' | 'vendedores' | 'origens';
+type ViewMode = 'turmas' | 'vendedores' | 'nucleos';
 type RankingCriteria = 'nearest' | 'conversion' | 'revenue' | 'enrolled' | 'paid';
 
 interface CohortData {
@@ -195,16 +195,16 @@ export function HierarchyCards({
                         <span>Vendedores</span>
                     </button>
                     <button
-                        onClick={() => setViewMode('origens')}
+                        onClick={() => setViewMode('nucleos')}
                         className={cn(
                             "flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5",
-                            viewMode === 'origens'
+                            viewMode === 'nucleos'
                                 ? "bg-primary text-primary-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                         )}
                     >
                         <Target className="w-3.5 h-3.5" />
-                        <span>Origens</span>
+                        <span>Núcleos</span>
                     </button>
                 </div>
 
@@ -212,7 +212,7 @@ export function HierarchyCards({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            {viewMode === 'turmas' ? 'TURMAS' : viewMode === 'vendedores' ? 'VENDEDORES' : 'ORIGENS UTM'}
+                            {viewMode === 'turmas' ? 'TURMAS' : viewMode === 'vendedores' ? 'VENDEDORES' : 'NÚCLEOS'}
                         </h3>
 
                         {/* Hide Past Toggle - Only for Turmas */}
@@ -322,7 +322,7 @@ export function HierarchyCards({
                             </motion.div>
                         ))}
 
-                        {viewMode === 'origens' && sortedOrigens.map((origem, index) => (
+                        {viewMode === 'nucleos' && sortedOrigens.map((origem, index) => (
                             <motion.div
                                 key={origem.id}
                                 initial={{ opacity: 0, y: 10 }}

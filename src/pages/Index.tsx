@@ -51,38 +51,39 @@ const Index = () => {
   const [utmStatusFilter, setUtmStatusFilter] = useState<string>("all");
   const { toast } = useToast();
   const navigate = useNavigate();
-    const { data: cohorts, isLoading } = useCohortsQuery();
-    const { data: purchaseWindowData } = usePurchaseWindow({ ...dateRange, cohortId: selectedCohortId });
-    const { data: utmData } = useUtmData({ ...dateRange, cohortId: selectedCohortId });
-    const { data: originHierarchy } = useOriginHierarchy(); // Origin hierarchy structure is static
-    const { data: analytics, isLoading: isLoadingAnalytics } = useEnrollmentAnalytics({
-      ...dateRange,
-      cohortId: selectedCohortId,
-      status: utmStatusFilter
-    });
+  const { data: cohorts, isLoading } = useCohortsQuery();
+  const { data: purchaseWindowData } = usePurchaseWindow({ ...dateRange, cohortId: selectedCohortId });
+  const { data: utmData } = useUtmData({ ...dateRange, cohortId: selectedCohortId });
+
+  const { data: originHierarchy, isLoading: isLoadingHierarchy } = useOriginHierarchy(dateRange, selectedCohortId);
+  const { data: analytics, isLoading: isLoadingAnalytics } = useEnrollmentAnalytics({
+    ...dateRange,
+    cohortId: selectedCohortId,
+    status: utmStatusFilter
+  });
 
 
   // Encontrar a próxima turma baseado na data atual
   const today = new Date();
 
-    // Filtrar cohorts baseado no dateRange e selectedCohortId
-    const filteredCohorts = useMemo(() => {
-      if (!cohorts) return [];
-      let filtered = cohorts;
+  // Filtrar cohorts baseado no dateRange e selectedCohortId
+  const filteredCohorts = useMemo(() => {
+    if (!cohorts) return [];
+    let filtered = cohorts;
 
-      if (dateRange.from) {
-        filtered = filtered.filter(c => new Date(c.start_date) >= dateRange.from!);
-      }
-      if (dateRange.to) {
-        filtered = filtered.filter(c => new Date(c.start_date) <= dateRange.to!);
-      }
-      
-      if (selectedCohortId && selectedCohortId !== "all") {
-        filtered = filtered.filter(c => c.id === selectedCohortId);
-      }
+    if (dateRange.from) {
+      filtered = filtered.filter(c => new Date(c.start_date) >= dateRange.from!);
+    }
+    if (dateRange.to) {
+      filtered = filtered.filter(c => new Date(c.start_date) <= dateRange.to!);
+    }
 
-      return filtered;
-    }, [cohorts, dateRange, selectedCohortId]);
+    if (selectedCohortId && selectedCohortId !== "all") {
+      filtered = filtered.filter(c => c.id === selectedCohortId);
+    }
+
+    return filtered;
+  }, [cohorts, dateRange, selectedCohortId]);
 
 
   const upcomingCohorts = filteredCohorts
@@ -407,49 +408,49 @@ const Index = () => {
       {/* Main Content: Grid 7:5 - Estilo Nexus Cortex */}
       <section className="px-4 sm:px-6 lg:px-8 py-2">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
-            {/* LEFT: Hierarchy Cards (7 colunas) */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="xl:col-span-7"
-            >
-              <HierarchyCards
-                cohorts={filteredCohorts.map(c => {
-                  const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
-                  return {
-                    id: c.id,
-                    name: c.name,
-                    location: c.location,
-                    startDate: c.start_date,
-                    capacity: c.capacity,
-                    enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
-                    reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
-                    paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
-                    signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
-                    revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
-                    hasChildren: true,
-                  };
-                })}
-                vendedores={analytics?.salesReps?.map(rep => ({
-                  id: rep.name,
-                  name: rep.name,
-                  totalSales: rep.totalSales,
-                  totalRevenue: rep.totalRevenue,
-                  conversionRate: rep.paidSales > 0 ? (rep.paidSales / rep.totalSales) * 100 : 0,
-                })) || []}
-                origens={analytics?.sources?.map(src => ({
-                  id: src.source,
-                  source: src.source,
-                  count: src.count,
-                  paidCount: src.paidCount,
-                  revenue: src.paidCount * 2000, // Estimativa
-                  conversionRate: src.conversionRate,
-                })) || []}
-                onCohortClick={(id) => navigate(`/cohorts/${id}`)}
-                isLoading={isLoading || isLoadingAnalytics}
-              />
-            </motion.div>
+          {/* LEFT: Hierarchy Cards (7 colunas) */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="xl:col-span-7"
+          >
+            <HierarchyCards
+              cohorts={filteredCohorts.map(c => {
+                const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
+                return {
+                  id: c.id,
+                  name: c.name,
+                  location: c.location,
+                  startDate: c.start_date,
+                  capacity: c.capacity,
+                  enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
+                  reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
+                  paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
+                  signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
+                  revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
+                  hasChildren: true,
+                };
+              })}
+              vendedores={analytics?.salesReps?.map(rep => ({
+                id: rep.name,
+                name: rep.name,
+                totalSales: rep.totalSales,
+                totalRevenue: rep.totalRevenue,
+                conversionRate: rep.paidSales > 0 ? (rep.paidSales / rep.totalSales) * 100 : 0,
+              })) || []}
+              origens={originHierarchy?.macroOrigens?.map(src => ({
+                id: src.name,
+                source: src.name,
+                count: src.count,
+                paidCount: src.paidCount,
+                revenue: src.revenue,
+                conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
+              })) || []}
+              onCohortClick={(id) => navigate(`/cohorts/${id}`)}
+              isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
+            />
+          </motion.div>
 
 
           {/* RIGHT: Charts Panel (5 colunas) */}

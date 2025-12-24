@@ -14,9 +14,9 @@ export interface DateRange {
     to?: Date;
 }
 
-export function useOriginHierarchy(dateRange?: DateRange) {
+export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
     return useQuery({
-        queryKey: ["origin-hierarchy", dateRange?.from, dateRange?.to],
+        queryKey: ["origin-hierarchy", dateRange?.from, dateRange?.to, cohortId],
         queryFn: async (): Promise<OriginHierarchyData> => {
             let query = supabase
                 .from("enrollments")
@@ -28,10 +28,12 @@ export function useOriginHierarchy(dateRange?: DateRange) {
                     macro_origin_id,
                     micro_origin_id,
                     micro_variation_id,
-                    funnels(name),
-                    macro_origins(name),
-                    micro_origins(name),
-                    micro_variations(name)
+                    cohort_id,
+                    funnel_name,
+                    macro_origin_name,
+                    micro_origin_name,
+                    micro_variation_name,
+                    nano_variation_name
                 `);
 
             if (dateRange?.from) {
@@ -43,6 +45,10 @@ export function useOriginHierarchy(dateRange?: DateRange) {
                 const toDate = new Date(dateRange.to);
                 toDate.setHours(23, 59, 59, 999);
                 query = query.lte("created_at", toDate.toISOString());
+            }
+
+            if (cohortId && cohortId !== "all") {
+                query = query.eq("cohort_id", cohortId);
             }
 
             const { data: enrollments, error } = await query;
@@ -86,11 +92,11 @@ export function useOriginHierarchy(dateRange?: DateRange) {
                     .sort((a, b) => b.count - a.count);
             };
 
-            const funis = aggregateByField((e) => e.funnels?.name);
-            const macroOrigens = aggregateByField((e) => e.macro_origins?.name);
-            const microOrigens = aggregateByField((e) => e.micro_origins?.name);
-            const variacaoMicro = aggregateByField((e) => e.micro_variations?.name);
-            const variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }> = [];
+            const funis = aggregateByField((e) => e.funnel_name);
+            const macroOrigens = aggregateByField((e) => e.macro_origin_name);
+            const microOrigens = aggregateByField((e) => e.micro_origin_name);
+            const variacaoMicro = aggregateByField((e) => e.micro_variation_name);
+            const variacaoNano = aggregateByField((e) => e.nano_variation_name);
 
             return {
                 funis,
