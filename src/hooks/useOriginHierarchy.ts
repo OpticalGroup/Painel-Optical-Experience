@@ -22,6 +22,7 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                 .from("enrollments")
                 .select(`
                     id,
+                    created_at,
                     financial_status,
                     payment_amount,
                     funnel_id,
@@ -41,7 +42,6 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
             }
 
             if (dateRange?.to) {
-                // Adjust TO date to end of day if it's the exact same as FROM or just a specific date
                 const toDate = new Date(dateRange.to);
                 toDate.setHours(23, 59, 59, 999);
                 query = query.lte("created_at", toDate.toISOString());

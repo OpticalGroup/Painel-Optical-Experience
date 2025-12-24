@@ -439,14 +439,14 @@ const Index = () => {
                 totalRevenue: rep.totalRevenue,
                 conversionRate: rep.paidSales > 0 ? (rep.paidSales / rep.totalSales) * 100 : 0,
               })) || []}
-              origens={originHierarchy?.macroOrigens?.map(src => ({
-                id: src.name,
-                source: src.name,
-                count: src.count,
-                paidCount: src.paidCount,
-                revenue: src.revenue,
-                conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
-              })) || []}
+                origens={originHierarchy?.funis?.map(src => ({
+                  id: src.name,
+                  source: src.name,
+                  count: src.count,
+                  paidCount: src.paidCount,
+                  revenue: src.revenue,
+                  conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
+                })) || []}
               onCohortClick={(id) => navigate(`/cohorts/${id}`)}
               isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
             />
