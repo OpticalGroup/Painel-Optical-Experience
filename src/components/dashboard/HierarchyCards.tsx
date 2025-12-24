@@ -130,6 +130,8 @@ export function HierarchyCards({
     const sortedVendedores = useMemo(() => {
         return [...vendedores].sort((a, b) => {
             switch (ranking) {
+                case 'conversion':
+                    return (b.conversionRate || 0) - (a.conversionRate || 0);
                 case 'revenue':
                     return b.totalRevenue - a.totalRevenue;
                 case 'paid':
@@ -148,6 +150,10 @@ export function HierarchyCards({
                     return (b.conversionRate || 0) - (a.conversionRate || 0);
                 case 'revenue':
                     return b.revenue - a.revenue;
+                case 'paid':
+                    return b.paidCount - a.paidCount;
+                case 'enrolled':
+                    return b.count - a.count;
                 default:
                     return b.count - a.count;
             }
@@ -163,6 +169,10 @@ export function HierarchyCards({
                     const convA = a.totalSales > 0 ? a.paidSales / a.totalSales : 0;
                     const convB = b.totalSales > 0 ? b.paidSales / b.totalSales : 0;
                     return convB - convA;
+                case 'paid':
+                    return b.paidSales - a.paidSales;
+                case 'enrolled':
+                    return b.totalSales - a.totalSales;
                 default:
                     return b.paidSales - a.paidSales;
             }
