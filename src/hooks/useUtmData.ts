@@ -12,26 +12,31 @@ export interface UtmData {
 export interface DateRange {
     from?: Date;
     to?: Date;
+    cohortId?: string;
 }
 
-export function useUtmData(dateRange?: DateRange) {
+export function useUtmData(filters?: DateRange) {
     return useQuery({
-        queryKey: ["utm-data", dateRange?.from, dateRange?.to],
+        queryKey: ["utm-data", filters?.from, filters?.to, filters?.cohortId],
         queryFn: async (): Promise<UtmData> => {
             // Fetch enrollments with UTM data
             let query = supabase
                 .from("enrollments")
-                .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, financial_status, payment_amount, product_name")
+                .select("utm_source, utm_medium, utm_campaign, utm_content, utm_term, financial_status, payment_amount, product_name, cohort_id")
                 .eq("product_name", "Optical Experience");
 
-            if (dateRange?.from) {
-                query = query.gte("created_at", dateRange.from.toISOString());
+            if (filters?.from) {
+                query = query.gte("created_at", filters.from.toISOString());
             }
 
-            if (dateRange?.to) {
-                const toDate = new Date(dateRange.to);
+            if (filters?.to) {
+                const toDate = new Date(filters.to);
                 toDate.setHours(23, 59, 59, 999);
                 query = query.lte("created_at", toDate.toISOString());
+            }
+
+            if (filters?.cohortId && filters.cohortId !== "all") {
+                query = query.eq("cohort_id", filters.cohortId);
             }
 
             const { data: enrollments, error } = await query;

@@ -38,6 +38,15 @@ export interface AllUtmStats {
   page: UtmStatsItem[];
 }
 
+export interface CohortAnalyticsStats {
+  cohortId: string;
+  enrolledCount: number;
+  paidCount: number;
+  reservedCount: number;
+  signedCount: number;
+  revenue: number;
+}
+
 export interface AnalyticsFilters {
   from?: Date;
   to?: Date;
@@ -57,6 +66,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
             sales_rep,
             source,
             financial_status,
+            contract_status,
             payment_amount,
             lead_date,
             purchase_date,
@@ -239,10 +249,41 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
         totalPaid: dataToAnalyze.filter(e => e.financial_status === 'paid').length,
       };
 
+      // Calcular estatísticas por turma (Cohort)
+      const cohortStatsMap = new Map<string, CohortAnalyticsStats>();
+      dataToAnalyze.forEach((enrollment) => {
+        const cohortId = enrollment.cohort_id;
+        if (!cohortId) return;
+
+        if (!cohortStatsMap.has(cohortId)) {
+          cohortStatsMap.set(cohortId, {
+            cohortId,
+            enrolledCount: 0,
+            paidCount: 0,
+            reservedCount: 0,
+            signedCount: 0,
+            revenue: 0,
+          });
+        }
+        const stats = cohortStatsMap.get(cohortId)!;
+        stats.enrolledCount++;
+        if (enrollment.financial_status === "paid") {
+          stats.paidCount++;
+          stats.revenue += Number(enrollment.payment_amount) || 0;
+        } else if (enrollment.financial_status === "pending") {
+          stats.reservedCount++;
+        }
+        
+        if (enrollment.contract_status === "signed") {
+          stats.signedCount++;
+        }
+      });
+
       return {
         summary,
         salesReps: Array.from(salesRepMap.values()),
         sources: Array.from(sourceMap.values()),
+        cohortStats: Array.from(cohortStatsMap.values()),
         utmStats,
         conversions: conversionStats,
       };

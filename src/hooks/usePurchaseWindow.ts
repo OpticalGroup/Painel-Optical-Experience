@@ -20,29 +20,34 @@ export interface PurchaseWindowData {
 export interface DateRange {
     from?: Date;
     to?: Date;
+    cohortId?: string;
 }
 
-export function usePurchaseWindow(dateRange?: DateRange) {
+export function usePurchaseWindow(filters?: DateRange) {
     return useQuery({
-        queryKey: ["purchase-window", dateRange?.from, dateRange?.to],
+        queryKey: ["purchase-window", filters?.from, filters?.to, filters?.cohortId],
         queryFn: async (): Promise<PurchaseWindowData> => {
             // Fetch enrollments with both lead_date and purchase_date
             let query = supabase
                 .from("enrollments")
-                .select("id, lead_date, purchase_date, sales_rep, source, financial_status, product_name")
+                .select("id, lead_date, purchase_date, sales_rep, source, financial_status, product_name, cohort_id")
                 .not("lead_date", "is", null)
                 .not("purchase_date", "is", null)
                 .eq("financial_status", "paid")
                 .eq("product_name", "Optical Experience");
 
-            if (dateRange?.from) {
-                query = query.gte("purchase_date", dateRange.from.toISOString());
+            if (filters?.from) {
+                query = query.gte("purchase_date", filters.from.toISOString());
             }
 
-            if (dateRange?.to) {
-                const toDate = new Date(dateRange.to);
+            if (filters?.to) {
+                const toDate = new Date(filters.to);
                 toDate.setHours(23, 59, 59, 999);
                 query = query.lte("purchase_date", toDate.toISOString());
+            }
+
+            if (filters?.cohortId && filters.cohortId !== "all") {
+                query = query.eq("cohort_id", filters.cohortId);
             }
 
             const { data: enrollments, error } = await query;
