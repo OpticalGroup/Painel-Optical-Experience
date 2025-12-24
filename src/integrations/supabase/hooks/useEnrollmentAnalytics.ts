@@ -69,26 +69,27 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       // Buscar enrollments com filtros opcionais de data
         let query = supabase
           .from("enrollments")
-          .select(`
-            id,
-            sales_rep,
-            nucleo_id,
-            nucleo_name,
-            source,
-            financial_status,
-            contract_status,
-            payment_amount,
-            lead_date,
-            purchase_date,
-            created_at,
-            cohort_id,
-            utm_source,
-            utm_medium,
-            utm_campaign,
-            external_metadata,
-            product_name,
-            cohort_name
-          `)
+            .select(`
+              id,
+              sales_rep,
+              nucleo_id,
+              nucleo_name,
+              source,
+              financial_status,
+              contract_status,
+              payment_amount,
+              lead_date,
+              purchase_date,
+              created_at,
+              cohort_id,
+              utm_source,
+              utm_medium,
+              utm_campaign,
+              external_metadata,
+              product_name,
+              cohort_name,
+              student_name:buyer_name
+            `)
           .eq("product_name", "Optical Experience");
 
       // Aplicar filtros de data se fornecidos

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Users, GraduationCap, TrendingUp, DollarSign, ArrowRight, Calendar, MapPin, Upload, FileSignature, Clock, Target, CalendarIcon, HelpCircle, SlidersHorizontal } from "lucide-react";
@@ -24,6 +24,7 @@ import { ptBR } from "date-fns/locale";
 import { SmartAlert } from "@/components/SmartAlert";
 import { HealthWidget } from "@/components/HealthWidget";
 import { TrendChart } from "@/components/TrendChart";
+import { UnifiedTrendChart } from "@/components/trends";
 import { RankingCard } from "@/components/RankingCard";
 import { ConversionAnalysis } from "@/components/ConversionAnalysis";
 import { UtmAnalytics } from "@/components/dashboard/UtmAnalytics";
@@ -49,6 +50,9 @@ const Index = () => {
   });
   const [selectedCohortId, setSelectedCohortId] = useState<string>("all");
   const [utmStatusFilter, setUtmStatusFilter] = useState<string>("all");
+  const [scrollPhase, setScrollPhase] = useState<'normal' | 'sticky'>('normal');
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const heroKpisRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: cohorts, isLoading } = useCohortsQuery();
@@ -61,6 +65,54 @@ const Index = () => {
     cohortId: selectedCohortId,
     status: utmStatusFilter
   });
+
+  // Progressive scroll detection - show sticky KPIs after scrolling past hero section
+  // Uses hysteresis (different thresholds for enter/exit) to prevent flickering
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null;
+    let lastPhase: 'normal' | 'sticky' = 'normal';
+
+    const handleScroll = () => {
+      const heroElement = heroKpisRef.current;
+      if (!heroElement) return;
+
+      // Use getBoundingClientRect for reliable position check
+      const heroRect = heroElement.getBoundingClientRect();
+      const heroBottom = heroRect.bottom;
+
+      // Hysteresis: different thresholds for entering vs exiting sticky mode
+      // This creates a "buffer zone" that prevents flickering at the transition point
+      const ENTER_THRESHOLD = 100;  // Enter sticky when heroBottom < 100
+      const EXIT_THRESHOLD = 160;   // Exit sticky when heroBottom > 160
+
+      let newPhase: 'normal' | 'sticky';
+      if (lastPhase === 'normal') {
+        // Currently normal - need to scroll past ENTER_THRESHOLD to become sticky
+        newPhase = heroBottom < ENTER_THRESHOLD ? 'sticky' : 'normal';
+      } else {
+        // Currently sticky - need to scroll back past EXIT_THRESHOLD to become normal
+        newPhase = heroBottom > EXIT_THRESHOLD ? 'normal' : 'sticky';
+      }
+
+      // Only update if phase actually changed, with debounce
+      if (newPhase !== lastPhase) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          lastPhase = newPhase;
+          setScrollPhase(newPhase);
+        }, 50); // 50ms debounce for smooth transitions
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Initial check after a small delay to ensure element is rendered
+    setTimeout(handleScroll, 100);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, []); // Empty deps - only mount once
 
 
   // Encontrar a próxima turma baseado na data atual
@@ -169,6 +221,51 @@ const Index = () => {
     return months;
   }, [cohorts, dateRange]);
 
+  // Dados unificados para o novo TrendChart
+  const unifiedTrendData = useMemo(() => {
+    if (!cohorts || cohorts.length === 0) return [];
+
+    const dataByMonth: Record<string, {
+      enrollments: number;
+      paid: number;
+      pending: number;
+      revenue: number;
+      capacity: number;
+    }> = {};
+
+    // Agrupar dados por mês
+    cohorts.forEach(c => {
+      const cohortDate = new Date(c.start_date);
+      const monthKey = format(cohortDate, "yyyy-MM", { locale: ptBR });
+
+      if (!dataByMonth[monthKey]) {
+        dataByMonth[monthKey] = { enrollments: 0, paid: 0, pending: 0, revenue: 0, capacity: 0 };
+      }
+
+      dataByMonth[monthKey].enrollments += c.stats?.enrolled_count || 0;
+      dataByMonth[monthKey].paid += c.stats?.paid_count || 0;
+      dataByMonth[monthKey].pending += (c.stats?.enrolled_count || 0) - (c.stats?.paid_count || 0);
+      dataByMonth[monthKey].revenue += c.stats?.total_revenue || 0;
+      dataByMonth[monthKey].capacity += c.capacity || 0;
+    });
+
+    // Converter para array ordenado
+    return Object.entries(dataByMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12) // Últimos 12 meses
+      .map(([month, data]) => ({
+        date: format(new Date(month + "-01"), "MMM/yy", { locale: ptBR }),
+        enrollments: data.enrollments,
+        paid: data.paid,
+        pending: data.pending,
+        revenue: data.revenue,
+        capacity: data.capacity,
+        conversionRate: data.enrollments > 0 ? data.paid / data.enrollments : 0,
+        occupancyRate: data.capacity > 0 ? data.enrollments / data.capacity : 0,
+        ticketMedio: data.paid > 0 ? data.revenue / data.paid : 0,
+      }));
+  }, [cohorts]);
+
   // Smart alerts para próxima turma
   const nextCohortAlerts = useMemo(() => {
     if (!nextCohort) return [];
@@ -219,8 +316,8 @@ const Index = () => {
   return (
     <>
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-4 gap-3">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 lg:py-3 gap-3">
           {/* Left: Title */}
           <div className="flex items-center gap-3 min-w-0">
             <SidebarTrigger />
@@ -233,6 +330,75 @@ const Index = () => {
               </p>
             </div>
           </div>
+
+          {/* Compact KPIs Strip - Only visible after scrolling past HeroKPIs */}
+          <AnimatePresence mode="wait">
+            {scrollPhase === 'sticky' && (
+              <motion.div
+                initial={{ opacity: 0, x: 30, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 30, scale: 0.9 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  mass: 0.8
+                }}
+                className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/80 backdrop-blur-md border border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.15)]"
+              >
+                {/* Progress mini-bar showing scroll context */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-emerald-500 via-cyan-400 to-purple-500 rounded-full"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    style={{ transformOrigin: 'left' }}
+                  />
+                </div>
+                <motion.div
+                  className="flex flex-col px-3 py-1"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 }}
+                >
+                  <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Receita</span>
+                  <span className="text-sm font-bold text-emerald-400 tabular-nums">{formatBRL(totalRevenue)}</span>
+                </motion.div>
+                <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                <motion.div
+                  className="flex flex-col px-3 py-1"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Conversão</span>
+                  <span className="text-sm font-bold text-cyan-400 tabular-nums">{((totalEnrolled > 0 ? totalPaid / totalEnrolled : 0) * 100).toFixed(1)}%</span>
+                </motion.div>
+                <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                <motion.div
+                  className="flex flex-col px-3 py-1"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Matrículas</span>
+                  <span className="text-sm font-bold text-foreground tabular-nums">{totalEnrolled}</span>
+                </motion.div>
+                <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                <motion.div
+                  className="flex flex-col px-3 py-1"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Pagos</span>
+                  <span className="text-sm font-bold text-foreground tabular-nums">{totalPaid}</span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
 
           {/* Desktop Controls (lg+) */}
           <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
@@ -386,12 +552,14 @@ const Index = () => {
             <UserMenu />
           </div>
         </div>
-      </header>
+      </header >
 
       {/* Hero KPIs - Estilo Nexus Cortex */}
-      <motion.section
+      < motion.section
+        ref={heroKpisRef}
         className="px-8 pt-6 pb-4"
-        initial={{ opacity: 0 }}
+        initial={{ opacity: 0 }
+        }
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
@@ -403,10 +571,10 @@ const Index = () => {
           cohortsCount={cohorts?.filter(c => c.status === 'open').length || 0}
           isLoading={isLoading}
         />
-      </motion.section>
+      </motion.section >
 
       {/* Main Content: Grid 7:5 - Estilo Nexus Cortex */}
-      <section className="px-4 sm:px-6 lg:px-8 py-2">
+      < section className="px-4 sm:px-6 lg:px-8 py-2" >
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
           {/* LEFT: Hierarchy Cards (7 colunas) */}
           <motion.div
@@ -415,24 +583,24 @@ const Index = () => {
             transition={{ delay: 0.1 }}
             className="xl:col-span-7"
           >
-              <HierarchyCards
-                cohorts={filteredCohorts.map(c => {
-                  const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
-                  return {
-                    id: c.id,
-                    name: c.name,
-                    status: c.status,
-                    location: c.location,
-                    startDate: c.start_date,
-                    capacity: c.capacity,
-                    enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
-                    reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
-                    paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
-                    signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
-                    revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
-                    hasChildren: true,
-                  };
-                })}
+            <HierarchyCards
+              cohorts={filteredCohorts.map(c => {
+                const dynamicStats = analytics?.cohortStats?.find(s => s.cohortId === c.id);
+                return {
+                  id: c.id,
+                  name: c.name,
+                  status: c.status,
+                  location: c.location,
+                  startDate: c.start_date,
+                  capacity: c.capacity,
+                  enrolledCount: dynamicStats ? dynamicStats.enrolledCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.enrolled_count || 0)),
+                  reservedCount: dynamicStats ? dynamicStats.reservedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.reserved_count || 0)),
+                  paidCount: dynamicStats ? dynamicStats.paidCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.paid_count || 0)),
+                  signedCount: dynamicStats ? dynamicStats.signedCount : (dateRange.from || dateRange.to ? 0 : (c.stats?.signed_count || 0)),
+                  revenue: dynamicStats ? dynamicStats.revenue : (dateRange.from || dateRange.to ? 0 : (c.stats?.total_revenue || 0)),
+                  hasChildren: true,
+                };
+              })}
               vendedores={analytics?.salesReps?.map(rep => ({
                 id: rep.name,
                 name: rep.name,
@@ -440,25 +608,25 @@ const Index = () => {
                 totalRevenue: rep.totalRevenue,
                 conversionRate: rep.paidSales > 0 ? (rep.paidSales / rep.totalSales) * 100 : 0,
               })) || []}
-                origens={originHierarchy?.funis?.map(src => ({
-                  id: src.name,
-                  source: src.name,
-                  count: src.count,
-                  paidCount: src.paidCount,
-                  revenue: src.revenue,
-                  conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
-                })) || []}
-                  nucleos={analytics?.nucleos?.map(n => ({
-                    id: n.id,
-                    name: n.name,
-                    totalSales: n.totalSales,
-                    paidSales: n.paidSales,
-                    totalRevenue: n.totalRevenue,
-                  })) || []}
-                  enrollments={analytics?.enrollments || []}
-                  onCohortClick={(id) => navigate(`/cohorts/${id}`)}
-                isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
-              />
+              origens={originHierarchy?.funis?.map(src => ({
+                id: src.name,
+                source: src.name,
+                count: src.count,
+                paidCount: src.paidCount,
+                revenue: src.revenue,
+                conversionRate: src.count > 0 ? (src.paidCount / src.count) * 100 : 0,
+              })) || []}
+              nucleos={analytics?.nucleos?.map(n => ({
+                id: n.id,
+                name: n.name,
+                totalSales: n.totalSales,
+                paidSales: n.paidSales,
+                totalRevenue: n.totalRevenue,
+              })) || []}
+              enrollments={analytics?.enrollments || []}
+              onCohortClick={(id) => navigate(`/cohorts/${id}`)}
+              isLoading={isLoading || isLoadingAnalytics || isLoadingHierarchy}
+            />
           </motion.div>
 
 
@@ -507,7 +675,7 @@ const Index = () => {
             />
           </motion.div>
         </div>
-      </section>
+      </section >
 
       {/* Smart Alerts */}
       {
@@ -530,6 +698,24 @@ const Index = () => {
       }
 
 
+      {/* Análise de Tendências - UnifiedTrendChart */}
+      {!isLoading && unifiedTrendData.length > 0 && (
+        <section className="px-8 pb-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Análise de Tendências</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Evolução de métricas ao longo do tempo</p>
+          </div>
+          <Card className="p-4 border border-border bg-card/50 backdrop-blur-sm">
+            <div className="h-[350px]">
+              <UnifiedTrendChart
+                data={unifiedTrendData}
+                title="Métricas de Matrículas"
+                defaultMetrics={['enrollments', 'revenue', 'conversionRate']}
+              />
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* Saúde Operacional */}
       {

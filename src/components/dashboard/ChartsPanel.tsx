@@ -121,6 +121,8 @@ const DIMENSION_COLORS: Record<string, { primary: string; shades: string[] }> = 
     origemMicro: { primary: "#3B82F6", shades: ["#3B82F6", "#2563EB", "#1D4ED8", "#1E40AF", "#1E3A8A"] },
     variacaoMicro: { primary: "#8B5CF6", shades: ["#8B5CF6", "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95"] },
     variacaoNano: { primary: "#EC4899", shades: ["#EC4899", "#DB2777", "#BE185D", "#9D174D", "#831843"] },
+    // Núcleos (from HierarchyCards)
+    nucleos: { primary: "#06B6D4", shades: ["#06B6D4", "#0891B2", "#0E7490", "#155E75", "#164E63"] },
     // UTMs
     utmCampaign: { primary: "#EC4899", shades: ["#EC4899", "#DB2777", "#BE185D", "#9D174D", "#831843"] },
     utmSource: { primary: "#14B8A6", shades: ["#14B8A6", "#0D9488", "#0F766E", "#115E59", "#134E4A"] },
@@ -167,7 +169,26 @@ function getMetricValue(item: any, metric: MetricType, type: 'turma' | 'vendedor
 // CUSTOM TOOLTIP
 // ============================================
 
-function CustomSunburstTooltip({ active, payload, metric, activeSegment }: { active?: boolean; payload?: any[]; metric?: MetricType; activeSegment?: any }) {
+interface HierarchyContext {
+    funnel?: string;
+    macroOrigin?: string;
+    microOrigin?: string;
+    variacaoMicro?: string;
+}
+
+function CustomSunburstTooltip({
+    active,
+    payload,
+    metric,
+    activeSegment,
+    hierarchyMap
+}: {
+    active?: boolean;
+    payload?: any[];
+    metric?: MetricType;
+    activeSegment?: any;
+    hierarchyMap?: Record<string, HierarchyContext>;
+}) {
     if (!active || (!activeSegment && (!payload || !payload.length))) return null;
 
     // Use the explicitly tracked hovered segment if available, otherwise fallback to payload
@@ -176,19 +197,55 @@ function CustomSunburstTooltip({ active, payload, metric, activeSegment }: { act
 
     const metricLabel = metric === 'receita' ? 'receita' : metric === 'pagos' ? 'pagos' : 'matrículas';
 
+    // Get hierarchy context for this segment
+    const context = hierarchyMap?.[data.name];
+
     return (
-        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl min-w-[160px] z-[100]">
+        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl min-w-[180px] max-w-[240px] z-[100]">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.color }} />
                 {data.ringLabel}
             </div>
             <p className="font-semibold text-foreground text-sm">{data.name}</p>
-            <p className="text-sm text-muted-foreground mt-1">
-                {metric === 'receita' ? formatBRL(data.value) : data.value.toLocaleString('pt-BR')} {metricLabel}
-            </p>
-            <p className="text-lg font-bold mt-1" style={{ color: data.color }}>
-                {data.percentage.toFixed(1)}%
-            </p>
+
+            {/* Hierarchy Context */}
+            {context && (
+                <div className="mt-2 pt-2 border-t border-border/30 space-y-1">
+                    {context.variacaoMicro && (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <span className="text-amber-400">🔸</span>
+                            <span className="truncate">{context.variacaoMicro}</span>
+                        </div>
+                    )}
+                    {context.microOrigin && (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <span className="text-blue-400">📍</span>
+                            <span className="truncate">{context.microOrigin}</span>
+                        </div>
+                    )}
+                    {context.macroOrigin && (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <span className="text-emerald-400">🌐</span>
+                            <span className="truncate">{context.macroOrigin}</span>
+                        </div>
+                    )}
+                    {context.funnel && (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <span className="text-orange-400">🎯</span>
+                            <span className="truncate">{context.funnel}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                    {metric === 'receita' ? formatBRL(data.value) : data.value.toLocaleString('pt-BR')} {metricLabel}
+                </span>
+                <span className="text-sm font-bold" style={{ color: data.color }}>
+                    {data.percentage.toFixed(1)}%
+                </span>
+            </div>
         </div>
     );
 }
@@ -223,6 +280,8 @@ export function ChartsPanel({
         origemMicro: true,
         variacaoMicro: false,
         variacaoNano: false,
+        // Núcleos
+        nucleos: true,
         // UTMs - disabled by default
         utmCampaign: false,
         utmSource: false,
@@ -275,6 +334,11 @@ export function ChartsPanel({
         { id: "variacaoNano", label: "Variação Nano", enabled: enabledRings.variacaoNano, icon: "🔹", data: originHierarchy?.variacaoNano || [] },
     ], [enabledRings, originHierarchy]);
 
+    // Núcleos ring configuration (separate from origin hierarchy)
+    const nucleosRingConfig = useMemo(() => [
+        { id: "nucleos", label: "Núcleos", enabled: enabledRings.nucleos, icon: "🔵", data: originHierarchy?.macroOrigens || [] },
+    ], [enabledRings, originHierarchy]);
+
     // UTM ring configurations
     const utmRingConfigs = useMemo(() => [
         { id: "utmCampaign", label: "Campaign", enabled: enabledRings.utmCampaign, icon: "📢", data: utmData?.campaign || [] },
@@ -285,12 +349,12 @@ export function ChartsPanel({
     ], [enabledRings, utmData]);
 
     // All ring configs combined
-    const allRingConfigs = useMemo(() => [...coreRingConfigs, ...originRingConfigs, ...utmRingConfigs], [coreRingConfigs, originRingConfigs, utmRingConfigs]);
+    const allRingConfigs = useMemo(() => [...coreRingConfigs, ...nucleosRingConfig, ...originRingConfigs, ...utmRingConfigs], [coreRingConfigs, nucleosRingConfig, originRingConfigs, utmRingConfigs]);
 
-    const activeRings = useMemo(() => 
+    const activeRings = useMemo(() =>
         allRingConfigs.filter(r => r.enabled && r.data && r.data.length > 0),
-    [allRingConfigs]);
-    
+        [allRingConfigs]);
+
     const enabledCount = activeRings.length;
 
     const [hoveredSegment, setHoveredSegment] = useState<any>(null);
@@ -461,6 +525,30 @@ export function ChartsPanel({
                                         </div>
                                     </div>
 
+                                    {/* Núcleos Toggle */}
+                                    <div className="p-2 bg-secondary/30 rounded-lg border border-border/30">
+                                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1.5 px-1">🔵 Núcleos</div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {nucleosRingConfig.map((ring) => (
+                                                <button
+                                                    key={ring.id}
+                                                    onClick={() => toggleRing(ring.id)}
+                                                    className={cn(
+                                                        "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all whitespace-nowrap",
+                                                        ring.enabled
+                                                            ? "text-white shadow-sm"
+                                                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary/70"
+                                                    )}
+                                                    style={ring.enabled ? { backgroundColor: DIMENSION_COLORS[ring.id]?.primary || "#06B6D4" } : {}}
+                                                >
+                                                    {ring.enabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                                    <span>{ring.icon}</span>
+                                                    <span>{ring.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                     {/* Origin Hierarchy Toggles (5 levels) */}
                                     <div className="p-2 bg-secondary/30 rounded-lg border border-border/30">
                                         <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1.5 px-1">🎯 Hierarquia de Origens</div>
@@ -536,19 +624,7 @@ export function ChartsPanel({
                                         />
                                     </div>
 
-                                    {/* Breathing core */}
-                                    <motion.div
-                                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                                        animate={{ opacity: [0.15, 0.25, 0.15] }}
-                                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                    >
-                                        <div
-                                            className="w-[12%] h-[12%] rounded-full blur-md"
-                                            style={{
-                                                background: "radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%)",
-                                            }}
-                                        />
-                                    </motion.div>
+
 
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RechartsPie>
@@ -581,22 +657,31 @@ export function ChartsPanel({
                                                     }}
                                                     onMouseLeave={() => setHoveredSegment(null)}
                                                 >
-                                                    {ring.segments.map((segment) => (
-                                                        <Cell
-                                                            key={`${ring.id}-${segment.id}`}
-                                                            fill={segment.color}
-                                                            stroke="rgba(255,255,255,0.06)"
-                                                            strokeWidth={1}
-                                                            style={{
-                                                                filter: "url(#baseGlow)",
-                                                                transition: "all 0.3s ease",
-                                                            }}
-                                                        />
-                                                    ))}
+                                                    {ring.segments.map((segment) => {
+                                                        const isHovered = hoveredSegment?.id === segment.id;
+                                                        const hasHover = hoveredSegment !== null;
+
+                                                        return (
+                                                            <Cell
+                                                                key={`${ring.id}-${segment.id}`}
+                                                                fill={segment.color}
+                                                                stroke={isHovered ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.06)"}
+                                                                strokeWidth={isHovered ? 2 : 1}
+                                                                style={{
+                                                                    filter: isHovered ? "url(#baseGlow) brightness(1.2)" : "url(#baseGlow)",
+                                                                    opacity: hasHover && !isHovered ? 0.4 : 1,
+                                                                    transform: isHovered ? "scale(1.02)" : "scale(1)",
+                                                                    transformOrigin: "center center",
+                                                                    transition: "all 0.2s ease-out",
+                                                                    cursor: "pointer",
+                                                                }}
+                                                            />
+                                                        );
+                                                    })}
                                                 </Pie>
                                             ))}
 
-                                            <Tooltip content={<CustomSunburstTooltip metric={selectedMetric} activeSegment={hoveredSegment} />} />
+                                            <Tooltip content={<CustomSunburstTooltip metric={selectedMetric} activeSegment={hoveredSegment} hierarchyMap={originHierarchy?.hierarchyMap} />} />
                                         </RechartsPie>
                                     </ResponsiveContainer>
                                 </motion.div>
@@ -641,20 +726,55 @@ export function ChartsPanel({
 
                         {purchaseWindowData ? (
                             <>
-                                {/* Main Metric */}
-                                <div className="text-center mb-6 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20">
-                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                                        Tempo Médio de Conversão
+                                {/* Main Metric with Insights */}
+                                <div className="mb-4">
+                                    <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20">
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                                            Tempo Médio de Conversão
+                                        </div>
+                                        <div className="flex items-baseline justify-center gap-2">
+                                            <span className="text-4xl font-bold tracking-tight text-foreground">
+                                                {purchaseWindowData.averageDays.toFixed(0)}
+                                            </span>
+                                            <span className="text-lg text-muted-foreground">dias</span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            baseado em {purchaseWindowData.totalConversions} conversões
+                                        </div>
                                     </div>
-                                    <div className="flex items-baseline justify-center gap-2">
-                                        <span className="text-5xl font-normal tracking-tight text-foreground">
-                                            {purchaseWindowData.averageDays.toFixed(0)}
-                                        </span>
-                                        <span className="text-xl text-muted-foreground">dias</span>
-                                    </div>
-                                    <div className="text-sm text-muted-foreground mt-2">
-                                        baseado em {purchaseWindowData.totalConversions} conversões
-                                    </div>
+
+                                    {/* Comparative Insights Strip */}
+                                    {purchaseWindowData.byVendedor.length > 0 && (() => {
+                                        const sortedBySpeed = [...purchaseWindowData.byVendedor].sort((a, b) => a.averageDays - b.averageDays);
+                                        const sortedByVolume = [...purchaseWindowData.byVendedor].sort((a, b) => b.conversions - a.conversions);
+                                        const fastest = sortedBySpeed[0];
+                                        const mostVolume = sortedByVolume[0];
+                                        const isSamePerson = fastest.name === mostVolume.name;
+
+                                        return (
+                                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                                {/* Top Agilidade */}
+                                                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                                    <div className="flex items-center gap-1.5 mb-1">
+                                                        <span className="text-xs">⚡</span>
+                                                        <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Top Agilidade</span>
+                                                    </div>
+                                                    <div className="text-sm font-medium text-foreground truncate">{fastest.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{fastest.averageDays.toFixed(0)} dias · {fastest.conversions} conv.</div>
+                                                </div>
+
+                                                {/* Top Volume */}
+                                                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                                    <div className="flex items-center gap-1.5 mb-1">
+                                                        <span className="text-xs">📈</span>
+                                                        <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Top Volume</span>
+                                                    </div>
+                                                    <div className="text-sm font-medium text-foreground truncate">{mostVolume.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{mostVolume.conversions} conv. · {mostVolume.averageDays.toFixed(0)} dias</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Ranking by Vendedor */}
@@ -755,47 +875,100 @@ export function ChartsPanel({
                         </div>
 
                         {trendData.length > 0 ? (
-                            <div className="flex-1 min-h-0">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={trendData}>
-                                        <defs>
-                                            <linearGradient id="trendGradientExpanded" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="hsl(172 66% 50%)" stopOpacity={0.4} />
-                                                <stop offset="95%" stopColor="hsl(172 66% 50%)" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis
-                                            dataKey="month"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
-                                        />
-                                        <YAxis
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
-                                            tickFormatter={(value) => `${value}%`}
-                                        />
-                                        <Tooltip
-                                            contentStyle={{
-                                                background: "hsl(222 47% 8%)",
-                                                border: "1px solid hsl(217 33% 15%)",
-                                                borderRadius: "12px",
-                                                fontSize: "12px",
-                                                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                                            }}
-                                            formatter={(value: number) => [`${value.toFixed(0)}%`, "Ocupação"]}
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="value"
-                                            stroke="hsl(172 66% 50%)"
-                                            strokeWidth={2}
-                                            fill="url(#trendGradientExpanded)"
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <>
+                                {/* Trend Insights Header */}
+                                {(() => {
+                                    const values = trendData.map(d => d.value);
+                                    const maxValue = Math.max(...values);
+                                    const minValue = Math.min(...values);
+                                    const maxMonth = trendData.find(d => d.value === maxValue)?.month;
+                                    const minMonth = trendData.find(d => d.value === minValue)?.month;
+                                    const currentValue = values[values.length - 1];
+                                    const previousValue = values[values.length - 2] || currentValue;
+                                    const delta = currentValue - previousValue;
+
+                                    return (
+                                        <div className="grid grid-cols-3 gap-2 mb-3">
+                                            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                                                <div className="text-[9px] text-emerald-400 uppercase tracking-wider">Máximo</div>
+                                                <div className="text-lg font-bold text-emerald-400">{maxValue.toFixed(0)}%</div>
+                                                <div className="text-[10px] text-muted-foreground">{maxMonth}</div>
+                                            </div>
+                                            <div className="p-2 rounded-lg bg-muted/20 border border-white/5 text-center">
+                                                <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Atual</div>
+                                                <div className="text-lg font-bold text-foreground">{currentValue.toFixed(0)}%</div>
+                                                <div className={cn(
+                                                    "text-[10px] font-semibold",
+                                                    delta >= 0 ? "text-emerald-400" : "text-red-400"
+                                                )}>
+                                                    {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}%
+                                                </div>
+                                            </div>
+                                            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                                                <div className="text-[9px] text-red-400 uppercase tracking-wider">Mínimo</div>
+                                                <div className="text-lg font-bold text-red-400">{minValue.toFixed(0)}%</div>
+                                                <div className="text-[10px] text-muted-foreground">{minMonth}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                <div className="flex-1 min-h-0">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={trendData}>
+                                            <defs>
+                                                <linearGradient id="trendGradientExpanded" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="hsl(172 66% 50%)" stopOpacity={0.4} />
+                                                    <stop offset="95%" stopColor="hsl(172 66% 50%)" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis
+                                                dataKey="month"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
+                                            />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }}
+                                                tickFormatter={(value) => `${value}%`}
+                                            />
+                                            <Tooltip
+                                                content={({ active, payload, label }) => {
+                                                    if (!active || !payload || !payload.length) return null;
+                                                    const currentIndex = trendData.findIndex(d => d.month === label);
+                                                    const currentValue = payload[0].value as number;
+                                                    const previousValue = currentIndex > 0 ? trendData[currentIndex - 1].value : currentValue;
+                                                    const delta = currentValue - previousValue;
+
+                                                    return (
+                                                        <div className="bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg px-4 py-3 shadow-xl">
+                                                            <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                                                            <div className="text-lg font-bold text-foreground">{currentValue.toFixed(0)}% ocupação</div>
+                                                            {currentIndex > 0 && (
+                                                                <div className={cn(
+                                                                    "text-xs font-semibold mt-1",
+                                                                    delta >= 0 ? "text-emerald-400" : "text-red-400"
+                                                                )}>
+                                                                    {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}% vs mês anterior
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="value"
+                                                stroke="hsl(172 66% 50%)"
+                                                strokeWidth={2}
+                                                fill="url(#trendGradientExpanded)"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </>
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
                                 Sem dados suficientes para tendência

@@ -13,14 +13,15 @@ export const useEnrollmentsQuery = (cohortId: string | undefined, showCancelled:
     queryFn: async () => {
       if (!cohortId) throw new Error('Cohort ID is required');
 
-      let query = supabase
-        .from('enrollments')
-        .select(`
-          *,
-          contacts (*),
-          products (*),
-          sellers (*)
-        `)
+        let query = supabase
+          .from('enrollments')
+          .select(`
+            *,
+            student_name:buyer_name,
+            contacts (*),
+            products (*),
+            sellers (*)
+          `)
         .eq('cohort_id', cohortId)
         .order('position_in_cohort', { ascending: true });
 
