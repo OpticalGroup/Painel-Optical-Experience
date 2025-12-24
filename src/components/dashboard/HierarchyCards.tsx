@@ -314,53 +314,81 @@ export function HierarchyCards({
                 {/* Cards Grid */}
                 <div className="space-y-3">
                     <AnimatePresence mode="wait">
-                        {viewMode === 'turmas' && sortedCohorts.map((cohort, index) => (
+                        {viewMode === 'turmas' && (
                             <motion.div
-                                key={cohort.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ delay: index * 0.05 }}
-                                layout
+                                key="turmas-view"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="space-y-3"
                             >
-                                <CohortCard
-                                    cohort={cohort}
-                                    onClick={() => onCohortClick?.(cohort.id)}
-                                    rank={index + 1}
-                                    isTopRanked={index === 0}
-                                />
+                                {sortedCohorts.length > 0 ? (
+                                    sortedCohorts.map((cohort, index) => (
+                                        <CohortCard
+                                            key={cohort.id}
+                                            cohort={cohort}
+                                            onClick={() => onCohortClick?.(cohort.id)}
+                                            rank={index + 1}
+                                            isTopRanked={index === 0}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-10 text-muted-foreground">
+                                        Nenhuma turma encontrada.
+                                    </div>
+                                )}
                             </motion.div>
-                        ))}
+                        )}
 
-                        {viewMode === 'vendedores' && sortedVendedores.map((vendedor, index) => (
+                        {viewMode === 'vendedores' && (
                             <motion.div
-                                key={vendedor.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
+                                key="vendedores-view"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="space-y-3"
                             >
-                                <VendedorCard
-                                    vendedor={vendedor}
-                                    rank={index + 1}
-                                    isTopRanked={index === 0}
-                                />
+                                {sortedVendedores.length > 0 ? (
+                                    sortedVendedores.map((vendedor, index) => (
+                                        <VendedorCard
+                                            key={vendedor.id}
+                                            vendedor={vendedor}
+                                            rank={index + 1}
+                                            isTopRanked={index === 0}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-10 text-muted-foreground">
+                                        Nenhum vendedor encontrado.
+                                    </div>
+                                )}
                             </motion.div>
-                        ))}
+                        )}
 
-                        {viewMode === 'nucleos' && sortedNucleos.map((nucleo, index) => (
+                        {viewMode === 'nucleos' && (
                             <motion.div
-                                key={nucleo.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
+                                key="nucleos-view"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="space-y-3"
                             >
-                                <NucleoCard
-                                    nucleo={nucleo}
-                                    rank={index + 1}
-                                    isTopRanked={index === 0}
-                                />
+                                {sortedNucleos.length > 0 ? (
+                                    sortedNucleos.map((nucleo, index) => (
+                                        <NucleoCard
+                                            key={nucleo.id}
+                                            nucleo={nucleo}
+                                            rank={index + 1}
+                                            isTopRanked={index === 0}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-10 text-muted-foreground">
+                                        Nenhum núcleo encontrado.
+                                    </div>
+                                )}
                             </motion.div>
-                        ))}
+                        )}
                     </AnimatePresence>
                 </div>
             </div>

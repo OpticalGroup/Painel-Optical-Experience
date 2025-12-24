@@ -87,10 +87,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
             utm_campaign,
             external_metadata,
             product_name,
-            cohorts (
-              id,
-              name
-            )
+            cohort_name
           `)
           .eq("product_name", "Optical Experience");
 
@@ -219,11 +216,11 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       // Calcular janela de conversão por turma
       const cohortConversionMap = new Map<string, { days: number[]; name: string }>();
       dataToAnalyze.forEach((enrollment) => {
-        if (enrollment.lead_date && enrollment.purchase_date) {
-          const cohortId = enrollment.cohort_id;
-          const cohortName = enrollment.cohorts?.name || "Turma desconhecida";
+          if (enrollment.lead_date && enrollment.purchase_date) {
+            const cohortId = enrollment.cohort_id;
+            const cohortName = enrollment.cohort_name || "Turma desconhecida";
 
-          if (!cohortConversionMap.has(cohortId)) {
+            if (!cohortConversionMap.has(cohortId)) {
             cohortConversionMap.set(cohortId, { days: [], name: cohortName });
           }
 
