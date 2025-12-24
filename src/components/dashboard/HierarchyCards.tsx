@@ -297,7 +297,11 @@ export function HierarchyCards({
                         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         className="py-4"
                     >
-                        <div className="grid grid-cols-4 gap-6">
+                        <div className="grid grid-cols-5 gap-6">
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-slate-400 mb-1">{Math.max(0, totals.capacity - totals.enrolled)}</div>
+                                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Disponíveis</div>
+                            </div>
                             <div className="text-center">
                                 <div className="text-2xl font-bold text-blue-400 mb-1">{totals.enrolled}</div>
                                 <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Matrículas</div>
