@@ -49,7 +49,14 @@ const Index = () => {
   });
   const [selectedCohortId, setSelectedCohortId] = useState<string>("all");
   const [utmStatusFilter, setUtmStatusFilter] = useState<string>("all");
-  
+
+  const [scrollPhase, setScrollPhase] = useState<'normal' | 'sticky'>('normal');
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const heroKpisRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { data: cohorts, isLoading } = useCohortsQuery();
+
   // Encontrar IDs de turmas futuras
   const today = new Date();
   const upcomingCohortIds = useMemo(() => {
@@ -65,13 +72,6 @@ const Index = () => {
     }
     return selectedCohortId;
   }, [selectedCohortId, upcomingCohortIds]);
-
-  const [scrollPhase, setScrollPhase] = useState<'normal' | 'sticky'>('normal');
-  const mainContentRef = useRef<HTMLDivElement>(null);
-  const heroKpisRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { data: cohorts, isLoading } = useCohortsQuery();
   const { data: purchaseWindowData } = usePurchaseWindow({ ...dateRange, cohortId: cohortFilterForHooks });
   const { data: utmData } = useUtmData({ ...dateRange, cohortId: cohortFilterForHooks });
 
@@ -137,8 +137,6 @@ const Index = () => {
   }, []); // Empty deps - only mount once
 
 
-  // Encontrar a próxima turma baseado na data atual
-  const today = new Date();
 
   // Filtrar cohorts baseado no dateRange e selectedCohortId
   const filteredCohorts = useMemo(() => {
@@ -494,13 +492,13 @@ const Index = () => {
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Todas as Turmas" />
               </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Turmas</SelectItem>
-                  <SelectItem value="future">Turmas Futuras</SelectItem>
-                  {cohorts?.map((cohort) => (
-                    <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
-                  ))}
-                </SelectContent>
+              <SelectContent>
+                <SelectItem value="all">Todas as Turmas</SelectItem>
+                <SelectItem value="future">Turmas Futuras</SelectItem>
+                {cohorts?.map((cohort) => (
+                  <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
 
             <ExportButton type="dashboard" label="Exportar Dashboard" />
@@ -560,13 +558,13 @@ const Index = () => {
                       <SelectTrigger className="w-full h-11">
                         <SelectValue placeholder="Todas as Turmas" />
                       </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as Turmas</SelectItem>
-                          <SelectItem value="future">Turmas Futuras</SelectItem>
-                          {cohorts?.map((cohort) => (
-                            <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
-                          ))}
-                        </SelectContent>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Turmas</SelectItem>
+                        <SelectItem value="future">Turmas Futuras</SelectItem>
+                        {cohorts?.map((cohort) => (
+                          <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
 

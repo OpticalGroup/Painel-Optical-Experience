@@ -732,18 +732,18 @@ export function ChartsPanel({
                         {purchaseWindowData ? (
                             <>
                                 {/* Main Metric with Insights */}
-                                <div className="mb-4">
-                                    <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20">
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                                <div className="mb-2 space-y-2">
+                                    <div className="text-center p-2 rounded-xl bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20">
+                                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
                                             Tempo Médio de Conversão
                                         </div>
-                                        <div className="flex items-baseline justify-center gap-2">
-                                            <span className="text-4xl font-bold tracking-tight text-foreground">
+                                        <div className="flex items-baseline justify-center gap-1.5">
+                                            <span className="text-2xl font-bold tracking-tight text-foreground">
                                                 {purchaseWindowData.averageDays.toFixed(0)}
                                             </span>
-                                            <span className="text-lg text-muted-foreground">dias</span>
+                                            <span className="text-sm text-muted-foreground">dias</span>
                                         </div>
-                                        <div className="text-xs text-muted-foreground mt-1">
+                                        <div className="text-[9px] text-muted-foreground">
                                             baseado em {purchaseWindowData.totalConversions} conversões
                                         </div>
                                     </div>
@@ -754,28 +754,27 @@ export function ChartsPanel({
                                         const sortedByVolume = [...purchaseWindowData.byVendedor].sort((a, b) => b.conversions - a.conversions);
                                         const fastest = sortedBySpeed[0];
                                         const mostVolume = sortedByVolume[0];
-                                        const isSamePerson = fastest.name === mostVolume.name;
 
                                         return (
-                                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                            <div className="grid grid-cols-2 gap-2">
                                                 {/* Top Agilidade */}
-                                                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                                                    <div className="flex items-center gap-1.5 mb-1">
-                                                        <span className="text-xs">⚡</span>
-                                                        <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Top Agilidade</span>
+                                                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                                    <div className="flex items-center gap-1 mb-0.5">
+                                                        <span className="text-[10px]">⚡</span>
+                                                        <span className="text-[9px] text-emerald-400 font-semibold uppercase tracking-wider">Top Agilidade</span>
                                                     </div>
-                                                    <div className="text-sm font-medium text-foreground truncate">{fastest.name}</div>
-                                                    <div className="text-xs text-muted-foreground">{fastest.averageDays.toFixed(0)} dias · {fastest.conversions} conv.</div>
+                                                    <div className="text-xs font-medium text-foreground truncate">{fastest.name}</div>
+                                                    <div className="text-[9px] text-muted-foreground">{fastest.averageDays.toFixed(0)} dias · {fastest.conversions} conv.</div>
                                                 </div>
 
                                                 {/* Top Volume */}
-                                                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                                                    <div className="flex items-center gap-1.5 mb-1">
-                                                        <span className="text-xs">📈</span>
-                                                        <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Top Volume</span>
+                                                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                                    <div className="flex items-center gap-1 mb-0.5">
+                                                        <span className="text-[10px]">📈</span>
+                                                        <span className="text-[9px] text-blue-400 font-semibold uppercase tracking-wider">Top Volume</span>
                                                     </div>
-                                                    <div className="text-sm font-medium text-foreground truncate">{mostVolume.name}</div>
-                                                    <div className="text-xs text-muted-foreground">{mostVolume.conversions} conv. · {mostVolume.averageDays.toFixed(0)} dias</div>
+                                                    <div className="text-xs font-medium text-foreground truncate">{mostVolume.name}</div>
+                                                    <div className="text-[9px] text-muted-foreground">{mostVolume.conversions} conv. · {mostVolume.averageDays.toFixed(0)} dias</div>
                                                 </div>
                                             </div>
                                         );
@@ -783,18 +782,17 @@ export function ChartsPanel({
                                 </div>
 
                                 {/* Ranking by Vendedor */}
-                                <div className="flex-1 overflow-hidden">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Trophy className="w-4 h-4 text-amber-400" />
-                                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                <div className="flex-1 flex flex-col min-h-0 mt-1">
+                                    <div className="flex items-center gap-1.5 mb-2 shrink-0">
+                                        <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                                             Ranking por Vendedor
                                         </span>
                                     </div>
 
-                                    <div className="space-y-2 overflow-y-auto max-h-[200px] pr-1">
+                                    <div className="space-y-1.5 overflow-y-auto pr-2 pb-2 -mr-2 scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent flex-1">
                                         {purchaseWindowData.byVendedor
                                             .sort((a, b) => a.averageDays - b.averageDays)
-                                            .slice(0, 5)
                                             .map((vendedor, index) => {
                                                 const isTop = index === 0;
                                                 const maxDays = Math.max(...purchaseWindowData.byVendedor.map(v => v.averageDays));
@@ -804,36 +802,36 @@ export function ChartsPanel({
                                                     <div
                                                         key={vendedor.name}
                                                         className={cn(
-                                                            "p-3 rounded-lg border transition-all",
+                                                            "p-2 rounded-lg border transition-all",
                                                             isTop
                                                                 ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30"
                                                                 : "bg-muted/20 border-white/5"
                                                         )}
                                                     >
-                                                        <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center justify-between mb-1.5">
                                                             <div className="flex items-center gap-2">
                                                                 <span className={cn(
-                                                                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                                                                    "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold",
                                                                     isTop ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
                                                                 )}>
                                                                     {index + 1}
                                                                 </span>
-                                                                <span className="font-medium text-foreground text-sm">
+                                                                <span className="font-medium text-foreground text-xs">
                                                                     {vendedor.name}
                                                                 </span>
-                                                                {isTop && <span className="text-xs">🏆</span>}
+                                                                {isTop && <span className="text-[10px]">🏆</span>}
                                                             </div>
-                                                            <div className="text-right">
+                                                            <div className="text-right flex items-baseline gap-1">
                                                                 <span className={cn(
-                                                                    "text-lg font-bold",
+                                                                    "text-sm font-bold",
                                                                     isTop ? "text-emerald-400" : "text-foreground"
                                                                 )}>
                                                                     {vendedor.averageDays.toFixed(0)}
                                                                 </span>
-                                                                <span className="text-xs text-muted-foreground ml-1">dias</span>
+                                                                <span className="text-[9px] text-muted-foreground">dias</span>
                                                             </div>
                                                         </div>
-                                                        <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                                                        <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
                                                             <motion.div
                                                                 className={cn(
                                                                     "h-full rounded-full",
@@ -844,7 +842,7 @@ export function ChartsPanel({
                                                                 transition={{ duration: 0.6, delay: index * 0.1 }}
                                                             />
                                                         </div>
-                                                        <div className="text-[10px] text-muted-foreground mt-1">
+                                                        <div className="text-[9px] text-muted-foreground mt-0.5">
                                                             {vendedor.conversions} conversões
                                                         </div>
                                                     </div>
