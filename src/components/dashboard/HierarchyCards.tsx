@@ -459,7 +459,8 @@ function CohortCard({ cohort, onClick, rank, isTopRanked = false }: CohortCardPr
         ? (cohort.paidCount / cohort.enrolledCount) * 100
         : 0;
     const occupancyRate = (cohort.enrolledCount / cohort.capacity) * 100;
-    const maxValue = Math.max(cohort.enrolledCount, cohort.reservedCount, cohort.paidCount, 1);
+    const availableCount = Math.max(0, cohort.capacity - cohort.enrolledCount);
+    const maxValue = Math.max(cohort.enrolledCount, cohort.reservedCount, cohort.paidCount, availableCount, 1);
 
     return (
         <button
@@ -497,10 +498,16 @@ function CohortCard({ cohort, onClick, rank, isTopRanked = false }: CohortCardPr
 
                     {/* Metrics Grid */}
                     <div className="grid grid-cols-4 gap-3">
-                        {/* Capacidade */}
+                        {/* Vagas Disponíveis */}
                         <div>
-                            <div className="text-[10px] text-muted-foreground uppercase mb-1">Capacidade</div>
-                            <div className="text-lg font-bold text-foreground/80">{cohort.capacity}</div>
+                            <div className="text-[10px] text-muted-foreground uppercase mb-1">Disponíveis</div>
+                            <div className="text-lg font-bold text-slate-400">{cohort.capacity - cohort.enrolledCount}</div>
+                            <div className="h-1 rounded-full bg-slate-500/20 mt-1">
+                                <div
+                                    className="h-full rounded-full bg-slate-500/40"
+                                    style={{ width: `${(Math.max(0, cohort.capacity - cohort.enrolledCount) / maxValue) * 100}%` }}
+                                />
+                            </div>
                         </div>
 
                         {/* Matriculados */}
