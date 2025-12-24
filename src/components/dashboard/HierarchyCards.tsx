@@ -474,7 +474,7 @@ function CohortCard({ cohort, onClick, rank, isTopRanked = false }: CohortCardPr
         : 0;
     const occupancyRate = (cohort.enrolledCount / cohort.capacity) * 100;
     const availableCount = Math.max(0, cohort.capacity - cohort.enrolledCount);
-    const maxValue = Math.max(cohort.enrolledCount, cohort.reservedCount, cohort.paidCount, availableCount, 1);
+    const maxValue = Math.max(cohort.enrolledCount, cohort.reservedCount, cohort.paidCount, cohort.signedCount, availableCount, 1);
 
     return (
         <button
@@ -524,18 +524,6 @@ function CohortCard({ cohort, onClick, rank, isTopRanked = false }: CohortCardPr
                             </div>
                         </div>
 
-                        {/* Matriculados */}
-                        <div>
-                            <div className="text-[10px] text-muted-foreground uppercase mb-1">Matriculados</div>
-                            <div className="text-lg font-bold text-blue-400">{cohort.enrolledCount}</div>
-                            <div className="h-1 rounded-full bg-blue-500/20 mt-1">
-                                <div
-                                    className="h-full rounded-full bg-blue-500"
-                                    style={{ width: `${(cohort.enrolledCount / maxValue) * 100}%` }}
-                                />
-                            </div>
-                        </div>
-
                         {/* Reservados */}
                         <div>
                             <div className="text-[10px] text-muted-foreground uppercase mb-1">Reservados</div>
@@ -556,6 +544,18 @@ function CohortCard({ cohort, onClick, rank, isTopRanked = false }: CohortCardPr
                                 <div
                                     className="h-full rounded-full bg-emerald-500"
                                     style={{ width: `${(cohort.paidCount / maxValue) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Assinados */}
+                        <div>
+                            <div className="text-[10px] text-muted-foreground uppercase mb-1">Assinados</div>
+                            <div className="text-lg font-bold text-violet-400">{cohort.signedCount}</div>
+                            <div className="h-1 rounded-full bg-violet-500/20 mt-1">
+                                <div
+                                    className="h-full rounded-full bg-violet-500"
+                                    style={{ width: `${(cohort.signedCount / maxValue) * 100}%` }}
                                 />
                             </div>
                         </div>
