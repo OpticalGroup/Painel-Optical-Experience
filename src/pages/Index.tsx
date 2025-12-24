@@ -49,20 +49,43 @@ const Index = () => {
   });
   const [selectedCohortId, setSelectedCohortId] = useState<string>("all");
   const [utmStatusFilter, setUtmStatusFilter] = useState<string>("all");
+  
+  // Encontrar IDs de turmas futuras
+  const today = new Date();
+  const upcomingCohortIds = useMemo(() => {
+    if (!cohorts) return [];
+    return cohorts
+      .filter(c => new Date(c.start_date) > today)
+      .map(c => c.id);
+  }, [cohorts]);
+
+  const cohortFilterForHooks = useMemo(() => {
+    if (selectedCohortId === "future") {
+      return upcomingCohortIds.length > 0 ? upcomingCohortIds.join(',') : 'none';
+    }
+    return selectedCohortId;
+  }, [selectedCohortId, upcomingCohortIds]);
+
   const [scrollPhase, setScrollPhase] = useState<'normal' | 'sticky'>('normal');
   const mainContentRef = useRef<HTMLDivElement>(null);
   const heroKpisRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: cohorts, isLoading } = useCohortsQuery();
-  const { data: purchaseWindowData } = usePurchaseWindow({ ...dateRange, cohortId: selectedCohortId });
-  const { data: utmData } = useUtmData({ ...dateRange, cohortId: selectedCohortId });
+  const { data: purchaseWindowData } = usePurchaseWindow({ ...dateRange, cohortId: cohortFilterForHooks });
+  const { data: utmData } = useUtmData({ ...dateRange, cohortId: cohortFilterForHooks });
 
-  const { data: originHierarchy, isLoading: isLoadingHierarchy } = useOriginHierarchy(dateRange, selectedCohortId);
+  const { data: originHierarchy, isLoading: isLoadingHierarchy } = useOriginHierarchy(dateRange, cohortFilterForHooks);
   const { data: analytics, isLoading: isLoadingAnalytics } = useEnrollmentAnalytics({
     ...dateRange,
-    cohortId: selectedCohortId,
+    cohortId: cohortFilterForHooks,
     status: utmStatusFilter
+  });
+
+  // Separate unfiltered analytics call for trend chart (not affected by global date filter)
+  const { data: trendAnalytics } = useEnrollmentAnalytics({
+    // No date filter - get all historical data
+    cohortId: cohortFilterForHooks !== 'all' ? cohortFilterForHooks : undefined,
   });
 
   // Progressive scroll detection - show sticky KPIs after scrolling past hero section
@@ -129,7 +152,9 @@ const Index = () => {
       filtered = filtered.filter(c => new Date(c.start_date) <= dateRange.to!);
     }
 
-    if (selectedCohortId && selectedCohortId !== "all") {
+    if (selectedCohortId === "future") {
+      filtered = filtered.filter(c => new Date(c.start_date) > today);
+    } else if (selectedCohortId && selectedCohortId !== "all") {
       filtered = filtered.filter(c => c.id === selectedCohortId);
     }
 
@@ -222,8 +247,8 @@ const Index = () => {
 
   // Dados unificados para o TrendChart do ChartsPanel (agregados por DIA)
   const unifiedTrendData = useMemo(() => {
-    // Use enrollments from analytics (each has created_at)
-    const enrollments = analytics?.enrollments || [];
+    // Use trendAnalytics (unfiltered) for historical trend data
+    const enrollments = trendAnalytics?.enrollments || [];
     if (enrollments.length === 0) return [];
 
     const dataByDay: Record<string, {
@@ -234,10 +259,12 @@ const Index = () => {
       revenue: number;
     }> = {};
 
-    // Agregar dados por DIA (created_at de cada matrícula)
+    // Agregar dados por DIA usando purchase_date (data real da venda)
+    // Fallback para created_at se purchase_date não existir
     enrollments.forEach((e: any) => {
-      if (!e.created_at) return;
-      const dayKey = format(new Date(e.created_at), "yyyy-MM-dd");
+      const dateToUse = e.purchase_date || e.created_at;
+      if (!dateToUse) return;
+      const dayKey = format(new Date(dateToUse), "yyyy-MM-dd");
 
       if (!dataByDay[dayKey]) {
         dataByDay[dayKey] = { enrollments: 0, paid: 0, pending: 0, signed: 0, revenue: 0 };
@@ -273,7 +300,7 @@ const Index = () => {
         capacity: undefined,
         available: undefined,
       }));
-  }, [analytics?.enrollments]);
+  }, [trendAnalytics?.enrollments]);
 
   // Smart alerts para próxima turma
   const nextCohortAlerts = useMemo(() => {
@@ -467,12 +494,13 @@ const Index = () => {
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Todas as Turmas" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as Turmas</SelectItem>
-                {cohorts?.map((cohort) => (
-                  <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
-                ))}
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Turmas</SelectItem>
+                  <SelectItem value="future">Turmas Futuras</SelectItem>
+                  {cohorts?.map((cohort) => (
+                    <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                  ))}
+                </SelectContent>
             </Select>
 
             <ExportButton type="dashboard" label="Exportar Dashboard" />
@@ -532,12 +560,13 @@ const Index = () => {
                       <SelectTrigger className="w-full h-11">
                         <SelectValue placeholder="Todas as Turmas" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as Turmas</SelectItem>
-                        {cohorts?.map((cohort) => (
-                          <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
-                        ))}
-                      </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as Turmas</SelectItem>
+                          <SelectItem value="future">Turmas Futuras</SelectItem>
+                          {cohorts?.map((cohort) => (
+                            <SelectItem key={cohort.id} value={cohort.id}>{cohort.name}</SelectItem>
+                          ))}
+                        </SelectContent>
                     </Select>
                   </div>
 

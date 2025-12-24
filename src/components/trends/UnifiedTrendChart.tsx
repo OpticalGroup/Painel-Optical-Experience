@@ -49,6 +49,7 @@ import { TrendDataPoint } from './types';
 // ============================================
 
 type ChartPeriod = '7D' | '30D' | '90D' | '180D' | '1Y' | 'ALL' | 'CUSTOM';
+type Granularity = 'day' | 'week' | 'month';
 
 interface CustomDateRange {
     startDate: Date | undefined;
@@ -79,6 +80,12 @@ const PERIODS: { value: ChartPeriod; label: string }[] = [
     { value: '1Y', label: '1A' },
     { value: 'ALL', label: 'Tudo' },
     { value: 'CUSTOM', label: '📅' },
+];
+
+const GRANULARITIES: { value: Granularity; label: string }[] = [
+    { value: 'day', label: 'Dia' },
+    { value: 'week', label: 'Sem' },
+    { value: 'month', label: 'Mês' },
 ];
 
 const formatDateShort = (date: Date): string => format(date, 'dd/MM/yy', { locale: ptBR });
@@ -293,6 +300,7 @@ export function UnifiedTrendChart({
     className,
 }: UnifiedTrendChartProps) {
     const [period, setPeriod] = useState<ChartPeriod>('30D');
+    const [granularity, setGranularity] = useState<Granularity>('day');
     const [showMetricSelector, setShowMetricSelector] = useState(false);
     const [enabledMetrics, setEnabledMetrics] = useState<Set<MetricId>>(new Set(defaultMetrics));
     const [showCustomDateModal, setShowCustomDateModal] = useState(false);
@@ -339,17 +347,71 @@ export function UnifiedTrendChart({
         return dataArray.filter((d) => d.date >= cutoffStr);
     };
 
-    // Prepare chart data
+    // Prepare chart data with granularity aggregation
     const chartData = useMemo((): ChartDataPoint[] => {
         const filtered = getFilteredData(data);
-        return filtered.map((d) => ({
-            ...d,
-            // Ensure all metrics are present
-            conversionRate: d.conversionRate ?? (d.enrollments && d.paid ? d.paid / d.enrollments : undefined),
-            occupancyRate: d.occupancyRate ?? (d.capacity && d.enrollments ? d.enrollments / d.capacity : undefined),
-            ticketMedio: d.ticketMedio ?? (d.revenue && d.paid ? d.revenue / d.paid : undefined),
-        }));
-    }, [data, period, customRange]);
+
+        // If granularity is 'day', no aggregation needed
+        if (granularity === 'day') {
+            return filtered.map((d) => ({
+                ...d,
+                conversionRate: d.conversionRate ?? (d.enrollments && d.paid ? d.paid / d.enrollments : undefined),
+                occupancyRate: d.occupancyRate ?? (d.capacity && d.enrollments ? d.enrollments / d.capacity : undefined),
+                ticketMedio: d.ticketMedio ?? (d.revenue && d.paid ? d.revenue / d.paid : undefined),
+            }));
+        }
+
+        // Aggregate by week or month
+        const aggregated: Record<string, {
+            enrollments: number;
+            paid: number;
+            pending: number;
+            signed: number;
+            revenue: number;
+            count: number;
+        }> = {};
+
+        filtered.forEach((d) => {
+            const date = new Date(d.date);
+            let key: string;
+
+            if (granularity === 'week') {
+                // Get start of week (Monday)
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+                const weekStart = new Date(date);
+                weekStart.setDate(diff);
+                key = format(weekStart, 'yyyy-MM-dd');
+            } else {
+                // Month
+                key = format(date, 'yyyy-MM');
+            }
+
+            if (!aggregated[key]) {
+                aggregated[key] = { enrollments: 0, paid: 0, pending: 0, signed: 0, revenue: 0, count: 0 };
+            }
+
+            aggregated[key].enrollments += (d.enrollments as number) || 0;
+            aggregated[key].paid += (d.paid as number) || 0;
+            aggregated[key].pending += (d.pending as number) || 0;
+            aggregated[key].signed += (d.signed as number) || 0;
+            aggregated[key].revenue += (d.revenue as number) || 0;
+            aggregated[key].count++;
+        });
+
+        return Object.entries(aggregated)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, agg]) => ({
+                date: key,
+                enrollments: agg.enrollments,
+                paid: agg.paid,
+                pending: agg.pending,
+                signed: agg.signed,
+                revenue: agg.revenue,
+                ticketMedio: agg.paid > 0 ? agg.revenue / agg.paid : undefined,
+                conversionRate: agg.enrollments > 0 ? agg.paid / agg.enrollments : undefined,
+            }));
+    }, [data, period, customRange, granularity]);
 
     // Toggle metric
     const toggleMetric = (id: MetricId) => {
@@ -394,6 +456,25 @@ export function UnifiedTrendChart({
                         customRange={customRange}
                         onCustomClick={() => setShowCustomDateModal(true)}
                     />
+
+                    {/* Granularity selector */}
+                    <div className="flex items-center gap-0.5 bg-secondary/30 rounded-lg p-0.5">
+                        {GRANULARITIES.map((g) => (
+                            <button
+                                key={g.value}
+                                onClick={() => setGranularity(g.value)}
+                                className={cn(
+                                    'px-2 py-0.5 text-[10px] font-medium rounded-md transition-all',
+                                    granularity === g.value
+                                        ? 'bg-emerald-500/80 text-white'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                                )}
+                                title={`Agrupar por ${g.label.toLowerCase()}`}
+                            >
+                                {g.label}
+                            </button>
+                        ))}
+                    </div>
 
                     {/* Settings toggle */}
                     <button

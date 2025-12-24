@@ -47,7 +47,11 @@ export function usePurchaseWindow(filters?: DateRange) {
             }
 
             if (filters?.cohortId && filters.cohortId !== "all") {
-                query = query.eq("cohort_id", filters.cohortId);
+                if (filters.cohortId.includes(',')) {
+                    query = query.in("cohort_id", filters.cohortId.split(','));
+                } else {
+                    query = query.eq("cohort_id", filters.cohortId);
+                }
             }
 
             const { data: enrollments, error } = await query;

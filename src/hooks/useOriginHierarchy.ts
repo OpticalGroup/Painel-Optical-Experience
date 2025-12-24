@@ -50,7 +50,11 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
             }
 
             if (cohortId && cohortId !== "all") {
-                query = query.eq("cohort_id", cohortId);
+                if (cohortId.includes(',')) {
+                    query = query.in("cohort_id", cohortId.split(','));
+                } else {
+                    query = query.eq("cohort_id", cohortId);
+                }
             }
 
             const { data: enrollments, error } = await query;
