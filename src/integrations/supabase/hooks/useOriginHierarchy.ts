@@ -158,7 +158,7 @@ export function useCreateMacroOrigin() {
         mutationFn: async (origin: Omit<MacroOrigin, 'id' | 'created_at' | 'updated_at' | 'funnel'>) => {
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_macro_origin', {
-                    p_funnel_id: origin.funnel, // Note: origin.funnel maps to funnel_id in types but check usage
+                    p_funnel_id: origin.funnel_id,
                     p_name: origin.name,
                     p_description: origin.description
                 });
@@ -234,7 +234,7 @@ export function useCreateMicroOrigin() {
         mutationFn: async (origin: Omit<MicroOrigin, 'id' | 'created_at' | 'updated_at' | 'macro_origin'>) => {
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_micro_origin', {
-                    p_macro_origin_id: origin.macro_origin,
+                    p_macro_origin_id: origin.macro_origin_id,
                     p_name: origin.name,
                     p_description: origin.description
                 });
@@ -310,7 +310,7 @@ export function useCreateMicroVariation() {
         mutationFn: async (variation: Omit<MicroVariation, 'id' | 'created_at' | 'updated_at' | 'micro_origin'>) => {
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_micro_variation', {
-                    p_micro_origin_id: variation.micro_origin,
+                    p_micro_origin_id: variation.micro_origin_id,
                     p_name: variation.name,
                     p_description: variation.description
                 });
@@ -386,7 +386,7 @@ export function useCreateNanoVariation() {
         mutationFn: async (variation: Omit<NanoVariation, 'id' | 'created_at' | 'updated_at' | 'micro_variation'>) => {
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_nano_variation', {
-                    p_micro_variation_id: variation.micro_variation,
+                    p_micro_variation_id: variation.micro_variation_id,
                     p_name: variation.name,
                     p_description: variation.description
                 });
