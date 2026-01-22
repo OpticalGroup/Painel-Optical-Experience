@@ -81,9 +81,11 @@ export function useCreateFunnel() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (funnel: Omit<Funnel, 'id' | 'created_at' | 'updated_at'>) => {
+            // Omit active to bypass schema cache issue
+            const { active, ...rest } = funnel as any;
             const { data, error } = await (supabase as any)
                 .from('funnels')
-                .insert(funnel)
+                .insert(rest)
                 .select()
                 .single();
             if (error) throw error;
@@ -156,9 +158,11 @@ export function useCreateMacroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MacroOrigin, 'id' | 'created_at' | 'updated_at' | 'funnel'>) => {
+            // Omit active to bypass schema cache issue
+            const { active, ...rest } = origin as any;
             const { data, error } = await (supabase as any)
                 .from('macro_origins')
-                .insert(origin)
+                .insert(rest)
                 .select()
                 .single();
             if (error) throw error;
@@ -231,9 +235,11 @@ export function useCreateMicroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MicroOrigin, 'id' | 'created_at' | 'updated_at' | 'macro_origin'>) => {
+            // Omit active to bypass schema cache issue
+            const { active, ...rest } = origin as any;
             const { data, error } = await (supabase as any)
                 .from('micro_origins')
-                .insert(origin)
+                .insert(rest)
                 .select()
                 .single();
             if (error) throw error;
@@ -306,9 +312,11 @@ export function useCreateMicroVariation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (variation: Omit<MicroVariation, 'id' | 'created_at' | 'updated_at' | 'micro_origin'>) => {
+            // Omit active to bypass schema cache issue
+            const { active, ...rest } = variation as any;
             const { data, error } = await (supabase as any)
                 .from('micro_variations')
-                .insert(variation)
+                .insert(rest)
                 .select()
                 .single();
             if (error) throw error;
@@ -381,9 +389,11 @@ export function useCreateNanoVariation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (variation: Omit<NanoVariation, 'id' | 'created_at' | 'updated_at' | 'micro_variation'>) => {
+            // Omit active to bypass schema cache issue
+            const { active, ...rest } = variation as any;
             const { data, error } = await (supabase as any)
                 .from('nano_variations')
-                .insert(variation)
+                .insert(rest)
                 .select()
                 .single();
             if (error) throw error;
