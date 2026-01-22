@@ -1070,6 +1070,27 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             continue;
           }
 
+          // --- INSERIR LEAD (Novo requisito) ---
+          try {
+            const leadPayload = {
+              name: dataToImport[i].student_name,
+              email: dataToImport[i].email,
+              phone: dataToImport[i].phone || null,
+              source: enrollmentData.source,
+            };
+            // Usando 'as any' pois leads pode nao estar no type definition ainda
+            const { error: leadError } = await (supabase as any)
+              .from('leads')
+              .upsert(leadPayload, { onConflict: 'email' });
+
+            if (leadError) {
+              console.error(`[Import Lead Error] Row ${i + 1}:`, leadError);
+            }
+          } catch (leadEx) {
+            console.error(`[Import Lead Exception] Row ${i + 1}:`, leadEx);
+          }
+          // -------------------------------------
+
           const { error } = await supabase
             .from('enrollments')
             .insert(enrollmentData);
