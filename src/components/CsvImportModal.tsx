@@ -114,6 +114,11 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
   const [results, setResults] = useState<{ success: number; errors: string[] } | null>(null);
   const { toast } = useToast();
   const createImportRecord = useCreateImportRecord();
+  const createFunnel = useCreateFunnel();
+  const createMacroOrigin = useCreateMacroOrigin();
+  const createMicroOrigin = useCreateMicroOrigin();
+  const createMicroVariation = useCreateMicroVariation();
+  const createNanoVariation = useCreateNanoVariation();
   const queryClient = useQueryClient();
 
   // Hook para vendedores
