@@ -55,7 +55,7 @@ export default function Integrations() {
     }
 
     // Para outros sistemas, usar Supabase Edge Functions
-    const projectId = 'tboxsndhlnomvwnqveat';
+    const projectId = 'nrrtiiwekxejvzdfocgy';
     return `https://${projectId}.supabase.co/functions/v1/${system}-webhook`;
   };
 
