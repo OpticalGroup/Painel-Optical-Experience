@@ -3,15 +3,25 @@ import { supabase } from '../client';
 import { Tables, TablesInsert, TablesUpdate } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
-type SalesRep = Tables<'sellers'>;
-type SalesRepInsert = TablesInsert<'sellers'>;
-type SalesRepUpdate = TablesUpdate<'sellers'>;
+// Manual definition to bypass outdated types.ts
+export interface SalesRep {
+  id: string;
+  name: string;
+  active: boolean;
+  email: string | null;
+  phone: string | null;
+  nucleo_id: string | null;
+  created_at: string;
+}
+
+export type SalesRepInsert = Omit<SalesRep, 'id' | 'created_at'>;
+export type SalesRepUpdate = Partial<SalesRepInsert>;
 
 export const useSalesRepsQuery = () => {
   return useQuery({
     queryKey: ['sales-reps'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sellers')
         .select('*')
         .order('name', { ascending: true });
@@ -28,7 +38,7 @@ export const useCreateSalesRep = () => {
 
   return useMutation({
     mutationFn: async (salesRep: SalesRepInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sellers')
         .insert(salesRep)
         .select()
@@ -60,7 +70,7 @@ export const useUpdateSalesRep = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: SalesRepUpdate & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sellers')
         .update(updates)
         .eq('id', id)
@@ -93,7 +103,7 @@ export const useDeleteSalesRep = () => {
 
   return useMutation({
     mutationFn: async (salesRepId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('sellers')
         .delete()
         .eq('id', salesRepId);
