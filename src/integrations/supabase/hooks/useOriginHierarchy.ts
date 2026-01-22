@@ -81,11 +81,11 @@ export function useCreateFunnel() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (funnel: Omit<Funnel, 'id' | 'created_at' | 'updated_at'>) => {
-            // Omit active and description to bypass schema cache issue
-            const { active, description, ...rest } = funnel as any;
             const { data, error } = await (supabase as any)
-                .from('funnels')
-                .insert(rest)
+                .rpc('rpc_create_funnel', {
+                    p_name: funnel.name,
+                    p_description: funnel.description
+                })
                 .select()
                 .single();
             if (error) throw error;
@@ -158,11 +158,12 @@ export function useCreateMacroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MacroOrigin, 'id' | 'created_at' | 'updated_at' | 'funnel'>) => {
-            // Omit active and description to bypass schema cache issue
-            const { active, description, ...rest } = origin as any;
             const { data, error } = await (supabase as any)
-                .from('macro_origins')
-                .insert(rest)
+                .rpc('rpc_create_macro_origin', {
+                    p_funnel_id: origin.funnel, // Note: origin.funnel maps to funnel_id in types but check usage
+                    p_name: origin.name,
+                    p_description: origin.description
+                })
                 .select()
                 .single();
             if (error) throw error;
@@ -235,11 +236,12 @@ export function useCreateMicroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MicroOrigin, 'id' | 'created_at' | 'updated_at' | 'macro_origin'>) => {
-            // Omit active and description to bypass schema cache issue
-            const { active, description, ...rest } = origin as any;
             const { data, error } = await (supabase as any)
-                .from('micro_origins')
-                .insert(rest)
+                .rpc('rpc_create_micro_origin', {
+                    p_macro_origin_id: origin.macro_origin,
+                    p_name: origin.name,
+                    p_description: origin.description
+                })
                 .select()
                 .single();
             if (error) throw error;
@@ -312,11 +314,12 @@ export function useCreateMicroVariation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (variation: Omit<MicroVariation, 'id' | 'created_at' | 'updated_at' | 'micro_origin'>) => {
-            // Omit active and description to bypass schema cache issue
-            const { active, description, ...rest } = variation as any;
             const { data, error } = await (supabase as any)
-                .from('micro_variations')
-                .insert(rest)
+                .rpc('rpc_create_micro_variation', {
+                    p_micro_origin_id: variation.micro_origin,
+                    p_name: variation.name,
+                    p_description: variation.description
+                })
                 .select()
                 .single();
             if (error) throw error;
@@ -389,11 +392,12 @@ export function useCreateNanoVariation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (variation: Omit<NanoVariation, 'id' | 'created_at' | 'updated_at' | 'micro_variation'>) => {
-            // Omit active and description to bypass schema cache issue
-            const { active, description, ...rest } = variation as any;
             const { data, error } = await (supabase as any)
-                .from('nano_variations')
-                .insert(rest)
+                .rpc('rpc_create_nano_variation', {
+                    p_micro_variation_id: variation.micro_variation,
+                    p_name: variation.name,
+                    p_description: variation.description
+                })
                 .select()
                 .single();
             if (error) throw error;

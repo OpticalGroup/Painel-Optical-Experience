@@ -1091,9 +1091,8 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
           }
           // -------------------------------------
 
-          const { error } = await supabase
-            .from('enrollments')
-            .insert(enrollmentData);
+          const { error } = await (supabase as any)
+            .rpc('rpc_insert_enrollment', { p_data: enrollmentData });
 
           if (error) {
             // Ignorar erro de email duplicado
