@@ -85,9 +85,7 @@ export function useCreateFunnel() {
                 .rpc('rpc_create_funnel', {
                     p_name: funnel.name,
                     p_description: funnel.description
-                })
-                .select()
-                .single();
+                });
             if (error) throw error;
             return data;
         },
@@ -163,9 +161,7 @@ export function useCreateMacroOrigin() {
                     p_funnel_id: origin.funnel, // Note: origin.funnel maps to funnel_id in types but check usage
                     p_name: origin.name,
                     p_description: origin.description
-                })
-                .select()
-                .single();
+                });
             if (error) throw error;
             return data;
         },
@@ -241,9 +237,7 @@ export function useCreateMicroOrigin() {
                     p_macro_origin_id: origin.macro_origin,
                     p_name: origin.name,
                     p_description: origin.description
-                })
-                .select()
-                .single();
+                });
             if (error) throw error;
             return data;
         },
@@ -319,9 +313,7 @@ export function useCreateMicroVariation() {
                     p_micro_origin_id: variation.micro_origin,
                     p_name: variation.name,
                     p_description: variation.description
-                })
-                .select()
-                .single();
+                });
             if (error) throw error;
             return data;
         },
@@ -397,9 +389,7 @@ export function useCreateNanoVariation() {
                     p_micro_variation_id: variation.micro_variation,
                     p_name: variation.name,
                     p_description: variation.description
-                })
-                .select()
-                .single();
+                });
             if (error) throw error;
             return data;
         },
