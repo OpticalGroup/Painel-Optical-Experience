@@ -35,7 +35,8 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                     funnels:funnel_id(name),
                     macro_origins:macro_origin_id(name),
                     micro_origins:micro_origin_id(name),
-                    micro_variations:micro_variation_id(name)
+                    micro_variations:micro_variation_id(name),
+                    external_metadata
                 `);
 
             if (dateRange?.from) {
@@ -56,14 +57,20 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                 }
             }
 
-            const { data: enrollments, error } = await query;
+            const { data: rawEnrollments, error } = await query;
 
             if (error) {
                 console.error("Error fetching origin hierarchy data:", error);
                 throw error;
             }
 
-            if (!enrollments || enrollments.length === 0) {
+            // Filter out cancelled enrollments
+            const enrollments = rawEnrollments?.filter(e => {
+                const metadata = e.external_metadata as any;
+                return metadata?.status !== 'cancelled';
+            }) || [];
+
+            if (enrollments.length === 0) {
                 return {
                     funis: [],
                     macroOrigens: [],
