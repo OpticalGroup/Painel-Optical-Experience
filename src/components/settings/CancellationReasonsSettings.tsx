@@ -31,20 +31,30 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useCancellationReasons, CancellationReason } from "@/integrations/supabase/hooks/useCancellationReasons";
+import {
+    useCancellationReasons,
+    useCreateCancellationReason,
+    useUpdateCancellationReason,
+    useDeleteCancellationReason,
+    CancellationReason
+} from "@/integrations/supabase/hooks/useCancellationReasons";
 
 export const CancellationReasonsSettings = () => {
-    const { reasons, isLoading, updateReasons } = useCancellationReasons();
+    const { data: reasons, isLoading } = useCancellationReasons();
+    const createReason = useCreateCancellationReason();
+    const updateReason = useUpdateCancellationReason();
+    const deleteReason = useDeleteCancellationReason();
+
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedReason, setSelectedReason] = useState<CancellationReason | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [reasonToDelete, setReasonToDelete] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ label: "", active: true });
+    const [formData, setFormData] = useState({ name: "", active: true });
 
     const handleEdit = (reason: CancellationReason) => {
         setSelectedReason(reason);
         setFormData({
-            label: reason.label,
+            name: reason.name,
             active: reason.active,
         });
         setModalOpen(true);
@@ -52,34 +62,32 @@ export const CancellationReasonsSettings = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.label.trim()) return;
+        if (!formData.name.trim()) return;
 
-        let newReasons = [...reasons];
-
-        if (selectedReason) {
-            newReasons = newReasons.map(r =>
-                r.id === selectedReason.id
-                    ? { ...r, label: formData.label, active: formData.active }
-                    : r
-            );
-        } else {
-            newReasons.push({
-                id: crypto.randomUUID(),
-                label: formData.label,
-                active: formData.active,
-            });
+        try {
+            if (selectedReason) {
+                await updateReason.mutateAsync({
+                    id: selectedReason.id,
+                    name: formData.name,
+                    active: formData.active
+                });
+            } else {
+                await createReason.mutateAsync({
+                    name: formData.name,
+                    active: formData.active,
+                });
+            }
+            setModalOpen(false);
+            setSelectedReason(null);
+            setFormData({ name: "", active: true });
+        } catch (error) {
+            console.error("Error saving reason:", error);
         }
-
-        await updateReasons.mutateAsync(newReasons);
-        setModalOpen(false);
-        setSelectedReason(null);
-        setFormData({ label: "", active: true });
     };
 
     const handleDelete = async () => {
         if (reasonToDelete) {
-            const newReasons = reasons.filter(r => r.id !== reasonToDelete);
-            await updateReasons.mutateAsync(newReasons);
+            await deleteReason.mutateAsync(reasonToDelete);
             setDeleteDialogOpen(false);
             setReasonToDelete(null);
         }
@@ -94,7 +102,7 @@ export const CancellationReasonsSettings = () => {
                 <Button
                     onClick={() => {
                         setSelectedReason(null);
-                        setFormData({ label: "", active: true });
+                        setFormData({ name: "", active: true });
                         setModalOpen(true);
                     }}
                     className="bg-primary hover:bg-primary/90"
@@ -121,9 +129,9 @@ export const CancellationReasonsSettings = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {reasons.map((reason) => (
+                            {reasons?.map((reason) => (
                                 <TableRow key={reason.id} className="hover:bg-muted/50">
-                                    <TableCell className="font-medium">{reason.label}</TableCell>
+                                    <TableCell className="font-medium">{reason.name}</TableCell>
                                     <TableCell>
                                         <Badge variant={reason.active ? "default" : "secondary"}>
                                             {reason.active ? "Ativo" : "Inativo"}
@@ -154,6 +162,13 @@ export const CancellationReasonsSettings = () => {
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {(!reasons || reasons.length === 0) && (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                                        Nenhum motivo encontrado.
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 )}
@@ -172,13 +187,15 @@ export const CancellationReasonsSettings = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="label">Motivo *</Label>
+                            <Label htmlFor="name">Motivo *</Label>
                             <Input
-                                id="label"
-                                value={formData.label}
-                                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="focus:border-[#D6CDC8]"
                                 maxLength={50}
+                                placeholder="Ex: Problemas Financeiros"
+                                required
                             />
                         </div>
 
@@ -198,7 +215,7 @@ export const CancellationReasonsSettings = () => {
                             <Button
                                 type="submit"
                                 className="flex-1 bg-primary hover:bg-primary/90"
-                                disabled={updateReasons.isPending}
+                                disabled={createReason.isPending || updateReason.isPending}
                             >
                                 {selectedReason ? "Atualizar" : "Criar"}
                             </Button>

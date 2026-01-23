@@ -2,89 +2,120 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../client";
 import { useToast } from "@/hooks/use-toast";
 
-const SETTING_KEY = "cancellation_reasons";
-const DEFAULT_REASONS = [
-    "Financeiro",
-    "Horário incompatível",
-    "Conteúdo não atendeu expectativa",
-    "Problemas pessoais",
-    "Outro"
-];
-
 export interface CancellationReason {
     id: string;
-    label: string;
+    name: string;
     active: boolean;
+    created_at?: string;
 }
 
 export const useCancellationReasons = () => {
+    return useQuery({
+        queryKey: ["cancellation-reasons"],
+        queryFn: async (): Promise<CancellationReason[]> => {
+            const { data, error } = await supabase
+                .from("cancellation_reasons")
+                .select("*")
+                .order("name");
+
+            if (error) throw error;
+            return data;
+        },
+    });
+};
+
+export const useCreateCancellationReason = () => {
     const queryClient = useQueryClient();
     const { toast } = useToast();
 
-    const query = useQuery({
-        queryKey: ["cancellation-reasons"],
-        queryFn: async () => {
+    return useMutation({
+        mutationFn: async (reason: { name: string; active: boolean }) => {
             const { data, error } = await supabase
-                .from("integration_settings")
-                .select("*")
-                .eq("system_name", SETTING_KEY)
-                .maybeSingle();
+                .from("cancellation_reasons")
+                .insert(reason)
+                .select()
+                .single();
 
             if (error) throw error;
-
-            if (!data) {
-                // Initialize if not exists
-                const initialConfig = {
-                    reasons: DEFAULT_REASONS.map(r => ({
-                        id: crypto.randomUUID(),
-                        label: r,
-                        active: true
-                    }))
-                };
-
-                const { data: newData, error: createError } = await supabase
-                    .from("integration_settings")
-                    .insert({
-                        system_name: SETTING_KEY,
-                        config: initialConfig,
-                        enabled: true
-                    })
-                    .select()
-                    .single();
-
-                if (createError) throw createError;
-                return (newData.config as any).reasons as CancellationReason[];
-            }
-
-            return (data.config as any).reasons as CancellationReason[];
+            return data;
         },
-    });
-
-    const updateReasons = useMutation({
-        mutationFn: async (reasons: CancellationReason[]) => {
-            // First get the ID
-            const { data: existing } = await supabase
-                .from("integration_settings")
-                .select("id")
-                .eq("system_name", SETTING_KEY)
-                .single();
-            toast({
-                title: "Motivos atualizados",
-                description: "A lista de motivos de cancelamento foi salva.",
-            });
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["cancellation-reasons"] });
+            toast({ title: "Motivo criado com sucesso!" });
         },
-        onError: (error: Error) => {
+        onError: (error: any) => {
             toast({
-                title: "Erro ao atualizar",
+                title: "Erro ao criar motivo",
                 description: error.message,
                 variant: "destructive",
             });
         },
     });
+};
 
-    return {
-        reasons: query.data || [],
-        isLoading: query.isLoading,
-        updateReasons,
-    };
+export const useUpdateCancellationReason = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async ({ id, ...updates }: Partial<CancellationReason> & { id: string }) => {
+            const { data, error } = await supabase
+                .from("cancellation_reasons")
+                .update(updates)
+                .eq("id", id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["cancellation-reasons"] });
+            toast({ title: "Motivo atualizado com sucesso!" });
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Erro ao atualizar motivo",
+                description: error.message,
+                variant: "destructive",
+            });
+        },
+    });
+};
+
+export const useDeleteCancellationReason = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from("cancellation_reasons")
+                .delete()
+                .eq("id", id);
+
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["cancellation-reasons"] });
+            toast({ title: "Motivo removido com sucesso!" });
+        },
+        onError: (error: any) => {
+            console.error("Erro ao deletar:", error);
+            // Check for foreign key constraint usually
+            if (error.code === '23503') {
+                toast({
+                    title: "Não é possível excluir",
+                    description: "Este motivo já está sendo usado em algum cancelamento.",
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Erro ao remover motivo",
+                    description: error.message,
+                    variant: "destructive",
+                });
+            }
+        },
+    });
 };
