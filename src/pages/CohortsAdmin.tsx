@@ -127,7 +127,7 @@ const CohortsAdmin = () => {
                   <TableRow key={cohort.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{cohort.name}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {cohort.course?.name || "—"}
+                      {cohort.product?.name || "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(cohort.start_date), "dd/MM/yyyy", { locale: ptBR })}
