@@ -63,6 +63,14 @@ interface ChartsPanelProps {
         totalSales: number;
         totalRevenue: number;
     }>;
+    // Nucleos data
+    nucleos?: Array<{
+        id: string;
+        name: string;
+        totalSales: number;
+        paidSales: number;
+        totalRevenue: number;
+    }>;
     // Origin Hierarchy (5 levels)
     originHierarchy?: {
         funis: Array<{ name: string; count: number; paidCount: number; revenue: number }>;
@@ -267,6 +275,7 @@ export function ChartsPanel({
     isLoading = false,
     cohorts = [],
     vendedores = [],
+    nucleos = [],
     originHierarchy,
     utmData,
     purchaseWindowData,
@@ -341,8 +350,8 @@ export function ChartsPanel({
 
     // Núcleos ring configuration (separate from origin hierarchy)
     const nucleosRingConfig = useMemo(() => [
-        { id: "nucleos", label: "Núcleos", enabled: enabledRings.nucleos, icon: "🔵", data: originHierarchy?.macroOrigens || [] },
-    ], [enabledRings, originHierarchy]);
+        { id: "nucleos", label: "Núcleos", enabled: enabledRings.nucleos, icon: "🔵", data: nucleos || [] },
+    ], [enabledRings, nucleos]);
 
     // UTM ring configurations
     const utmRingConfigs = useMemo(() => [

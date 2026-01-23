@@ -705,6 +705,7 @@ const Index = () => {
                 totalSales: rep.totalSales,
                 totalRevenue: rep.totalRevenue,
               })) || []}
+              nucleos={analytics?.nucleos || []}
               originHierarchy={originHierarchy}
               utmData={utmData}
               purchaseWindowData={purchaseWindowData}

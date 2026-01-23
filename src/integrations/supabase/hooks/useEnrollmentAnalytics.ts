@@ -83,8 +83,11 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
           utm_source,
           utm_medium,
           utm_campaign,
+          utm_campaign,
           external_metadata,
-          buyer_name
+          buyer_name,
+          nucleo_id,
+          nucleo_name
         `);
 
       // Aplicar filtros de data se fornecidos
@@ -284,6 +287,29 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
 
           if (enrollment.contract_status === "signed") {
             stats.signedCount++;
+          }
+        }
+
+        // Calculate Nucleo stats
+        const nId = (enrollment as any).nucleo_id;
+        const nName = (enrollment as any).nucleo_name; // Using denormalized name for now
+
+        if (nId) {
+          if (!nucleoStatsMap.has(nId)) {
+            nucleoStatsMap.set(nId, {
+              id: nId,
+              name: nName || "Desconhecido", // Fallback if name is missing
+              totalSales: 0,
+              paidSales: 0,
+              totalRevenue: 0
+            });
+          }
+          const nStats = nucleoStatsMap.get(nId)!;
+          nStats.totalSales++;
+
+          if (enrollment.financial_status === "paid") {
+            nStats.paidSales++;
+            nStats.totalRevenue += Number(enrollment.payment_amount) || 0;
           }
         }
       });
