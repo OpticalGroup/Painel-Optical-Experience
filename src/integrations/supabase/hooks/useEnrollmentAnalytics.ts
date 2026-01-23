@@ -87,7 +87,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
           external_metadata,
           buyer_name,
           nucleo_id,
-          nucleo_name
+          nucleos ( name )
         `);
 
       // Aplicar filtros de data se fornecidos
@@ -292,7 +292,8 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
 
         // Calculate Nucleo stats
         const nId = (enrollment as any).nucleo_id;
-        const nName = (enrollment as any).nucleo_name; // Using denormalized name for now
+        // @ts-ignore
+        const nName = (enrollment as any).nucleos?.name;
 
         if (nId) {
           if (!nucleoStatsMap.has(nId)) {
