@@ -32,11 +32,10 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                     micro_origin_id,
                     micro_variation_id,
                     cohort_id,
-                    funnel_name,
-                    macro_origin_name,
-                    micro_origin_name,
-                    micro_variation_name,
-                    nano_variation_name
+                    funnels:funnel_id(name),
+                    macro_origins:macro_origin_id(name),
+                    micro_origins:micro_origin_id(name),
+                    micro_variations:micro_variation_id(name)
                 `);
 
             if (dateRange?.from) {
@@ -78,12 +77,12 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
             // Build hierarchy map from enrollments
             const hierarchyMap: Record<string, { funnel?: string; macroOrigin?: string; microOrigin?: string; variacaoMicro?: string }> = {};
 
-            enrollments.forEach((e) => {
-                const funnel = e.funnel_name || "Não Informado";
-                const macro = e.macro_origin_name || "Não Informado";
-                const micro = e.micro_origin_name || "Não Informado";
-                const varMicro = e.micro_variation_name || "Não Informado";
-                const varNano = e.nano_variation_name || "Não Informado";
+            enrollments.forEach((e: any) => {
+                // Extract names from JOINed tables
+                const funnel = e.funnels?.name || "Não Informado";
+                const macro = e.macro_origins?.name || "Não Informado";
+                const micro = e.micro_origins?.name || "Não Informado";
+                const varMicro = e.micro_variations?.name || "Não Informado";
 
                 // Map macro origin to its funnel
                 if (macro !== "Não Informado" && !hierarchyMap[macro]) {
@@ -96,10 +95,6 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                 // Map variação micro to its parents
                 if (varMicro !== "Não Informado" && !hierarchyMap[varMicro]) {
                     hierarchyMap[varMicro] = { funnel, macroOrigin: macro, microOrigin: micro };
-                }
-                // Map variação nano to its parents
-                if (varNano !== "Não Informado" && !hierarchyMap[varNano]) {
-                    hierarchyMap[varNano] = { funnel, macroOrigin: macro, microOrigin: micro, variacaoMicro: varMicro };
                 }
             });
 
@@ -127,11 +122,11 @@ export function useOriginHierarchy(dateRange?: DateRange, cohortId?: string) {
                     .sort((a, b) => b.count - a.count);
             };
 
-            const funis = aggregateByField((e) => e.funnel_name);
-            const macroOrigens = aggregateByField((e) => e.macro_origin_name);
-            const microOrigens = aggregateByField((e) => e.micro_origin_name);
-            const variacaoMicro = aggregateByField((e) => e.micro_variation_name);
-            const variacaoNano = aggregateByField((e) => e.nano_variation_name);
+            const funis = aggregateByField((e: any) => e.funnels?.name);
+            const macroOrigens = aggregateByField((e: any) => e.macro_origins?.name);
+            const microOrigens = aggregateByField((e: any) => e.micro_origins?.name);
+            const variacaoMicro = aggregateByField((e: any) => e.micro_variations?.name);
+            const variacaoNano: Array<{ name: string; count: number; paidCount: number; revenue: number }> = []; // Nano requires separate table
 
             return {
                 funis,
