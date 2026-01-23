@@ -29,7 +29,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         if (product) {
             setName(product.name);
             setTicketMedio(product.ticket_medio?.toString() || "");
-            setActive(product.active);
+            setActive(product.active ?? true);
         } else {
             setName("");
             setTicketMedio("");
