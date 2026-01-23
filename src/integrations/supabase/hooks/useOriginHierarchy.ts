@@ -156,6 +156,7 @@ export function useCreateMacroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MacroOrigin, 'id' | 'created_at' | 'updated_at' | 'funnel'>) => {
+            console.log("DEBUG: createMacroOrigin payload:", origin);
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_macro_origin', {
                     p_funnel_id: origin.funnel_id,
@@ -232,6 +233,7 @@ export function useCreateMicroOrigin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (origin: Omit<MicroOrigin, 'id' | 'created_at' | 'updated_at' | 'macro_origin'>) => {
+            console.log("DEBUG: createMicroOrigin payload:", origin);
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_micro_origin', {
                     p_macro_origin_id: origin.macro_origin_id,
@@ -308,6 +310,7 @@ export function useCreateMicroVariation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (variation: Omit<MicroVariation, 'id' | 'created_at' | 'updated_at' | 'micro_origin'>) => {
+            console.log("DEBUG: createMicroVariation payload:", variation);
             const { data, error } = await (supabase as any)
                 .rpc('rpc_create_micro_variation', {
                     p_micro_origin_id: variation.micro_origin_id,
