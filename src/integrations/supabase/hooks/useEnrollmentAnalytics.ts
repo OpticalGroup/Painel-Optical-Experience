@@ -86,8 +86,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
           utm_campaign,
           external_metadata,
           buyer_name,
-          nucleo_id,
-          nucleos ( name )
+          nucleo_id
         `);
 
       // Aplicar filtros de data se fornecidos
@@ -105,9 +104,21 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
         }
       }
 
-      const { data: enrollments, error } = await query.order("created_at", { ascending: false });
+      // Fetch enrollments and nucleos in parallel
+      const [enrollmentsResponse, nucleosResponse] = await Promise.all([
+        query.order("created_at", { ascending: false }),
+        supabase.from('nucleos').select('id, name')
+      ]);
+
+      const enrollments = enrollmentsResponse.data;
+      const nucleos = nucleosResponse.data || [];
+      const error = enrollmentsResponse.error || nucleosResponse.error;
 
       if (error) throw error;
+
+      // Create a map for quick access to nucleo names
+      const nucleoMap = new Map<string, string>();
+      nucleos.forEach(n => nucleoMap.set(n.id, n.name));
 
       // Filter out cancelled enrollments for analytics unless specifically requested
       // or if we want to show stats for cancelled students
@@ -292,8 +303,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
 
         // Calculate Nucleo stats
         const nId = (enrollment as any).nucleo_id;
-        // @ts-ignore
-        const nName = (enrollment as any).nucleos?.name;
+        const nName = nId ? nucleoMap.get(nId) : undefined;
 
         if (nId) {
           if (!nucleoStatsMap.has(nId)) {
