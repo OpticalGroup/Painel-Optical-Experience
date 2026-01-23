@@ -70,26 +70,22 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       let query = supabase
         .from("enrollments")
         .select(`
-              id,
-              sales_rep,
-              source,
-              financial_status,
-              contract_status,
-              payment_amount,
-              lead_date,
-              purchase_date,
-              created_at,
-              cohort_id,
-              utm_source,
-              utm_medium,
-              utm_campaign,
-              external_metadata,
-              product_name,
-              funnel_name,
-              macro_origin_name,
-              micro_origin_name,
-              student_name:buyer_name
-            `);
+          id,
+          sales_rep,
+          source,
+          financial_status,
+          contract_status,
+          payment_amount,
+          lead_date,
+          purchase_date,
+          created_at,
+          cohort_id,
+          utm_source,
+          utm_medium,
+          utm_campaign,
+          external_metadata,
+          buyer_name
+        `);
 
       // Aplicar filtros de data se fornecidos
       if (filters?.from) {
