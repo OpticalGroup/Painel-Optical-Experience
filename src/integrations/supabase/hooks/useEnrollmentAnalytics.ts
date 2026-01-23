@@ -67,13 +67,11 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
     queryKey: ["enrollment-analytics", filters],
     queryFn: async () => {
       // Buscar enrollments com filtros opcionais de data
-        let query = supabase
-          .from("enrollments")
-            .select(`
+      let query = supabase
+        .from("enrollments")
+        .select(`
               id,
               sales_rep,
-              nucleo_id,
-              nucleo_name,
               source,
               financial_status,
               contract_status,
@@ -87,10 +85,11 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
               utm_campaign,
               external_metadata,
               product_name,
-              cohort_name,
+              funnel_name,
+              macro_origin_name,
+              micro_origin_name,
               student_name:buyer_name
-            `)
-          .eq("product_name", "Optical Experience");
+            `);
 
       // Aplicar filtros de data se fornecidos
       if (filters?.from) {
@@ -221,11 +220,11 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       // Calcular janela de conversão por turma
       const cohortConversionMap = new Map<string, { days: number[]; name: string }>();
       dataToAnalyze.forEach((enrollment) => {
-          if (enrollment.lead_date && enrollment.purchase_date) {
-            const cohortId = enrollment.cohort_id;
-            const cohortName = enrollment.cohort_name || "Turma desconhecida";
+        if (enrollment.lead_date && enrollment.purchase_date) {
+          const cohortId = enrollment.cohort_id;
+          const cohortName = "Turma";
 
-            if (!cohortConversionMap.has(cohortId)) {
+          if (!cohortConversionMap.has(cohortId)) {
             cohortConversionMap.set(cohortId, { days: [], name: cohortName });
           }
 
@@ -262,66 +261,47 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
       };
 
       // Calcular estatísticas por turma (Cohort)
-        const cohortStatsMap = new Map<string, CohortAnalyticsStats>();
-        const nucleoStatsMap = new Map<string, NucleoStats>();
+      const cohortStatsMap = new Map<string, CohortAnalyticsStats>();
+      const nucleoStatsMap = new Map<string, NucleoStats>();
 
-        dataToAnalyze.forEach((enrollment) => {
-          const cohortId = enrollment.cohort_id;
-          if (cohortId) {
-            if (!cohortStatsMap.has(cohortId)) {
-              cohortStatsMap.set(cohortId, {
-                cohortId,
-                enrolledCount: 0,
-                paidCount: 0,
-                reservedCount: 0,
-                signedCount: 0,
-                revenue: 0,
-              });
-            }
+      dataToAnalyze.forEach((enrollment) => {
+        const cohortId = enrollment.cohort_id;
+        if (cohortId) {
+          if (!cohortStatsMap.has(cohortId)) {
+            cohortStatsMap.set(cohortId, {
+              cohortId,
+              enrolledCount: 0,
+              paidCount: 0,
+              reservedCount: 0,
+              signedCount: 0,
+              revenue: 0,
+            });
+          }
           const stats = cohortStatsMap.get(cohortId)!;
           stats.enrolledCount++;
           if (enrollment.financial_status === "paid") {
             stats.paidCount++;
             stats.revenue += Number(enrollment.payment_amount) || 0;
           } else if (enrollment.financial_status === "pending") {
-              stats.reservedCount++;
-            }
-            
-            if (enrollment.contract_status === "signed") {
-              stats.signedCount++;
-            }
+            stats.reservedCount++;
           }
 
-          // Aggregation by Nucleo
-          const nId = enrollment.nucleo_id || "unassigned";
-          const nName = enrollment.nucleo_name || "Sem Núcleo";
-          if (!nucleoStatsMap.has(nId)) {
-            nucleoStatsMap.set(nId, {
-              id: nId,
-              name: nName,
-              totalSales: 0,
-              paidSales: 0,
-              totalRevenue: 0
-            });
+          if (enrollment.contract_status === "signed") {
+            stats.signedCount++;
           }
-          const nStats = nucleoStatsMap.get(nId)!;
-          nStats.totalSales++;
-          if (enrollment.financial_status === "paid") {
-            nStats.paidSales++;
-            nStats.totalRevenue += Number(enrollment.payment_amount) || 0;
-          }
-        });
+        }
+      });
 
-          return {
-            summary,
-            salesReps: Array.from(salesRepMap.values()),
-            sources: Array.from(sourceMap.values()),
-            cohortStats: Array.from(cohortStatsMap.values()),
-            nucleos: Array.from(nucleoStatsMap.values()),
-            utmStats,
-            conversions: conversionStats,
-            enrollments: dataToAnalyze,
-          };
-      },
-    });
-  };
+      return {
+        summary,
+        salesReps: Array.from(salesRepMap.values()),
+        sources: Array.from(sourceMap.values()),
+        cohortStats: Array.from(cohortStatsMap.values()),
+        nucleos: Array.from(nucleoStatsMap.values()),
+        utmStats,
+        conversions: conversionStats,
+        enrollments: dataToAnalyze,
+      };
+    },
+  });
+};
