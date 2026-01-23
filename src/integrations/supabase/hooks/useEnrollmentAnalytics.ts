@@ -341,6 +341,14 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
             nStats.totalRevenue += Number(enrollment.payment_amount) || 0;
           }
         }
+
+        // Attach inferred data to enrollment object so UI components can use it
+        if (nId && !(enrollment as any).nucleo_id) {
+          (enrollment as any).nucleo_id = nId;
+        }
+        if (nName) {
+          (enrollment as any).nucleo_name = nName;
+        }
       });
 
       return {
