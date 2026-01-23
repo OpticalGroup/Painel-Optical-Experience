@@ -48,15 +48,16 @@ import {
 } from "@/components/ui/select";
 import { useSalesRepsQuery } from "@/integrations/supabase/hooks/useSalesReps";
 import { useCohortsQuery } from "@/integrations/supabase/hooks/useCohorts";
-import { 
-  useFunnels, 
-  useMacroOrigins, 
-  useMicroOrigins, 
-  useMicroVariations, 
-  useNanoVariations 
+import {
+  useFunnels,
+  useMacroOrigins,
+  useMicroOrigins,
+  useMicroVariations,
+  useNanoVariations
 } from "@/integrations/supabase/hooks/useOriginHierarchy";
 
 import { useUtmSettings } from "@/integrations/supabase/hooks/useUtmSettings";
+import { useNucleosQuery } from "@/integrations/supabase/hooks/useNucleos";
 import { normalizeCPF } from "@/lib/cpf";
 import {
   normalizeZipcode,
@@ -105,6 +106,10 @@ const formSchema = z.object({
   utmContent: z.string().optional(),
   utmTerm: z.string().optional(),
   utmPage: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmPage: z.string().optional(),
+  nucleoId: z.string().optional().or(z.literal("")),
 });
 
 export interface EnrollmentData {
@@ -146,6 +151,8 @@ export interface EnrollmentData {
   utmContent?: string;
   utmTerm?: string;
   utmPage?: string;
+  utmPage?: string;
+  nucleoId?: string;
 }
 
 interface EnrollmentModalProps {
@@ -169,6 +176,7 @@ export const EnrollmentModal = ({
   const updateEnrollment = useUpdateEnrollment();
   const { data: salesReps } = useSalesRepsQuery();
   const { data: cohorts } = useCohortsQuery();
+  const { data: nucleos } = useNucleosQuery();
   const { config: utmConfig } = useUtmSettings();
   const isEditing = !!editingEnrollment;
 
@@ -212,7 +220,9 @@ export const EnrollmentModal = ({
       utmCampaign: "",
       utmContent: "",
       utmTerm: "",
+      utmTerm: "",
       utmPage: "",
+      nucleoId: "",
     },
   });
 
@@ -276,6 +286,7 @@ export const EnrollmentModal = ({
         utmContent: (editingEnrollment.external_metadata as any)?.utm_content || "",
         utmTerm: (editingEnrollment.external_metadata as any)?.utm_term || "",
         utmPage: (editingEnrollment.external_metadata as any)?.utm_page || "",
+        nucleoId: editingEnrollment.nucleo_id || "",
       });
     } else if (open && !editingEnrollment) {
       form.reset({
@@ -317,6 +328,7 @@ export const EnrollmentModal = ({
         utmContent: "",
         utmTerm: "",
         utmPage: "",
+        nucleoId: "",
       });
     }
   }, [open, editingEnrollment, cohortId, form]);
@@ -371,6 +383,7 @@ export const EnrollmentModal = ({
       lead_date: normalizedLeadDate || null,
       origin_action_date: normalizedOriginActionDate || null,
       submitted_at: normalizedSubmittedAt || null,
+      nucleo_id: data.nucleoId || null,
       external_metadata: {
         nationality: data.country || data.nationality || "Brasil",
         status: status, // Set status based on overbooking
@@ -668,6 +681,30 @@ export const EnrollmentModal = ({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="nucleoId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Núcleo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o núcleo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {nucleos?.map((nucleo) => (
+                            <SelectItem key={nucleo.id} value={nucleo.id}>
+                              {nucleo.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
@@ -681,14 +718,14 @@ export const EnrollmentModal = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Funil de Venda</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(val) => {
                           field.onChange(val);
                           form.setValue("macroOriginId", "");
                           form.setValue("microOriginId", "");
                           form.setValue("microVariationId", "");
                           form.setValue("nanoVariationId", "");
-                        }} 
+                        }}
                         value={field.value}
                       >
                         <FormControl>
@@ -712,7 +749,7 @@ export const EnrollmentModal = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Macro Origem</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(val) => {
                           field.onChange(val);
                           form.setValue("microOriginId", "");
@@ -720,7 +757,7 @@ export const EnrollmentModal = ({
                           form.setValue("nanoVariationId", "");
                           const macro = macroOrigins?.find(m => m.id === val);
                           if (macro) form.setValue("source", macro.name);
-                        }} 
+                        }}
                         value={field.value}
                         disabled={!watchedFunnelId}
                       >
@@ -745,12 +782,12 @@ export const EnrollmentModal = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Micro Origem</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(val) => {
                           field.onChange(val);
                           form.setValue("microVariationId", "");
                           form.setValue("nanoVariationId", "");
-                        }} 
+                        }}
                         value={field.value}
                         disabled={!watchedMacroOriginId}
                       >
@@ -775,11 +812,11 @@ export const EnrollmentModal = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Variação de Origem</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(val) => {
                           field.onChange(val);
                           form.setValue("nanoVariationId", "");
-                        }} 
+                        }}
                         value={field.value}
                         disabled={!watchedMicroOriginId}
                       >
