@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, isApproved, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,8 +29,8 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return null;
   }
 
-  // Redirect to access-pending if user has no role
-  if (userRole === null) {
+  // Redirect to access-pending if user is not approved
+  if (!isApproved) {
     return <Navigate to="/access-pending" replace />;
   }
 

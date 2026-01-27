@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, LogOut, Mail } from 'lucide-react';
 
 export default function AccessPending() {
-    const { user, userRole, signOut } = useAuth();
+    const { user, isApproved, signOut } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        // If user has a role, redirect to home
-        if (userRole) {
+        // If user is approved, redirect to home
+        if (isApproved) {
             navigate('/');
         }
 
@@ -19,7 +19,7 @@ export default function AccessPending() {
         if (!user) {
             navigate('/auth');
         }
-    }, [user, userRole, navigate]);
+    }, [user, isApproved, navigate]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">

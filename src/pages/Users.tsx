@@ -48,6 +48,7 @@ interface UserProfile {
   phone: string | null;
   created_at: string;
   role: UserRole | null;
+  is_approved: boolean;
 }
 
 export default function Users() {
@@ -77,20 +78,21 @@ export default function Users() {
 
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
-        .select("user_id, role");
+        .select("user_id, role, is_approved");
 
       if (rolesError) throw rolesError;
 
       const usersData: UserProfile[] = profiles.map((profile) => {
-        const role = roles.find((r) => r.user_id === profile.user_id);
+        const roleData = roles.find((r) => r.user_id === profile.id);
         return {
           id: profile.id,
-          user_id: profile.user_id,
+          user_id: profile.id,
           full_name: profile.full_name,
           email: profile.email || "",
           phone: profile.phone,
           created_at: profile.created_at,
-          role: role?.role || null,
+          role: roleData?.role || null,
+          is_approved: roleData?.is_approved ?? false,
         };
       });
 
@@ -187,6 +189,25 @@ export default function Users() {
     },
   });
 
+  // Approve user mutation
+  const approveUserMutation = useMutation({
+    mutationFn: async ({ userId, approve }: { userId: string; approve: boolean }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .update({ is_approved: approve })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { approve }) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success(approve ? "Usuário aprovado!" : "Acesso revogado!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao atualizar aprovação");
+    },
+  });
+
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -194,7 +215,7 @@ export default function Users() {
       const { error } = await supabase
         .from("profiles")
         .delete()
-        .eq("user_id", userId);
+        .eq("id", userId);
 
       if (error) throw error;
     },
@@ -528,6 +549,7 @@ export default function Users() {
                     <TableHead>Usuário</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Permissão</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -569,6 +591,13 @@ export default function Users() {
                         {user.phone || "—"}
                       </TableCell>
                       <TableCell>
+                        {user.is_approved ? (
+                          <Badge variant="default" className="bg-green-600">Aprovado</Badge>
+                        ) : (
+                          <Badge variant="destructive">Pendente</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
                           {getRoleLabel(user.role)}
                         </Badge>
@@ -592,6 +621,14 @@ export default function Users() {
                               <SelectItem value="viewer">Visualizador</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button
+                            variant={user.is_approved ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => approveUserMutation.mutate({ userId: user.user_id, approve: !user.is_approved })}
+                            disabled={approveUserMutation.isPending}
+                          >
+                            {user.is_approved ? "Revogar" : "Aprovar"}
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

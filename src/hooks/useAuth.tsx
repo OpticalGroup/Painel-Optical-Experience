@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
+  isApproved: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isApproved, setIsApproved] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Use a race to avoid hanging forever if the network request stalls
         const rolePromise = supabase
           .from('user_roles')
-          .select('role')
+          .select('role, is_approved')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -60,8 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (mounted) {
           const roleData = data?.role || null;
-          console.log('[Auth] Role resolved to:', roleData);
+          const approvedData = data?.is_approved ?? false;
+          console.log('[Auth] Role resolved to:', roleData, 'Approved:', approvedData);
           setUserRole(roleData as UserRole);
+          setIsApproved(approvedData);
         }
         return true; // Success
       } catch (error: any) {
@@ -195,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       userRole,
+      isApproved,
       loading,
       signIn,
       signUp,
