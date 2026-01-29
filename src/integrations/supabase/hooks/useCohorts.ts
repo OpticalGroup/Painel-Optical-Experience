@@ -34,6 +34,11 @@ export const useCohortsQuery = () => {
       if (error) throw error;
 
       // Fetch stats for each cohort
+      if (!cohorts || !Array.isArray(cohorts)) {
+        console.warn('useCohortsQuery: cohorts data is invalid', cohorts);
+        return [];
+      }
+
       const cohortsWithStats = await Promise.all(
         cohorts.map(async (cohort) => {
           const { data: stats } = await supabase

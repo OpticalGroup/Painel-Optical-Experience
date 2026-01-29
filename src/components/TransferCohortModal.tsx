@@ -51,14 +51,18 @@ export const TransferCohortModal = ({
   // Filtrar turmas disponíveis (excluir turma atual e turmas completas)
   // Note: For bulk, if students are from different cohorts, currentCohortId might be undefined or one of them.
   // We'll just filter out completed/cancelled and let user pick any valid target.
-  const availableCohorts = cohorts?.filter(
+  const availableCohorts = Array.isArray(cohorts) ? cohorts.filter(
     (c) =>
       (currentCohortId ? c.id !== currentCohortId : true) &&
       c.status !== "completed" &&
       c.status !== "cancelled"
     // Allow full cohorts for waitlist transfer
     // && (c.stats?.available_spots || 0) > 0
-  );
+  ) : [];
+
+  if (cohorts && !Array.isArray(cohorts)) {
+    console.warn("TransferCohortModal: cohorts is not an array", cohorts);
+  }
 
   const transferMutation = useMutation({
     mutationFn: async () => {

@@ -58,6 +58,14 @@ export const useEnrollments = (sortBy: SortOption, page: number = 1, pageSize: n
         placeholderData: keepPreviousData,
     });
 
+    if (error) {
+        console.error("useEnrollments error:", error);
+    }
+
+    if (data && !data.enrollments) {
+        console.warn("useEnrollments: data.enrollments is undefined", data);
+    }
+
     const enrollments = data?.enrollments || [];
     const totalCount = data?.count || 0;
     const totalPages = Math.ceil(totalCount / pageSize);

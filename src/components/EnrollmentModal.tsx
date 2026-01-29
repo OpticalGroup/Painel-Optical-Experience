@@ -646,7 +646,7 @@ export const EnrollmentModal = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {salesReps?.filter(r => r.active).map((rep) => (
+                          {(Array.isArray(salesReps) ? salesReps : []).filter(r => r.active).map((rep) => (
                             <SelectItem key={rep.id} value={rep.name}>
                               {rep.name}
                             </SelectItem>
@@ -670,7 +670,7 @@ export const EnrollmentModal = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {salesReps?.filter(r => r.active).map((rep) => (
+                          {(Array.isArray(salesReps) ? salesReps : []).filter(r => r.active).map((rep) => (
                             <SelectItem key={rep.id} value={rep.name}>
                               {rep.name}
                             </SelectItem>
