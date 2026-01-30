@@ -10,7 +10,7 @@ export interface CancellationReason {
 }
 
 export const useCancellationReasons = () => {
-    return useQuery({
+    const query = useQuery({
         queryKey: ["cancellation-reasons"],
         queryFn: async (): Promise<CancellationReason[]> => {
             const { data, error } = await supabase
@@ -19,10 +19,18 @@ export const useCancellationReasons = () => {
                 .order("name");
 
             if (error) throw error;
-            return data;
+            return data || [];
         },
     });
+
+    return {
+        reasons: query.data || [],
+        isLoading: query.isLoading,
+        error: query.error,
+        refetch: query.refetch,
+    };
 };
+
 
 export const useCreateCancellationReason = () => {
     const queryClient = useQueryClient();

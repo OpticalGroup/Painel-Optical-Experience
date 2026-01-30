@@ -851,6 +851,13 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
       const dataToImport = forceImport ? validRows : previewData;
       const ignoredRows = forceImport ? rowsWithErrors : [];
 
+      // ====== CACHE LOCAL PARA EVITAR DUPLICATAS DURANTE IMPORTAÇÃO ======
+      // Rastreia IDs criados/resolvidos durante esta sessão de importação
+      const funnelCache = new Map<string, string>();     // normalizedName -> id
+      const macroCache = new Map<string, string>();      // funnelId:normalizedName -> id
+      const microCache = new Map<string, string>();      // macroId:normalizedName -> id
+      const variationCache = new Map<string, string>();  // microId:normalizedName -> id
+
       for (let i = 0; i < dataToImport.length; i++) {
         const cohortInfo = multiCohort ? ` (Turma: ${dataToImport[i].cohort_identifier})` : '';
 
@@ -891,73 +898,105 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
 
           // Se tiver funnel_name, resolver/criar hierarquia
           if (row.funnel_name) {
-            // 1. Buscar ou criar funil
-            let funnel = funnels?.find(f =>
-              f.name.toLowerCase().trim() === row.funnel_name!.toLowerCase().trim()
-            );
-            if (!funnel) {
-              const created = await createFunnel.mutateAsync({
-                name: row.funnel_name,
-                description: 'Criado durante importação',
-                active: true,
-              });
-              resolvedFunnelId = created.id;
+            const funnelKey = row.funnel_name.toLowerCase().trim();
+
+            // 1. Buscar no cache local primeiro, depois no array carregado
+            if (funnelCache.has(funnelKey)) {
+              resolvedFunnelId = funnelCache.get(funnelKey);
             } else {
-              resolvedFunnelId = funnel.id;
+              let funnel = funnels?.find(f =>
+                f.name.toLowerCase().trim() === funnelKey
+              );
+              if (!funnel) {
+                const created = await createFunnel.mutateAsync({
+                  name: row.funnel_name,
+                  description: 'Criado durante importação',
+                  active: true,
+                });
+                resolvedFunnelId = created.id;
+              } else {
+                resolvedFunnelId = funnel.id;
+              }
+              // Adicionar ao cache para próximas linhas
+              funnelCache.set(funnelKey, resolvedFunnelId!);
             }
 
             // 2. Se tiver macro_origin, buscar ou criar
             if (row.macro_origin && resolvedFunnelId) {
-              let macro = macroOrigins?.find(m =>
-                m.funnel_id === resolvedFunnelId &&
-                m.name.toLowerCase().trim() === row.macro_origin!.toLowerCase().trim()
-              );
-              if (!macro) {
-                const created = await createMacroOrigin.mutateAsync({
-                  funnel_id: resolvedFunnelId,
-                  name: row.macro_origin,
-                  description: 'Criado durante importação',
-                  active: true,
-                });
-                resolvedMacroId = created.id;
+              const macroKey = `${resolvedFunnelId}:${row.macro_origin.toLowerCase().trim()}`;
+
+              if (macroCache.has(macroKey)) {
+                resolvedMacroId = macroCache.get(macroKey);
               } else {
-                resolvedMacroId = macro.id;
+                let macro = macroOrigins?.find(m =>
+                  m.funnel_id === resolvedFunnelId &&
+                  m.name.toLowerCase().trim() === row.macro_origin!.toLowerCase().trim()
+                );
+                if (!macro) {
+                  const created = await createMacroOrigin.mutateAsync({
+                    funnel_id: resolvedFunnelId,
+                    name: row.macro_origin,
+                    description: 'Criado durante importação',
+                    active: true,
+                  });
+                  resolvedMacroId = created.id;
+                } else {
+                  resolvedMacroId = macro.id;
+                }
+                // Adicionar ao cache para próximas linhas
+                macroCache.set(macroKey, resolvedMacroId!);
               }
 
               // 3. Se tiver micro_origin, buscar ou criar
               if (row.micro_origin && resolvedMacroId) {
-                let micro = microOrigins?.find(m =>
-                  m.macro_origin_id === resolvedMacroId &&
-                  m.name.toLowerCase().trim() === row.micro_origin!.toLowerCase().trim()
-                );
-                if (!micro) {
-                  const created = await createMicroOrigin.mutateAsync({
-                    macro_origin_id: resolvedMacroId,
-                    name: row.micro_origin,
-                    description: 'Criado durante importação',
-                    active: true,
-                  });
-                  resolvedMicroId = created.id;
+                const microKey = `${resolvedMacroId}:${row.micro_origin.toLowerCase().trim()}`;
+
+                if (microCache.has(microKey)) {
+                  resolvedMicroId = microCache.get(microKey);
                 } else {
-                  resolvedMicroId = micro.id;
+                  let micro = microOrigins?.find(m =>
+                    m.macro_origin_id === resolvedMacroId &&
+                    m.name.toLowerCase().trim() === row.micro_origin!.toLowerCase().trim()
+                  );
+                  if (!micro) {
+                    const created = await createMicroOrigin.mutateAsync({
+                      macro_origin_id: resolvedMacroId,
+                      name: row.micro_origin,
+                      description: 'Criado durante importação',
+                      active: true,
+                    });
+                    resolvedMicroId = created.id;
+                  } else {
+                    resolvedMicroId = micro.id;
+                  }
+                  // Adicionar ao cache para próximas linhas
+                  microCache.set(microKey, resolvedMicroId!);
                 }
 
                 // 4. Se tiver micro_variation, buscar ou criar
                 if (row.micro_variation && resolvedMicroId) {
-                  let variation = microVariations?.find(v =>
-                    v.micro_origin_id === resolvedMicroId &&
-                    v.name.toLowerCase().trim() === row.micro_variation!.toLowerCase().trim()
-                  );
-                  if (!variation) {
-                    const created = await createMicroVariation.mutateAsync({
-                      micro_origin_id: resolvedMicroId,
-                      name: row.micro_variation,
-                      description: 'Criado durante importação',
-                      active: true,
-                    });
-                    resolvedVariationId = created.id;
+                  const variationKey = `${resolvedMicroId}:${row.micro_variation.toLowerCase().trim()}`;
+
+                  if (variationCache.has(variationKey)) {
+                    resolvedVariationId = variationCache.get(variationKey);
                   } else {
-                    resolvedVariationId = variation.id;
+                    let variation = microVariations?.find(v =>
+                      v.micro_origin_id === resolvedMicroId &&
+                      v.name.toLowerCase().trim() === row.micro_variation!.toLowerCase().trim()
+                    );
+                    if (!variation) {
+                      const created = await createMicroVariation.mutateAsync({
+                        micro_origin_id: resolvedMicroId,
+                        name: row.micro_variation,
+                        description: 'Criado durante importação',
+                        active: true,
+                      });
+                      resolvedVariationId = created.id;
+                    } else {
+                      resolvedVariationId = variation.id;
+                    }
+                    // Adicionar ao cache para próximas linhas
+                    variationCache.set(variationKey, resolvedVariationId!);
                   }
                 }
               }

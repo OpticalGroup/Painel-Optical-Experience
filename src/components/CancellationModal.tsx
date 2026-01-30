@@ -70,8 +70,8 @@ export const CancellationModal = ({
                                     <SelectItem value="loading" disabled>Carregando...</SelectItem>
                                 ) : (
                                     reasons.filter(r => r.active).map((reason) => (
-                                        <SelectItem key={reason.id} value={reason.label}>
-                                            {reason.label}
+                                        <SelectItem key={reason.id} value={reason.name}>
+                                            {reason.name}
                                         </SelectItem>
                                     ))
                                 )}
