@@ -1034,6 +1034,7 @@ export const CsvImportModal = ({ open, onOpenChange, cohortId, cohortName, multi
             enrollmentData.purchase_date = dataToImport[i].purchase_date;
           }
 
+
           if (dataToImport[i].lead_date) {
             enrollmentData.lead_date = dataToImport[i].lead_date;
           }

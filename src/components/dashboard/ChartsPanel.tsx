@@ -799,7 +799,7 @@ export function ChartsPanel({
                                         </span>
                                     </div>
 
-                                    <div className="space-y-1.5 overflow-y-auto pr-2 pb-2 -mr-2 scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent flex-1">
+                                    <div className="space-y-1.5 overflow-y-auto pr-2 pb-2 -mr-2 scrollbar-thin scrollbar-thumb-secondary scrollbar-track-transparent flex-1 max-h-[180px]">
                                         {purchaseWindowData.byVendedor
                                             .sort((a, b) => a.averageDays - b.averageDays)
                                             .map((vendedor, index) => {

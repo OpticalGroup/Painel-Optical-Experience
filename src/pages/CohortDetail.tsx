@@ -433,6 +433,7 @@ const CohortDetail = () => {
       <section className="px-4 sm:px-6 lg:px-8 pb-4 lg:pb-6">
         <OriginSegmentationCard
           enrollments={enrollmentsData || []}
+          cohortId={cohortId}
           isLoading={isLoading}
         />
       </section>

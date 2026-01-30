@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { MapPin, TrendingUp, Users, Layers, Target, Crosshair, GitBranch } from "lucide-react";
 import { Enrollment } from "@/components/enrollments/types";
-import { useOriginHierarchy } from "@/integrations/supabase/hooks/useOriginHierarchy";
+import { useOriginHierarchy } from "@/hooks/useOriginHierarchy";
 
 interface OriginSegmentationCardProps {
   enrollments: Enrollment[];
+  cohortId?: string;
   isLoading?: boolean;
 }
 
@@ -38,89 +39,53 @@ interface OriginData {
   color: string;
 }
 
-type ViewLevel = 'source' | 'funnel' | 'macro' | 'micro' | 'variation';
+type ViewLevel = 'funnel' | 'macro' | 'micro' | 'variation';
 
-export const OriginSegmentationCard = ({ enrollments, isLoading }: OriginSegmentationCardProps) => {
-  const [viewLevel, setViewLevel] = useState<ViewLevel>('source');
-  const { funnels, macroOrigins, microOrigins, microVariations, isLoading: hierarchyLoading } = useOriginHierarchy();
+export const OriginSegmentationCard = ({ enrollments, cohortId, isLoading }: OriginSegmentationCardProps) => {
+  const [viewLevel, setViewLevel] = useState<ViewLevel>('funnel');
+  const { data: hierarchyData, isLoading: hierarchyLoading } = useOriginHierarchy(undefined, cohortId);
 
   const originData = useMemo(() => {
-    // Filtra apenas matrículas ativas (não canceladas)
-    const activeEnrollments = enrollments.filter(
-      e => (e.external_metadata as any)?.status !== 'cancelled'
-    );
+    // Use pre-aggregated data from the hook based on the selected view level
+    if (!hierarchyData) return [];
 
-    // Agrupa por origem baseado no nível selecionado
-    const originMap = new Map<string, {
-      count: number;
-      paid: number;
-      pending: number;
-      revenue: number;
-    }>();
+    let sourceData: Array<{ name: string; count: number; paidCount: number; revenue: number }> = [];
 
-    activeEnrollments.forEach(enrollment => {
-      let groupKey: string;
+    switch (viewLevel) {
+      case 'funnel':
+        sourceData = hierarchyData.funis || [];
+        break;
+      case 'macro':
+        sourceData = hierarchyData.macroOrigens || [];
+        break;
+      case 'micro':
+        sourceData = hierarchyData.microOrigens || [];
+        break;
+      case 'variation':
+        sourceData = hierarchyData.variacaoMicro || [];
+        break;
+      default:
+        // Legacy source: fall back to funis
+        sourceData = hierarchyData.funis || [];
+    }
 
-      switch (viewLevel) {
-        case 'funnel':
-          // Group by funnel_id
-          const funnelId = (enrollment as any).funnel_id;
-          const funnel = funnels.find(f => f.id === funnelId);
-          groupKey = funnel?.name || 'Sem Funil';
-          break;
-        case 'macro':
-          // Group by macro_origin_id
-          const macroId = (enrollment as any).macro_origin_id;
-          const macro = macroOrigins.find(m => m.id === macroId);
-          groupKey = macro?.name || enrollment.source || 'Não Rastreada';
-          break;
-        case 'micro':
-          // Group by micro_origin_id
-          const microId = (enrollment as any).micro_origin_id;
-          const micro = microOrigins.find(m => m.id === microId);
-          groupKey = micro?.name || 'Sem Origem Micro';
-          break;
-        case 'variation':
-          // Group by micro_variation_id
-          const variationId = (enrollment as any).micro_variation_id;
-          const variation = microVariations.find(v => v.id === variationId);
-          groupKey = variation?.name || 'Sem Variação';
-          break;
-        default:
-          // Default: use source field (legacy)
-          groupKey = enrollment.source || "Não Rastreada";
-      }
+    const totalCount = sourceData.reduce((sum, item) => sum + item.count, 0);
 
-      const existing = originMap.get(groupKey) || { count: 0, paid: 0, pending: 0, revenue: 0 };
-
-      existing.count += 1;
-      if (enrollment.financial_status === 'paid') {
-        existing.paid += 1;
-        existing.revenue += enrollment.payment_amount || 0;
-      } else {
-        existing.pending += 1;
-      }
-
-      originMap.set(groupKey, existing);
-    });
-
-    // Converte para array e ordena por quantidade
-    const origins: OriginData[] = Array.from(originMap.entries())
-      .map(([name, data], index) => ({
-        name,
-        value: data.count,
-        paid: data.paid,
-        pending: data.pending,
-        revenue: data.revenue,
-        percentage: activeEnrollments.length > 0
-          ? Math.round((data.count / activeEnrollments.length) * 100)
-          : 0,
+    // Convert to the expected OriginData format
+    const origins: OriginData[] = sourceData
+      .map((item, index) => ({
+        name: item.name,
+        value: item.count,
+        paid: item.paidCount,
+        pending: item.count - item.paidCount,
+        revenue: item.revenue,
+        percentage: totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0,
         color: COLORS[index % COLORS.length],
       }))
       .sort((a, b) => b.value - a.value);
 
     return origins;
-  }, [enrollments, viewLevel, funnels, macroOrigins, microOrigins, microVariations]);
+  }, [hierarchyData, viewLevel]);
 
   const totalEnrollments = originData.reduce((sum, o) => sum + o.value, 0);
   const totalPaid = originData.reduce((sum, o) => sum + o.paid, 0);
@@ -230,15 +195,6 @@ export const OriginSegmentationCard = ({ enrollments, isLoading }: OriginSegment
 
       {/* View Level Selector */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <Button
-          variant={viewLevel === 'source' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewLevel('source')}
-          className="gap-1"
-        >
-          <MapPin className="h-3 w-3" />
-          Origem (Legado)
-        </Button>
         <Button
           variant={viewLevel === 'funnel' ? 'default' : 'outline'}
           size="sm"

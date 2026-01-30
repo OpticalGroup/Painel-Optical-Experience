@@ -268,9 +268,23 @@ function MetricToggle({
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) {
     if (!active || !payload?.length) return null;
 
+    // Format ISO date label (yyyy-MM-dd) to dd/MM/yyyy without timezone conversion
+    const formatLabel = (dateStr: string | undefined): string => {
+        if (!dateStr) return '';
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`; // dd/MM/yyyy
+            } else if (parts.length === 2) {
+                return `${parts[1]}/${parts[0]}`; // MM/yyyy
+            }
+        }
+        return dateStr;
+    };
+
     return (
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-2 shadow-xl">
-            <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
+            <p className="text-[10px] text-muted-foreground mb-1">{formatLabel(label)}</p>
             <div className="space-y-0.5">
                 {payload.map((entry: any, index: number) => {
                     const metric = METRIC_CONFIGS.find((m) => m.id === entry.dataKey);
@@ -351,14 +365,79 @@ export function UnifiedTrendChart({
     const chartData = useMemo((): ChartDataPoint[] => {
         const filtered = getFilteredData(data);
 
-        // If granularity is 'day', no aggregation needed
+        // If granularity is 'day', fill gaps with zero-value days
         if (granularity === 'day') {
-            return filtered.map((d) => ({
-                ...d,
-                conversionRate: d.conversionRate ?? (d.enrollments && d.paid ? d.paid / d.enrollments : undefined),
-                occupancyRate: d.occupancyRate ?? (d.capacity && d.enrollments ? d.enrollments / d.capacity : undefined),
-                ticketMedio: d.ticketMedio ?? (d.revenue && d.paid ? d.revenue / d.paid : undefined),
-            }));
+            // Create a map of existing data by date
+            const dataMap = new Map<string, TrendDataPoint>();
+            filtered.forEach((d) => {
+                dataMap.set(d.date, d);
+            });
+
+            // Generate all consecutive days in the period
+            const allDays: ChartDataPoint[] = [];
+            const now = new Date();
+
+            // Calculate start date based on period
+            const getDaysBack = (): number => {
+                switch (period) {
+                    case '7D': return 7;
+                    case '30D': return 30;
+                    case '90D': return 90;
+                    case '180D': return 180;
+                    case '1Y': return 365;
+                    case 'ALL': return filtered.length > 0
+                        ? Math.ceil((now.getTime() - new Date(filtered[0].date).getTime()) / (1000 * 60 * 60 * 24)) + 1
+                        : 30;
+                    default: return 30;
+                }
+            };
+
+            const daysBack = getDaysBack();
+
+            // Use custom range if selected
+            let startDate: Date;
+            let endDate: Date = now;
+
+            if (period === 'CUSTOM' && customRange.startDate && customRange.endDate) {
+                startDate = customRange.startDate;
+                endDate = customRange.endDate;
+            } else {
+                startDate = new Date(now);
+                startDate.setDate(startDate.getDate() - daysBack + 1);
+            }
+
+            // Generate each day in the range
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                const dateStr = currentDate.toISOString().slice(0, 10);
+                const existingData = dataMap.get(dateStr);
+
+                if (existingData) {
+                    allDays.push({
+                        ...existingData,
+                        conversionRate: existingData.conversionRate ?? (existingData.enrollments && existingData.paid ? existingData.paid / existingData.enrollments : 0),
+                        occupancyRate: existingData.occupancyRate ?? (existingData.capacity && existingData.enrollments ? existingData.enrollments / existingData.capacity : 0),
+                        ticketMedio: existingData.ticketMedio ?? (existingData.revenue && existingData.paid ? existingData.revenue / existingData.paid : 0),
+                    });
+                } else {
+                    // Add zero-value day
+                    allDays.push({
+                        date: dateStr,
+                        enrollments: 0,
+                        paid: 0,
+                        pending: 0,
+                        signed: 0,
+                        revenue: 0,
+                        conversionRate: 0,
+                        occupancyRate: 0,
+                        ticketMedio: 0,
+                    });
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return allDays;
         }
 
         // Aggregate by week or month
@@ -372,19 +451,21 @@ export function UnifiedTrendChart({
         }> = {};
 
         filtered.forEach((d) => {
-            const date = new Date(d.date);
+            // Parse ISO date string directly to avoid timezone conversion issues
+            // d.date is in format "yyyy-MM-dd"
+            const [year, month, day] = d.date.split('-').map(Number);
             let key: string;
 
             if (granularity === 'week') {
-                // Get start of week (Monday)
-                const day = date.getDay();
-                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-                const weekStart = new Date(date);
-                weekStart.setDate(diff);
-                key = format(weekStart, 'yyyy-MM-dd');
+                // Get start of week (Monday) using UTC to avoid timezone issues
+                const date = new Date(Date.UTC(year, month - 1, day));
+                const dayOfWeek = date.getUTCDay();
+                const diff = day - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                const weekStartDate = new Date(Date.UTC(year, month - 1, diff));
+                key = `${weekStartDate.getUTCFullYear()}-${String(weekStartDate.getUTCMonth() + 1).padStart(2, '0')}-${String(weekStartDate.getUTCDate()).padStart(2, '0')}`;
             } else {
-                // Month
-                key = format(date, 'yyyy-MM');
+                // Month - just use year-month
+                key = `${year}-${String(month).padStart(2, '0')}`;
             }
 
             if (!aggregated[key]) {
@@ -552,9 +633,18 @@ export function UnifiedTrendChart({
                                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }}
                                 interval="preserveStartEnd"
                                 tickFormatter={(value: string) => {
-                                    // Format ISO date (yyyy-MM-dd) to dd/MM
+                                    // Format ISO date (yyyy-MM-dd) to dd/MM without timezone conversion
                                     try {
-                                        return format(new Date(value), 'dd/MM', { locale: ptBR });
+                                        if (value.includes('-')) {
+                                            const parts = value.split('-');
+                                            if (parts.length >= 2) {
+                                                // yyyy-MM-dd -> dd/MM or yyyy-MM -> MM/yy
+                                                return parts.length === 3
+                                                    ? `${parts[2]}/${parts[1]}`  // dd/MM
+                                                    : `${parts[1]}/${parts[0].slice(2)}`; // MM/yy
+                                            }
+                                        }
+                                        return value;
                                     } catch {
                                         return value;
                                     }

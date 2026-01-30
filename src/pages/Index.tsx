@@ -257,12 +257,19 @@ const Index = () => {
       revenue: number;
     }> = {};
 
-    // Agregar dados por DIA usando purchase_date (data real da venda)
-    // Fallback para created_at se purchase_date não existir
+
+    // Agregar dados por DIA usando APENAS purchase_date (data real da venda)
+    // Matrículas sem purchase_date são ignoradas para não poluir a análise
     enrollments.forEach((e: any) => {
-      const dateToUse = e.purchase_date || e.created_at;
-      if (!dateToUse) return;
-      const dayKey = format(new Date(dateToUse), "yyyy-MM-dd");
+      // Skip enrollments without a valid purchase_date
+      if (!e.purchase_date) return;
+
+      // Extract date portion directly from ISO string to avoid timezone conversion issues
+      // "2026-01-30T00:00:00+00:00" -> "2026-01-30" (without going through Date object)
+      const purchaseDateStr = e.purchase_date.toString();
+      const dayKey = purchaseDateStr.includes('T')
+        ? purchaseDateStr.split('T')[0]
+        : purchaseDateStr.substring(0, 10);
 
       if (!dataByDay[dayKey]) {
         dataByDay[dayKey] = { enrollments: 0, paid: 0, pending: 0, signed: 0, revenue: 0 };
