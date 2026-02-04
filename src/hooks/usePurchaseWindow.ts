@@ -30,7 +30,16 @@ export function usePurchaseWindow(filters?: DateRange) {
             // Fetch enrollments with both lead_date and purchase_date
             let query = supabase
                 .from("enrollments")
-                .select("id, lead_date, purchase_date, sales_rep, source, financial_status, product_name, cohort_id")
+                .select(`
+                    id, 
+                    lead_date, 
+                    purchase_date, 
+                    sales_rep, 
+                    financial_status, 
+                    product_name, 
+                    cohort_id,
+                    macro_origins!enrollments_macro_origin_id_fkey(name)
+                `)
                 .not("lead_date", "is", null)
                 .not("purchase_date", "is", null)
                 .eq("financial_status", "paid")
@@ -104,10 +113,10 @@ export function usePurchaseWindow(filters?: DateRange) {
                 }))
                 .sort((a, b) => a.averageDays - b.averageDays); // Sort by fastest first
 
-            // Group by origem (source)
+            // Group by origem (macro_origin)
             const origemMap = new Map<string, { totalDays: number; count: number }>();
             conversions.forEach((c) => {
-                const source = c.source || "Não informado";
+                const source = c.macro_origins?.name || "Não informado";
                 const current = origemMap.get(source) || { totalDays: 0, count: 0 };
                 origemMap.set(source, {
                     totalDays: current.totalDays + c.days,

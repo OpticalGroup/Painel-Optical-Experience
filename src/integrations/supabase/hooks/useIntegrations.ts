@@ -29,17 +29,14 @@ export interface IntegrationLog {
 }
 
 export const useIntegrationSettings = () => {
+  // DISABLED: integration_settings table does not exist
   return useQuery({
     queryKey: ['integration-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('integration_settings')
-        .select('*')
-        .order('system_name');
-
-      if (error) throw error;
-      return data as IntegrationSettings[];
+      // Return empty array instead of querying non-existent table
+      return [] as IntegrationSettings[];
     },
+    enabled: false, // Disable query
   });
 };
 
@@ -47,17 +44,11 @@ export const useUpdateIntegrationSettings = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // DISABLED: integration_settings table does not exist
   return useMutation({
     mutationFn: async (settings: Partial<IntegrationSettings> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('integration_settings')
-        .update(settings)
-        .eq('id', settings.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      console.warn('Cannot update integration settings (table does not exist)');
+      return null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['integration-settings'] });

@@ -13,11 +13,48 @@ export const useEnrollmentsQuery = (cohortId: string | undefined, showCancelled:
     queryFn: async () => {
       if (!cohortId) throw new Error('Cohort ID is required');
 
-        let query = supabase
-          .from('enrollments')
-          .select(`
-            *,
-            student_name:buyer_name
+      let query = supabase
+        .from('enrollments')
+        .select(`
+            id,
+            cohort_id,
+            student_name,
+            email,
+            cpf,
+            phone,
+            sales_rep,
+            financial_status,
+            contract_status,
+            payment_details,
+            payment_amount,
+            product_name,
+            purchase_date,
+            lead_date,
+            address,
+            city,
+            state,
+            zipcode,
+            observations,
+            utm_source,
+            utm_medium,
+            utm_campaign,
+            utm_term,
+            utm_content,
+            utm_page,
+            submitted_at,
+            payment_proof_url,
+            funnel_id,
+            macro_origin_id,
+            micro_origin_id,
+            micro_variation_id,
+            nucleo_id,
+            kommo_contact_id,
+            kommo_lead_id,
+            position_in_cohort,
+            external_metadata,
+            created_at,
+            updated_at,
+            created_by
           `)
         .eq('cohort_id', cohortId)
         .order('position_in_cohort', { ascending: true });

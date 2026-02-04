@@ -8,23 +8,18 @@ export interface TemplatePreset {
   name: string;
   description: string | null;
   selected_fields: string[];
-  multi_cohort: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export const useTemplatePresets = (multiCohort?: boolean) => {
+export const useTemplatePresets = () => {
   return useQuery({
-    queryKey: ['csv-template-presets', multiCohort],
+    queryKey: ['csv-template-presets'],
     queryFn: async () => {
       let query = supabase
         .from('csv_template_presets')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (multiCohort !== undefined) {
-        query = query.eq('multi_cohort', multiCohort);
-      }
 
       const { data, error } = await query;
 
@@ -43,7 +38,6 @@ export const useCreateTemplatePreset = () => {
       name: string;
       description?: string;
       selected_fields: string[];
-      multi_cohort: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');

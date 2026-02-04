@@ -26,57 +26,23 @@ export const useUtmSettings = () => {
     const queryClient = useQueryClient();
     const { toast } = useToast();
 
+    // DISABLED: integration_settings table does not exist
+    // Using local default config instead
     const query = useQuery({
         queryKey: ["utm-settings"],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from("integration_settings")
-                .select("*")
-                .eq("system_name", SETTING_KEY)
-                .maybeSingle();
-
-            if (error) throw error;
-
-            if (!data) {
-                // Initialize if not exists
-                const { data: newData, error: createError } = await supabase
-                    .from("integration_settings")
-                    .insert({
-                        system_name: SETTING_KEY,
-                        config: DEFAULT_CONFIG as any,
-                        active: true,
-                    })
-                    .select()
-                    .single();
-
-                if (createError) throw createError;
-                return newData.config as UtmConfig;
-            }
-
-            // Merge with default config to ensure new keys exist
-            return { ...DEFAULT_CONFIG, ...(data.config as object) } as UtmConfig;
+            // Return default config without database call
+            return DEFAULT_CONFIG;
         },
+        enabled: false, // Disable query entirely
     });
 
+    // DISABLED: integration_settings table does not exist
     const updateSettings = useMutation({
         mutationFn: async (newConfig: UtmConfig) => {
-            const { data: existing } = await supabase
-                .from("integration_settings")
-                .select("id")
-                .eq("system_name", SETTING_KEY)
-                .single();
-
-            if (!existing) throw new Error("Settings not found");
-
-            const { error } = await supabase
-                .from("integration_settings")
-                .update({
-                    config: newConfig as any,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", existing.id);
-
-            if (error) throw error;
+            // No-op: settings are not persisted
+            console.warn('UTM settings cannot be saved (integration_settings table does not exist)');
+            return;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["utm-settings"] });

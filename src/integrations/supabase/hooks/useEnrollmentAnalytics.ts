@@ -72,7 +72,9 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
         .select(`
           id,
           sales_rep,
-          source,
+          student_name,
+          macro_origin_id,
+          macro_origins!enrollments_macro_origin_id_fkey(name),
           financial_status,
           contract_status,
           payment_amount,
@@ -83,9 +85,7 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
           utm_source,
           utm_medium,
           utm_campaign,
-          utm_campaign,
           external_metadata,
-          buyer_name,
           nucleo_id
         `);
 
@@ -171,10 +171,10 @@ export const useEnrollmentAnalytics = (filters?: AnalyticsFilters) => {
         }
       });
 
-      // Calcular estatísticas por origem (Source)
+      // Calcular estatísticas por origem (Macro Origin)
       const sourceMap = new Map<string, SourceStats>();
-      dataToAnalyze.forEach((enrollment) => {
-        const source = enrollment.source || "Outro";
+      dataToAnalyze.forEach((enrollment: any) => {
+        const source = enrollment.macro_origins?.name || "Não informado";
         if (!sourceMap.has(source)) {
           sourceMap.set(source, {
             source,
