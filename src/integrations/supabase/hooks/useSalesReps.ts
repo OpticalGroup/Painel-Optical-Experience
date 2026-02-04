@@ -10,7 +10,7 @@ export interface SalesRep {
   active: boolean;
   email: string | null;
   phone: string | null;
-  nucleo_id: string | null;
+  nucleo_id?: string | null;
   created_at: string;
 }
 

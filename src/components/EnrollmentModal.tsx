@@ -106,9 +106,6 @@ const formSchema = z.object({
   utmContent: z.string().optional(),
   utmTerm: z.string().optional(),
   utmPage: z.string().optional(),
-  utmContent: z.string().optional(),
-  utmTerm: z.string().optional(),
-  utmPage: z.string().optional(),
   nucleoId: z.string().optional().or(z.literal("")),
 });
 
@@ -150,7 +147,6 @@ export interface EnrollmentData {
   utmCampaign?: string;
   utmContent?: string;
   utmTerm?: string;
-  utmPage?: string;
   utmPage?: string;
   nucleoId?: string;
 }
@@ -219,7 +215,6 @@ export const EnrollmentModal = ({
       utmMedium: "",
       utmCampaign: "",
       utmContent: "",
-      utmTerm: "",
       utmTerm: "",
       utmPage: "",
       nucleoId: "",
